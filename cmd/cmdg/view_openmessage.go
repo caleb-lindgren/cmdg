@@ -19,40 +19,47 @@ import (
 	"github.com/ThomasHabets/cmdg/pkg/dialog"
 	"github.com/ThomasHabets/cmdg/pkg/display"
 	"github.com/ThomasHabets/cmdg/pkg/input"
+	"github.com/ThomasHabets/cmdg/internal/customize"
 )
 
-const (
-	tsLayout = "2006-01-02 15:04:05"
-
-	openMessageViewHelp = `?, F1     — Help
-^R             — Reload
-l              — Add label
-L              — Remove label
-*              — Toggle "starred"
-u, ←           — Exit message
-U              — Mark unread
-n, Down        — Scroll down
-space          — Page down
-backspace      — Page up
-p, Up          — Scroll up
-^P             — Previous message
-^N             — Next message
-f              — Forward message
-r              — Reply
-s, ^s          — Search within message
-a              — Reply all
-d              — Delete
-e              — Archive
-t, →           — Browse attachments (if any)
-H              — Force HTML view
-\              — Show raw message source
-|              — Pipe to command
-
-Press [enter] to exit
-`
-)
+const tsLayout = "2006-01-02 15:04:05"
 
 var (
+	openMessageViewHelp = fmt.Sprintf(`?, F1     — Help
+Reload:                      ^R
+Add label:                   l
+Remove label:                L
+Toggle "starred":            *
+Exit message:                %[1]s, ←
+Mark unread:                 U
+Scroll down:                 %[2]s, Down
+Page down:                   %[3]s
+Page up:                     %[4]s
+Scroll up:                   %[5]s, Up
+Previous message:            ^P
+Next message:                ^N
+Forward message:             %[6]s
+Reply:                       r
+Search within message:       s, ^s
+Reply all:                   a
+Delete:                      %[7]s
+Archive:                     e
+Browse attachments (if any): t, →
+Force HTML view:             H
+Show raw message source:     \
+Pipe to command:             |
+
+Press [%[8]s] to exit
+`,
+	customize.ExitMessage.Name,
+	customize.ScrollDown.Name,
+	customize.PageDown.Name,
+	customize.PageUp.Name,
+	customize.ScrollUp.Name,
+	customize.ForwardMessage.Name,
+	customize.DeleteMessage.Name,
+	customize.LeaveHelp.Name,
+)
 	enableDottime = flag.Bool("dottime", false, "Enable dottime.")
 	showMessageID = flag.Bool("show_message_id", false, "Show message ID in a message.")
 )
@@ -103,7 +110,7 @@ func help(txt string, keys *input.Input) error {
 		screen.Draw()
 		k := <-keys.Chan()
 		switch k {
-		case input.Enter:
+		case customize.LeaveHelp.Key:
 			return nil
 		}
 	}
@@ -584,7 +591,7 @@ func (ov *OpenMessageView) Run(ctx context.Context) (*MessageViewOp, error) {
 					}
 					ov.Draw(lines, scroll)
 				}
-			case "u", input.Left:
+			case customize.ExitMessage.Key, input.Left:
 				return nil, nil
 			case "q":
 				return OpQuit(), nil
@@ -601,18 +608,18 @@ func (ov *OpenMessageView) Run(ctx context.Context) (*MessageViewOp, error) {
 			case input.Home, input.XHome:
 				scroll = 0
 				ov.Draw(lines, scroll)
-			case "n", input.Down:
+			case customize.ScrollDown.Key, input.Down:
 				ov.screen.UseCache()
 				scroll = ov.scroll(ctx, len(lines), scroll, 1)
 				ov.Draw(lines, scroll)
-			case " ", input.CtrlV, input.PgDown:
+			case customize.PageDown.Key, input.CtrlV, input.PgDown:
 				scroll = ov.scroll(ctx, len(lines), scroll, ov.screen.Height-10)
 				ov.Draw(lines, scroll)
-			case "p", input.Up:
+			case customize.ScrollUp.Key, input.Up:
 				ov.screen.UseCache()
 				scroll = ov.scroll(ctx, len(lines), scroll, -1)
 				ov.Draw(lines, scroll)
-			case "f":
+			case customize.ForwardMessage.Key:
 				if err := forward(ctx, conn, ov.keys, ov.msg); err != nil {
 					ov.errors <- fmt.Errorf("Failed to forward: %v", err)
 				}
@@ -636,7 +643,7 @@ func (ov *OpenMessageView) Run(ctx context.Context) (*MessageViewOp, error) {
 				} else {
 					return OpRemoveCurrent(nil), nil
 				}
-			case "d": // Delete
+			case customize.DeleteMessage.Key: // Delete
 				if err := ov.msg.RemoveLabelID(ctx, cmdg.Inbox); err != nil {
 					ov.errors <- fmt.Errorf("Failed to delete (remove Inbox label) : %v", err)
 					if err := ov.msg.AddLabelID(ctx, cmdg.Trash); err != nil {
@@ -693,7 +700,7 @@ func (ov *OpenMessageView) Run(ctx context.Context) (*MessageViewOp, error) {
 					break
 				}
 				ov.errors <- ov.showPager(ctx, buf.String())
-			case input.Backspace, input.CtrlH, input.PgUp, "Meta-v":
+			case customize.PageUp.Key, input.CtrlH, input.PgUp, "Meta-v":
 				scroll = ov.scroll(ctx, len(lines), scroll, -(ov.screen.Height - 10))
 				ov.Draw(lines, scroll)
 			default:
