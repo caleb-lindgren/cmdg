@@ -17,12 +17,15 @@ import (
 	"github.com/ThomasHabets/cmdg/pkg/dialog"
 	"github.com/ThomasHabets/cmdg/pkg/display"
 	"github.com/ThomasHabets/cmdg/pkg/input"
+	"github.com/ThomasHabets/cmdg/internal/customize"
 )
 
 const (
 	scrollLimit = 5
+)
 
-	messageListViewHelp = `?, F1              — Help
+var (
+	messageListViewHelp = fmt.Sprintf(`?, F1              — Help
 enter, →           — Open message
 space, x           — Mark message and advance
 X                  — Mark message and step up
@@ -44,11 +47,10 @@ s, ^s              — Search
 q                  — Quit
 ^L                 — Refresh screen
 
-Press [enter] to exit
-`
-)
-
-var (
+Press [%[1]s] to exit
+`,
+		customize.LeaveHelp.Name,
+	)
 	messageListReloadTime          = time.Minute
 	messageListReloadTimeout       = 40 * time.Second
 	messageListHistoryCheckTime    = 10 * time.Second

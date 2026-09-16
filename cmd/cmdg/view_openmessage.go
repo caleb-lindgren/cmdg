@@ -51,15 +51,15 @@ Pipe to command:             |
 
 Press [%[8]s] to exit
 `,
-	customize.ExitMessage.Name,
-	customize.ScrollDown.Name,
-	customize.PageDown.Name,
-	customize.PageUp.Name,
-	customize.ScrollUp.Name,
-	customize.ForwardMessage.Name,
-	customize.DeleteMessage.Name,
-	customize.LeaveHelp.Name,
-)
+		customize.ExitMessage.Name,
+		customize.ScrollDown.Name,
+		customize.PageDown.Name,
+		customize.PageUp.Name,
+		customize.ScrollUp.Name,
+		customize.ForwardMessage.Name,
+		customize.DeleteMessage.Name,
+		customize.LeaveHelp.Name,
+	)
 	enableDottime = flag.Bool("dottime", false, "Enable dottime.")
 	showMessageID = flag.Bool("show_message_id", false, "Show message ID in a message.")
 )
