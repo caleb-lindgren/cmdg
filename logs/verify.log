@@ -1,5 +1,5 @@
-date:   2026-09-16T15:37:24Z
-commit: 09036fea7642cb284f2f17610bb5d8cb04e6b3e5
+date:   2026-09-16T15:46:51Z
+commit: be2c042181d086c80d5a83a9359ead8192020a10
 go:     go version go1.27.0-X:nodwarf5 linux/amd64
 
 === gofmt -l ===
@@ -12,9 +12,9 @@ clean
 --- exit 0 ---
 
 === go test ./... ===
-ok  	github.com/ThomasHabets/cmdg/cmd/cmdg	0.040s
+ok  	github.com/ThomasHabets/cmdg/cmd/cmdg	0.029s
 ?   	github.com/ThomasHabets/cmdg/cmd/med	[no test files]
-ok  	github.com/ThomasHabets/cmdg/internal/customize	0.009s
+ok  	github.com/ThomasHabets/cmdg/internal/customize	0.006s
 ?   	github.com/ThomasHabets/cmdg/pkg/cmdg	[no test files]
 ok  	github.com/ThomasHabets/cmdg/pkg/dialog	(cached)
 ok  	github.com/ThomasHabets/cmdg/pkg/display	(cached)
