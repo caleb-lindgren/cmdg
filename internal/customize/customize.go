@@ -150,7 +150,7 @@ func remapNames(help string, bs []Binding) string {
 		}
 		var out []string
 		for _, k := range splitKeys(keys) {
-			if n, ok := names[k]; ok {
+			if n, found := names[k]; found {
 				k = n
 			}
 			out = append(out, k)
