@@ -105,7 +105,7 @@ func help(txt string, keys *input.Input) error {
 		screen.Draw()
 		k := <-keys.Chan()
 		switch k {
-		case customize.LeaveHelp.Key:
+		case customize.LeaveHelp.Keys[0]:
 			return nil
 		}
 	}
@@ -731,6 +731,17 @@ func (ov *OpenMessageView) Run(ctx context.Context) (*MessageViewOp, error) {
 				ov.errors <- ov.showPager(ctx, buf.String())
 			case input.Backspace, input.CtrlH, input.PgUp, "Meta-v":
 				scroll = ov.scroll(ctx, len(lines), scroll, -(ov.screen.Height - 10))
+				if err := ov.Draw(lines, scroll); err != nil {
+					log.Infof("Failed to draw: %v", err)
+				}
+			// Added by this fork. Unlike the rebindings, which
+			// are translated into keys this switch already
+			// handles, upstream has nothing that scrolls to the
+			// end, so there is nothing to translate into. See
+			// internal/customize.
+			case customize.GoBottom:
+				scroll = ov.scroll(ctx, len(lines), scroll,
+					len(lines))
 				if err := ov.Draw(lines, scroll); err != nil {
 					log.Infof("Failed to draw: %v", err)
 				}

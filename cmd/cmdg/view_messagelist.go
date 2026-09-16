@@ -713,6 +713,10 @@ func (mv *MessageView) Run(ctx context.Context) error {
 				continue
 			}
 			log.Debugf("MessageListView got key %q", key)
+			// Local rebindings, applied here rather than in
+			// the switch below so that the switch stays as
+			// upstream wrote it. See internal/customize.
+			key = customize.MessageListKey(key)
 			switch key {
 			case "?", input.F1:
 				txt := customize.MessageListHelp(
@@ -1001,6 +1005,17 @@ func (mv *MessageView) Run(ctx context.Context) error {
 				}
 			case "q":
 				return nil
+			// Added by this fork; see the matching case in
+			// view_openmessage.go. Only the messages loaded so
+			// far can be jumped to: the list pages in lazily.
+			case customize.GoBottom:
+				if n := len(mv.messages); n > 0 {
+					mv.pos = n - 1
+					scroll = mv.pos - contentHeight + 1
+					if scroll < 0 {
+						scroll = 0
+					}
+				}
 			default:
 				log.Infof("MessageListView got unknown key %q %v", key, []byte(key))
 			}
