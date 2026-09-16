@@ -745,6 +745,18 @@ func (ov *OpenMessageView) Run(ctx context.Context) (*MessageViewOp, error) {
 				if err := ov.Draw(lines, scroll); err != nil {
 					log.Infof("Failed to draw: %v", err)
 				}
+			case customize.HalfPageDown:
+				scroll = ov.scroll(ctx, len(lines), scroll,
+					halfPage(ov.screen.Height-10))
+				if err := ov.Draw(lines, scroll); err != nil {
+					log.Infof("Failed to draw: %v", err)
+				}
+			case customize.HalfPageUp:
+				scroll = ov.scroll(ctx, len(lines), scroll,
+					-halfPage(ov.screen.Height-10))
+				if err := ov.Draw(lines, scroll); err != nil {
+					log.Infof("Failed to draw: %v", err)
+				}
 			default:
 				log.Infof("Unknown key: %q", key)
 			}

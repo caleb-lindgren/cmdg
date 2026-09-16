@@ -30,6 +30,8 @@ func TestTranslateDoesNotCascade(t *testing.T) {
 		{"d", "d", "rebound to itself, so unchanged"},
 		{"r", "r", "not customized at all"},
 		{input.Home, input.Home, "aliased by gg, so still works"},
+		{ctrlD, HalfPageDown, "half page down"},
+		{input.CtrlU, HalfPageUp, "half page up"},
 	} {
 		if got := tr.translate(tc.press); got != tc.want {
 			t.Errorf("translate(%q) = %q, want %q (%s)",
@@ -112,6 +114,8 @@ Scroll down:           j, Down
 Page down:             f
 Forward message:       w
 Search within message: /, ^s
+Half page down:        ^D
+Half page up:          ^U
 Go to top:             gg
 Go to bottom:          G
 
@@ -138,6 +142,8 @@ Press [enter] to exit
 u                  — Unmark all messages
 gl                 — Go to label
 /, ^s              — Search
+^D                 — Half page down
+^U                 — Half page up
 gg                 — Go to top
 G                  — Go to bottom (of what is loaded)
 

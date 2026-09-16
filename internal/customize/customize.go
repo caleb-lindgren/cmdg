@@ -55,11 +55,20 @@ type Binding struct {
 	Alias bool
 }
 
-// GoBottom is delivered to a view's switch for the key that jumps to
-// the end. Unlike every other binding here it does not translate to an
-// existing upstream key, because upstream has none to translate to:
-// each view carries one added case matching this constant.
-const GoBottom = "\x00go-bottom"
+// GoBottom, HalfPageDown and HalfPageUp are delivered to a view's
+// switch for keys that upstream has no binding to translate into, so
+// unlike every other binding here they reach cases the fork adds
+// itself. Each view carries one case per constant.
+const (
+	GoBottom     = "\x00go-bottom"
+	HalfPageDown = "\x00half-page-down"
+	HalfPageUp   = "\x00half-page-up"
+)
+
+// ctrlD is ^D. pkg/input names most control keys but not this one, and
+// naming it there would put the fork into a third upstream file for
+// one line.
+const ctrlD = "\x04"
 
 // unbound is delivered for a key whose upstream meaning has been moved
 // elsewhere and that has no local meaning of its own, and for the key
@@ -108,6 +117,14 @@ var openMessageBindings = []Binding{
 		Upstream: "s", UpstreamName: "s",
 	},
 	{
+		Keys: []string{ctrlD}, Name: "^D",
+		Upstream: HalfPageDown, Help: "Half page down", Alias: true,
+	},
+	{
+		Keys: []string{input.CtrlU}, Name: "^U",
+		Upstream: HalfPageUp, Help: "Half page up", Alias: true,
+	},
+	{
 		// Upstream binds Home to this but does not document it,
 		// so the added line is the only one the help gets.
 		Keys: []string{"g", "g"}, Name: "gg",
@@ -131,6 +148,14 @@ var messageListBindings = []Binding{
 	{
 		Keys: []string{"g", "l"}, Name: "gl",
 		Upstream: "g", UpstreamName: "g",
+	},
+	{
+		Keys: []string{ctrlD}, Name: "^D",
+		Upstream: HalfPageDown, Help: "Half page down", Alias: true,
+	},
+	{
+		Keys: []string{input.CtrlU}, Name: "^U",
+		Upstream: HalfPageUp, Help: "Half page up", Alias: true,
 	},
 	{
 		Keys: []string{"g", "g"}, Name: "gg",
@@ -405,10 +430,8 @@ func shadowed(help string, bs []Binding) []string {
 		if b.UpstreamName != "" {
 			displaced[b.UpstreamName] = true
 		}
-		// A chord claims only its first keypress; that is the
-		// one that stops being available on its own.
-		if k := b.Keys[0]; isPlainKey(k) {
-			claimed[k] = true
+		if n := claimedName(b); n != "" {
+			claimed[n] = true
 		}
 	}
 	var out []string
@@ -418,7 +441,7 @@ func shadowed(help string, bs []Binding) []string {
 			continue
 		}
 		for _, k := range splitKeys(keys) {
-			if claimed[k] && !displaced[k] {
+			if k != "" && claimed[k] && !displaced[k] {
 				out = append(out, k)
 			}
 		}
@@ -426,11 +449,18 @@ func shadowed(help string, bs []Binding) []string {
 	return out
 }
 
-// isPlainKey reports whether a key is spelled in help text as itself,
-// which is what makes it comparable with upstream's key names.
-func isPlainKey(k string) bool {
-	r := []rune(k)
-	return len(r) == 1 && r[0] > ' ' && r[0] < 0x7f
+// claimedName is the help-text spelling of the keypress a binding
+// takes over, which is what makes it comparable with the key names in
+// upstream's help. A chord claims only its first keypress — that is
+// the one that stops working on its own — so "gg" claims "g".
+func claimedName(b Binding) string {
+	if len(b.Keys) == 1 {
+		return b.Name
+	}
+	if r := []rune(b.Name); len(r) > 0 {
+		return string(r[0])
+	}
+	return ""
 }
 
 // splitKeys splits a help line's key column into its individual keys.

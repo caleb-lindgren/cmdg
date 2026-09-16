@@ -1016,6 +1016,21 @@ func (mv *MessageView) Run(ctx context.Context) error {
 						scroll = 0
 					}
 				}
+			// next() and prev() rather than arithmetic, so
+			// that upstream keeps owning the scroll
+			// bookkeeping and the ends of the list.
+			case customize.HalfPageDown:
+				for n := halfPage(contentHeight); n > 0; n-- {
+					if !next() {
+						break
+					}
+				}
+			case customize.HalfPageUp:
+				for n := halfPage(contentHeight); n > 0; n-- {
+					if !prev() {
+						break
+					}
+				}
 			default:
 				log.Infof("MessageListView got unknown key %q %v", key, []byte(key))
 			}
