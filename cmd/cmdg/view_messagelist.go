@@ -17,15 +17,14 @@ import (
 	"github.com/ThomasHabets/cmdg/pkg/dialog"
 	"github.com/ThomasHabets/cmdg/pkg/display"
 	"github.com/ThomasHabets/cmdg/pkg/input"
+
 	"github.com/ThomasHabets/cmdg/internal/customize"
 )
 
 const (
 	scrollLimit = 5
-)
 
-var (
-	messageListViewHelp = fmt.Sprintf(`?, F1              — Help
+	messageListViewHelp = `?, F1              — Help
 enter, →           — Open message
 space, x           — Mark message and advance
 X                  — Mark message and step up
@@ -47,10 +46,11 @@ s, ^s              — Search
 q                  — Quit
 ^L                 — Refresh screen
 
-Press [%[1]s] to exit
-`,
-		customize.LeaveHelp.Name,
-	)
+Press [enter] to exit
+`
+)
+
+var (
 	messageListReloadTime          = time.Minute
 	messageListReloadTimeout       = 40 * time.Second
 	messageListHistoryCheckTime    = 10 * time.Second
@@ -714,7 +714,7 @@ func (mv *MessageView) Run(ctx context.Context) error {
 			log.Debugf("MessageListView got key %q", key)
 			switch key {
 			case "?", input.F1:
-				help(messageListViewHelp, mv.keys)
+				help(customize.MessageListHelp(messageListViewHelp), mv.keys)
 			case input.Enter, input.Right:
 				if len(mv.messages) == 0 {
 					// Let's assume we've never gotten to the state where mv.pos >= len(mv.messages)
