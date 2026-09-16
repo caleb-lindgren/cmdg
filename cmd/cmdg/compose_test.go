@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -23,7 +23,9 @@ type fakeSend struct {
 
 func (fs *fakeSend) bad(w http.ResponseWriter, f string, args ...interface{}) {
 	w.WriteHeader(http.StatusBadRequest)
-	fmt.Fprintf(w, f, args...)
+	if _, err := fmt.Fprintf(w, f, args...); err != nil {
+		fs.bad(w, "writing response failed: %v", err)
+	}
 }
 
 func (fs *fakeSend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -39,7 +41,7 @@ func (fs *fakeSend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fs.bad(w, "failed to parse form: %v", err)
 		return
 	}
-	content, err := ioutil.ReadAll(r.Body)
+	content, err := io.ReadAll(r.Body)
 	if err != nil {
 		fs.bad(w, "failed to read body: %v", err)
 		return
@@ -59,7 +61,9 @@ func (fs *fakeSend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	fs.msg = string(raw)
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{ "id": "12345" }`)
+	if _, err := fmt.Fprintf(w, `{ "id": "12345" }`); err != nil {
+		fs.bad(w, "failed to write reply: %v", err)
+	}
 }
 
 // net.RoundTripper that rewrites requests to the local fake.
@@ -80,7 +84,7 @@ func (redir *redirector) RoundTrip(r *http.Request) (*http.Response, error) {
 }
 
 func crnl(s string) string {
-	return strings.Replace(s, "\n", "\r\n", -1)
+	return strings.ReplaceAll(s, "\n", "\r\n")
 }
 
 func TestSendMessage(t *testing.T) {

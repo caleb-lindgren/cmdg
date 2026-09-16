@@ -1,12 +1,11 @@
+// Package cmdg is the "library" part of the cmdg binary.
 package cmdg
 
 import (
 	"bufio"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"html"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
@@ -26,15 +25,15 @@ var (
 	// Populate these for a binary-only release.
 
 	// DefaultClientID is the Oauth client ID.
-	DefaultClientID     = ""
+	DefaultClientID = ""
 
 	// DefaultClientSecret is the Oauth client secret.
 	DefaultClientSecret = ""
 )
 
 var (
-	// TODO: Listen to a dynamic port.
-	oauthListenPort = flag.Int("oauth_listen_port", 0, "Oauth port to listen to. 0 means pick dynamically.")
+// TODO: Listen to a dynamic port.
+// oauthListenPort = flag.Int("oauth_listen_port", 0, "Oauth port to listen to. 0 means pick dynamically.")
 )
 
 // ConfigOAuth contains the config for the oauth.
@@ -75,17 +74,21 @@ func auth(cfg ConfigOAuth) (string, error) {
 	fmt.Printf("Listening to port %d\n", port)
 
 	codeCh := make(chan string)
-	go http.Serve(ln, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		r.ParseForm()
-		codes := r.URL.Query()["code"]
-		if len(codes) == 0 {
-			fmt.Fprintf(w, "Did not get a code. Something's wrong.")
-			return
-		}
-		defer close(codeCh)
-		fmt.Fprintf(w, "Got code %q. You can close this tab now.", html.EscapeString(codes[0]))
-		codeCh <- codes[0]
-	}))
+	go func() {
+		_ = http.Serve(ln, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if err := r.ParseForm(); err != nil {
+				log.Fatalf("Failed to parse form: %v", err)
+			}
+			codes := r.URL.Query()["code"]
+			if len(codes) == 0 {
+				_, _ = fmt.Fprintf(w, "Did not get a code. Something's wrong.")
+				return
+			}
+			defer close(codeCh)
+			_, _ = fmt.Fprintf(w, "Got code %q. You can close this tab now.", html.EscapeString(codes[0]))
+			codeCh <- codes[0]
+		}))
+	}()
 	// No need to clean up. This is run in -configure and will soon exit.
 
 	ocfg := oauth2.Config{
@@ -101,6 +104,7 @@ func auth(cfg ConfigOAuth) (string, error) {
 	fmt.Printf("Cut and paste this URL into your browser:\n  %s\n", ocfg.AuthCodeURL("", at))
 	line := <-codeCh
 	fmt.Printf("Returned code: %s\n", line)
+	//nolint:staticcheck
 	token, err := ocfg.Exchange(oauth2.NoContext, line)
 	if err != nil {
 		return "", err
@@ -153,8 +157,8 @@ func makeConfig(id, secret string) ([]byte, error) {
 	}
 	// Don't store default ID/secret.
 	if id == DefaultClientID {
-		conf.OAuth.ClientID = "";
-		conf.OAuth.ClientSecret = "";
+		conf.OAuth.ClientID = ""
+		conf.OAuth.ClientSecret = ""
 	}
 	b, err := json.Marshal(conf)
 	if err != nil {
@@ -179,5 +183,5 @@ func Configure(fn string) error {
 	if err := os.MkdirAll(path.Dir(fn), 0700); err != nil {
 		return errors.Wrapf(err, "creating config directory %q", path.Dir(fn))
 	}
-	return ioutil.WriteFile(fn, b, 0600)
+	return os.WriteFile(fn, b, 0600)
 }

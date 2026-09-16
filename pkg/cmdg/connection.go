@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"mime"
 	"mime/multipart"
 	"net/http"
@@ -120,12 +120,13 @@ func (c *CmdG) LabelCache(label *Label) *Label {
 func NewFake(client *http.Client) (*CmdG, error) {
 	conn := &CmdG{
 		authedClient: client,
+		messageCache: make(map[string]*Message),
+		labelCache:   make(map[string]*Label),
 	}
 	return conn, conn.setupClients()
 }
-
 func readConf(fn string) (Config, error) {
-	f, err := ioutil.ReadFile(fn)
+	f, err := os.ReadFile(fn)
 	if err != nil {
 		return Config{}, err
 	}
@@ -174,6 +175,7 @@ func New(fn string) (*CmdG, error) {
 
 	// Attach APIkey, if any.
 	if conf.OAuth.APIKey != "" {
+		//nolint:staticcheck
 		newtp := &transport.APIKey{
 			Key:       conf.OAuth.APIKey,
 			Transport: tp,
@@ -215,6 +217,7 @@ func (c *CmdG) setupClients() error {
 	// Set up gmail client.
 	{
 		var err error
+		//nolint:staticcheck
 		c.gmail, err = gmail.New(c.authedClient)
 		if err != nil {
 			return errors.Wrap(err, "creating GMail client")
@@ -225,6 +228,7 @@ func (c *CmdG) setupClients() error {
 	// Set up drive client.
 	{
 		var err error
+		//nolint:staticcheck
 		c.drive, err = drive.New(c.authedClient)
 		if err != nil {
 			return errors.Wrap(err, "creating Drive client")
@@ -238,7 +242,7 @@ func (c *CmdG) setupClients() error {
 		if err != nil {
 			return errors.Wrap(err, "creating People client")
 		}
-		c.drive.UserAgent = userAgent()
+		c.people.UserAgent = userAgent()
 	}
 	return nil
 }
@@ -347,7 +351,7 @@ func ParseUserMessage(in string) (mail.Header, *Part, error) {
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "message to send is malformed")
 	}
-	b, err := ioutil.ReadAll(m.Body)
+	b, err := io.ReadAll(m.Body)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "failed to read user message")
 	}
@@ -363,9 +367,10 @@ func ParseUserMessage(in string) (mail.Header, *Part, error) {
 
 // SendParts sends a multipart message.
 // Args:
-//   mp:    multipart type. "mixed" is a typical type.
-//   head:  Email header.
-//   parts: Email parts.
+//
+//	mp:    multipart type. "mixed" is a typical type.
+//	head:  Email header.
+//	parts: Email parts.
 func (c *CmdG) SendParts(ctx context.Context, threadID ThreadID, mp string, head mail.Header, parts []*Part) error {
 	var mbuf bytes.Buffer
 	w := multipart.NewWriter(&mbuf)
@@ -532,8 +537,10 @@ func (c *CmdG) GetFile(ctx context.Context, fn string) ([]byte, error) {
 				if err != nil {
 					return nil, err
 				}
-				defer r.Body.Close()
-				return ioutil.ReadAll(r.Body)
+				defer func() {
+					_ = r.Body.Close()
+				}()
+				return io.ReadAll(r.Body)
 			}
 		}
 		token = l.NextPageToken

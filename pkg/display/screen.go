@@ -1,13 +1,15 @@
+// Package display has displaying functions.
 package display
 
 import (
-	"fmt"
 	"flag"
+	"fmt"
 	"regexp"
 	"strings"
 
 	"github.com/mattn/go-runewidth"
 	log "github.com/sirupsen/logrus"
+	//nolint:staticcheck
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -114,11 +116,9 @@ func (s *Screen) Copy() *Screen {
 	r := &Screen{
 		Width:  s.Width,
 		Height: s.Height,
-		buffer: make([]string, len(s.buffer), len(s.buffer)),
+		buffer: make([]string, len(s.buffer)),
 	}
-	for n := range s.buffer {
-		r.buffer[n] = s.buffer[n]
-	}
+	copy(r.buffer, s.buffer)
 	return r
 }
 
@@ -127,13 +127,13 @@ func NewScreen2(w int, h int) *Screen {
 	return &Screen{
 		Width:  w,
 		Height: h,
-		buffer: make([]string, h, h),
+		buffer: make([]string, h),
 	}
 }
 
 // Clear clears the screen.
 func (s *Screen) Clear() {
-	s.buffer = make([]string, s.Height, s.Height)
+	s.buffer = make([]string, s.Height)
 }
 
 // findScroll return the scroll offset (lines) and index of first line to scroll
@@ -189,7 +189,7 @@ func (s *Screen) Draw() {
 				log.Debugf("Scroll %d, first %d", ofs, start)
 				o = append(o, fmt.Sprintf("\033[%d;%dr\033[%dT", start, len(s.buffer)-1, -ofs))
 				head := s.prevBuffer[:start+ofs]
-				mid := make([]string, -ofs, -ofs)
+				mid := make([]string, -ofs)
 				rest := s.prevBuffer[start+ofs:]
 				s.prevBuffer = append(head, append(mid, rest...)...)
 			}
@@ -232,6 +232,13 @@ func (s *Screen) Draw() {
 
 // SetCursor sets the cursor position.
 func (s *Screen) SetCursor(y, x int) {
+	if y < 0 || y >= s.Height {
+		log.Warningf("Set cursor off screen. y=%d height=%d", y, s.Height)
+		return
+	}
+	if x < 0 {
+		x = 0
+	}
 	s.cursor = &cursor{x: x, y: y}
 }
 
@@ -284,8 +291,8 @@ func fixedANSIWidthRight2(s string, w int, recursive int) string {
 
 // Printlnf sets the content of a line to be a printfed string
 func (s *Screen) Printlnf(y int, fmts string, args ...interface{}) {
-	if y >= s.Height {
-		log.Warningf("Print off screen. %d>=%d", y, s.Height)
+	if y < 0 || y >= s.Height {
+		log.Warningf("Print off screen. y=%d height=%d", y, s.Height)
 		return
 	}
 	str := fmt.Sprintf(fmts, args...)
@@ -294,6 +301,13 @@ func (s *Screen) Printlnf(y int, fmts string, args ...interface{}) {
 
 // Printf prints to a given point on the screen.
 func (s *Screen) Printf(y, x int, fmts string, args ...interface{}) {
+	if y < 0 || y >= s.Height {
+		log.Warningf("Print off screen. y=%d height=%d", y, s.Height)
+		return
+	}
+	if x < 0 {
+		x = 0
+	}
 	str := fmt.Sprintf(fmts, args...)
 	strw := StringWidth(str)
 	prefix := ""

@@ -28,6 +28,7 @@ const (
 enter, →           — Open message
 space, x           — Mark message and advance
 X                  — Mark message and step up
+u                  — Unmark all messages
 e                  — Archive marked messages
 d                  — Move marked messages to trash
 I                  — Mark marked mails as read
@@ -51,7 +52,7 @@ Press [enter] to exit
 )
 
 var (
-	messageListReloadTime          = time.Minute
+	//messageListReloadTime          = time.Minute
 	messageListReloadTimeout       = 40 * time.Second
 	messageListHistoryCheckTime    = 10 * time.Second
 	messageListHistoryCheckTimeout = 10 * time.Second
@@ -714,7 +715,11 @@ func (mv *MessageView) Run(ctx context.Context) error {
 			log.Debugf("MessageListView got key %q", key)
 			switch key {
 			case "?", input.F1:
-				help(customize.MessageListHelp(messageListViewHelp), mv.keys)
+				txt := customize.MessageListHelp(
+					messageListViewHelp)
+				if err := help(txt, mv.keys); err != nil {
+					log.Infof("help() failed: %v", err)
+				}
 			case input.Enter, input.Right:
 				if len(mv.messages) == 0 {
 					// Let's assume we've never gotten to the state where mv.pos >= len(mv.messages)
@@ -935,6 +940,8 @@ func (mv *MessageView) Run(ctx context.Context) error {
 					marked[mv.messages[mv.pos].ID] = !marked[mv.messages[mv.pos].ID]
 					prev()
 				}
+			case "u":
+				marked = map[string]bool{}
 			case "N", "n", "j", input.CtrlN, input.Down:
 				screen.UseCache()
 				if !next() {

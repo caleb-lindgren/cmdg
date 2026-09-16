@@ -184,7 +184,7 @@ func (ov *OpenMessageView) Draw(lines []string, scroll int) error {
 		scroll,
 		min(scroll+contentSpace, len(lines)),
 		len(lines),
-		min(100,int(100*float64(scroll+contentSpace) / float64(len(lines)))),
+		min(100, int(100*float64(scroll+contentSpace)/float64(len(lines)))),
 		searching,
 	)
 	line++
@@ -336,7 +336,9 @@ func (ov *OpenMessageView) incrementalSearch(ctx context.Context, inlines []stri
 	defer func() { ov.inIncrementalSearch = false }()
 	ov.incrementalQuery = ""
 
-	ov.Draw(lines, 0)
+	if err := ov.Draw(lines, 0); err != nil {
+		log.Infof("Failed to draw: %v", err)
+	}
 	ov.screen.Draw()
 
 	found := 0
@@ -348,7 +350,6 @@ func (ov *OpenMessageView) incrementalSearch(ctx context.Context, inlines []stri
 		case <-ctx.Done():
 			return -1, ctx.Err()
 		case key, ok = <-ov.keys.Chan():
-			break
 		}
 		if !ok {
 			return -1, fmt.Errorf("incremental search key read channel closed")
@@ -410,7 +411,9 @@ func (ov *OpenMessageView) incrementalSearch(ctx context.Context, inlines []stri
 			// Not found even after wrapping.
 			found = 0
 		}
-		ov.Draw(lines, found)
+		if err := ov.Draw(lines, found); err != nil {
+			log.Infof("Failed to draw: %v", err)
+		}
 		copy(lines, inlines)
 		ov.screen.Draw()
 	}
@@ -500,7 +503,9 @@ func (ov *OpenMessageView) Run(ctx context.Context) (*MessageViewOp, error) {
 			ov.screen.Clear()
 
 			// TODO: double check that scroll is not too high after `lines` was recreated.
-			ov.Draw(lines, scroll)
+			if err := ov.Draw(lines, scroll); err != nil {
+				log.Infof("Failed to draw: %v", err)
+			}
 		case key, ok := <-ov.keys.Chan():
 			if !ok {
 				log.Errorf("OpenMessage: Input channel closed!")
@@ -520,7 +525,11 @@ func (ov *OpenMessageView) Run(ctx context.Context) (*MessageViewOp, error) {
 					ov.update <- struct{}{}
 				}()
 			case "?", input.F1:
-				help(customize.OpenMessageHelp(openMessageViewHelp), ov.keys)
+				txt := customize.OpenMessageHelp(
+					openMessageViewHelp)
+				if err := help(txt, ov.keys); err != nil {
+					log.Infof("help() failed: %v", err)
+				}
 			case "*":
 				if ov.msg.HasLabel(cmdg.Starred) {
 					if err := ov.msg.RemoveLabelID(ctx, cmdg.Starred); err != nil {
@@ -534,7 +543,9 @@ func (ov *OpenMessageView) Run(ctx context.Context) (*MessageViewOp, error) {
 				if err := ov.msg.ReloadLabels(ctx); err != nil {
 					ov.errors <- errors.Wrapf(err, "Failed to reload labels")
 				}
-				ov.Draw(lines, scroll)
+				if err := ov.Draw(lines, scroll); err != nil {
+					log.Infof("Failed to draw: %v", err)
+				}
 			case "l":
 				var opts []*dialog.Option
 				for _, l := range conn.Labels() {
@@ -559,7 +570,9 @@ func (ov *OpenMessageView) Run(ctx context.Context) (*MessageViewOp, error) {
 						ov.errors <- errors.Wrapf(err, "Failed to reload labels")
 					}
 				}
-				ov.Draw(lines, scroll)
+				if err := ov.Draw(lines, scroll); err != nil {
+					log.Infof("Failed to draw: %v", err)
+				}
 			case "L":
 				var opts []*dialog.Option
 				labels, err := ov.msg.GetLabels(ctx, true)
@@ -588,7 +601,9 @@ func (ov *OpenMessageView) Run(ctx context.Context) (*MessageViewOp, error) {
 							ov.errors <- errors.Wrapf(err, "Failed to reload labels")
 						}
 					}
-					ov.Draw(lines, scroll)
+					if err := ov.Draw(lines, scroll); err != nil {
+						log.Infof("Failed to draw: %v", err)
+					}
 				}
 			case "u", input.Left:
 				return nil, nil
@@ -600,34 +615,46 @@ func (ov *OpenMessageView) Run(ctx context.Context) (*MessageViewOp, error) {
 				return OpNext(), nil
 			case "U":
 				if err := ov.msg.AddLabelID(ctx, cmdg.Unread); err != nil {
+					//lint:ignore ST1005 UI-facing message intentionally starts with capital
 					ov.errors <- fmt.Errorf("Failed to mark unread : %v", err)
 				} else {
 					return nil, nil
 				}
 			case input.Home, input.XHome:
 				scroll = 0
-				ov.Draw(lines, scroll)
+				if err := ov.Draw(lines, scroll); err != nil {
+					log.Infof("Failed to draw: %v", err)
+				}
 			case "n", input.Down:
 				ov.screen.UseCache()
 				scroll = ov.scroll(ctx, len(lines), scroll, 1)
-				ov.Draw(lines, scroll)
+				if err := ov.Draw(lines, scroll); err != nil {
+					log.Infof("Failed to draw: %v", err)
+				}
 			case " ", input.CtrlV, input.PgDown:
 				scroll = ov.scroll(ctx, len(lines), scroll, ov.screen.Height-10)
-				ov.Draw(lines, scroll)
+				if err := ov.Draw(lines, scroll); err != nil {
+					log.Infof("Failed to draw: %v", err)
+				}
 			case "p", input.Up:
 				ov.screen.UseCache()
 				scroll = ov.scroll(ctx, len(lines), scroll, -1)
-				ov.Draw(lines, scroll)
+				if err := ov.Draw(lines, scroll); err != nil {
+					log.Infof("Failed to draw: %v", err)
+				}
 			case "f":
 				if err := forward(ctx, conn, ov.keys, ov.msg); err != nil {
+					//lint:ignore ST1005 UI-facing message intentionally starts with capital
 					ov.errors <- fmt.Errorf("Failed to forward: %v", err)
 				}
 			case "r":
 				if err := reply(ctx, conn, ov.keys, ov.msg); err != nil {
+					//lint:ignore ST1005 UI-facing message intentionally starts with capital
 					ov.errors <- fmt.Errorf("Failed to reply: %v", err)
 				}
 			case "a":
 				if err := replyAll(ctx, conn, ov.keys, ov.msg); err != nil {
+					//lint:ignore ST1005 UI-facing message intentionally starts with capital
 					ov.errors <- fmt.Errorf("Failed to replyAll: %v", err)
 				}
 			case "H":
@@ -645,12 +672,13 @@ func (ov *OpenMessageView) Run(ctx context.Context) (*MessageViewOp, error) {
 			case "d": // Delete
 				if err := ov.msg.RemoveLabelID(ctx, cmdg.Inbox); err != nil {
 					ov.errors <- fmt.Errorf("Failed to delete (remove Inbox label) : %v", err)
-					if err := ov.msg.AddLabelID(ctx, cmdg.Trash); err != nil {
-						ov.errors <- fmt.Errorf("Failed to delete (add Trash label) : %v", err)
-					}
-				} else {
-					return OpRemoveCurrent(nil), nil
+					break
 				}
+				if err := ov.msg.AddLabelID(ctx, cmdg.Trash); err != nil {
+					ov.errors <- fmt.Errorf("Failed to delete (add Trash label) : %v", err)
+					break
+				}
+				return OpRemoveCurrent(nil), nil
 			case "s", input.CtrlS: // Search
 				ns, err := ov.incrementalSearch(ctx, lines)
 				if err != nil {
@@ -659,7 +687,9 @@ func (ov *OpenMessageView) Run(ctx context.Context) (*MessageViewOp, error) {
 				if ns > 0 {
 					scroll = ns
 				}
-				ov.Draw(lines, scroll)
+				if err := ov.Draw(lines, scroll); err != nil {
+					log.Infof("Failed to draw: %v", err)
+				}
 			case "t", input.Right: // Attachmments
 				as, err := ov.msg.Attachments(ctx)
 				if err != nil {
@@ -701,7 +731,9 @@ func (ov *OpenMessageView) Run(ctx context.Context) (*MessageViewOp, error) {
 				ov.errors <- ov.showPager(ctx, buf.String())
 			case input.Backspace, input.CtrlH, input.PgUp, "Meta-v":
 				scroll = ov.scroll(ctx, len(lines), scroll, -(ov.screen.Height - 10))
-				ov.Draw(lines, scroll)
+				if err := ov.Draw(lines, scroll); err != nil {
+					log.Infof("Failed to draw: %v", err)
+				}
 			default:
 				log.Infof("Unknown key: %q", key)
 			}
@@ -720,7 +752,11 @@ func (ov *OpenMessageView) showRaw(ctx context.Context) error {
 
 func (ov *OpenMessageView) showPager(ctx context.Context, content string) error {
 	ov.keys.Stop()
-	defer ov.keys.Start()
+	defer func() {
+		if err := ov.keys.Start(); err != nil {
+			log.Infof("Failed to restart input: %v", err)
+		}
+	}()
 
 	cmd := exec.CommandContext(ctx, pagerBinary)
 	cmd.Stdin = strings.NewReader(content)

@@ -2,7 +2,7 @@ package cmdg
 
 import (
 	"context"
-	"sync"
+	"log"
 
 	gmail "google.golang.org/api/gmail/v1"
 )
@@ -11,8 +11,6 @@ import (
 type Page struct {
 	Label string
 	Query string
-
-	m sync.RWMutex
 
 	conn     *CmdG
 	Messages []*Message
@@ -29,7 +27,7 @@ func (p *Page) PreloadSubjects(ctx context.Context) error {
 	conc := 100
 	sem := make(chan struct{}, conc)
 	num := len(p.Response.Messages)
-	errs := make([]error, num, num)
+	errs := make([]error, num)
 	for n := 0; n < len(p.Response.Messages); n++ {
 		n := n
 		sem <- struct{}{}
@@ -43,6 +41,11 @@ func (p *Page) PreloadSubjects(ctx context.Context) error {
 	}
 	for t := 0; t < conc; t++ {
 		sem <- struct{}{}
+	}
+	for _, err := range errs {
+		if err != nil {
+			log.Printf("Preloading subjects: %v", err)
+		}
 	}
 	return nil
 }

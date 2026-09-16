@@ -29,7 +29,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"sync"
@@ -202,7 +201,7 @@ func main() {
 
 	if *updateSignature {
 		p := path.Join(os.Getenv("HOME"), ".signature")
-		b, err := ioutil.ReadFile(p)
+		b, err := os.ReadFile(p)
 		if err != nil {
 			log.Fatalf("Reading %q: %v", p, err)
 		}
@@ -281,7 +280,9 @@ func main() {
 		if err != nil {
 			log.Fatalf("Can't create logfile %q: %v", *logFile, err)
 		}
-		defer f.Close()
+		defer func() {
+			_ = f.Close()
+		}()
 		log.SetOutput(f)
 		if *logJSON {
 			log.SetFormatter(&log.JSONFormatter{})

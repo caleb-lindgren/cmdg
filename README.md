@@ -22,8 +22,8 @@ benefits.
   also passwords, and can be used for more than GMail). OAuth2 is used
   instead, and cmdgs access can be revoked
   [here](https://security.google.com/settings/security/permissions).
-  cmdg can only access your GMail, and cannot lose your password even
-  if the machine it runs on gets hacked.
+  cmdg can only access your GMail and contacts, and cannot lose your password
+  even if the machine it runs on gets hacked.
 * The "labels" model is native in the cmdg UI, unlike IMAP clients
   that try to map GMail labels onto IMAP.
 * Contacts are taken from your Google contacts
@@ -86,7 +86,7 @@ a ClientID and ClientSecret. You can do this with the following steps:
   1. Make sure to add scopes for the various APIs you'll need.  You may need to enter the following URLs under "Manually add scopes":
      1. Gmail API - `https://www.googleapis.com/auth/gmail.modify`
      1. Google Drive API - `https://www.googleapis.com/auth/drive.appdata`
-     1. People API - `https://www.googleapis.com/auth/contacts.readonly`
+     1. People API - `https://www.googleapis.com/auth/contacts`
   1. Navigate to the "Credentials"  page.
   1. Click "+ CREATE CREDENTIALS"
   1. Select "OAuth client ID" from the drop down.
@@ -110,5 +110,11 @@ This creates `~/.cmdg/cmdg.conf`.
 $ cmdg
 ```
 For keyboard shortcuts press '?' or F1 in most screens.
+
+### Multi-recipient Autocompletion
+When prompted for recipients (e.g., `To>`), you can enter multiple email addresses separated by commas (`,`) or semicolons (`;`).
+* **Tab**: Completes the currently highlighted contact and appends a comma and space.
+* **Right Arrow**: Same as Tab, allowing you to quickly chain multiple recipients from the contact list.
+* **Enter**: Completes the currently highlighted contact (if any), validates all addresses, and submits the list.
 
 To quit, press 'q'.

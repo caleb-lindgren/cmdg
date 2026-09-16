@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net/mail"
 	"os"
 	"os/exec"
@@ -30,7 +29,7 @@ const (
 )
 
 func getInput(ctx context.Context, prefill string, keys *input.Input) (string, error) {
-	tmpf, err := ioutil.TempFile("", "cmdg-")
+	tmpf, err := os.CreateTemp("", "cmdg-")
 	if err != nil {
 		return "", errors.Wrap(err, "creating tempfile")
 	}
@@ -41,7 +40,7 @@ func getInput(ctx context.Context, prefill string, keys *input.Input) (string, e
 		}
 	}()
 	if _, err := tmpf.Write([]byte(prefill)); err != nil {
-		tmpf.Close()
+		_ = tmpf.Close()
 		return "", errors.Wrapf(err, "prefilling compose file %q with %d bytes", tmpf.Name(), len(prefill))
 	}
 	if err := tmpf.Close(); err != nil {
@@ -50,7 +49,11 @@ func getInput(ctx context.Context, prefill string, keys *input.Input) (string, e
 
 	// Stop UI.
 	keys.Stop()
-	defer keys.Start()
+	defer func() {
+		if err := keys.Start(); err != nil {
+			log.Errorf("Failed to restart input: %v", err)
+		}
+	}()
 
 	cmd := exec.CommandContext(ctx, visualBinary, tmpf.Name())
 	cmd.Stdin = os.Stdin
@@ -64,7 +67,7 @@ func getInput(ctx context.Context, prefill string, keys *input.Input) (string, e
 	}
 
 	// Extract content.
-	b, err := ioutil.ReadFile(tmpf.Name())
+	b, err := os.ReadFile(tmpf.Name())
 	if err != nil {
 		return "", errors.Wrapf(err, "reading compose tempfile %q", tmpf.Name())
 	}
@@ -72,14 +75,13 @@ func getInput(ctx context.Context, prefill string, keys *input.Input) (string, e
 }
 
 func composeNew(ctx context.Context, conn *cmdg.CmdG, keys *input.Input) error {
-	toOpt, err := dialog.Selection(dialog.Strings2Options(conn.Contacts()), "To> ", true, keys)
+	to, err := dialog.MultiSelection(dialog.Strings2Options(conn.Contacts()), "To> ", keys)
 	if err == dialog.ErrAborted {
 		return nil
 	} else if err != nil {
 		return err
 	}
 
-	to := toOpt.Key
 	if strings.EqualFold(to, "me") {
 		p, err := conn.GetProfile(ctx)
 		if err != nil {
@@ -87,7 +89,6 @@ func composeNew(ctx context.Context, conn *cmdg.CmdG, keys *input.Input) error {
 		}
 		to = p.EmailAddress
 	}
-
 	var sig string
 	if signature != "" {
 		sig = "--\n" + signature + "\n"
@@ -110,7 +111,7 @@ Subject:
 		},
 	}
 
-	return compose(ctx, conn, headOps, keys, cmdg.NewThread, prefill)
+	return compose(ctx, conn, headOps, keys, cmdg.NewThread, prefill, nil)
 }
 
 func createSig(ctx context.Context, msg string) (string, error) {
@@ -192,10 +193,10 @@ func sendMessage(ctx context.Context, conn *cmdg.CmdG, headOps []headOp, msg str
 }
 
 // compose() is used for compose, replies, and forwards.
-func compose(ctx context.Context, conn *cmdg.CmdG, headOps []headOp, keys *input.Input, threadID cmdg.ThreadID, msg string) error {
+func compose(ctx context.Context, conn *cmdg.CmdG, headOps []headOp, keys *input.Input, threadID cmdg.ThreadID, msg string, attachments []*file) error {
 	doEdit := true
-	var attachments []*file
 	for {
+
 		var err error
 		if doEdit {
 			// Get message content.
@@ -248,12 +249,12 @@ func compose(ctx context.Context, conn *cmdg.CmdG, headOps []headOp, keys *input
 					}
 					switch a {
 					case "y":
-						f, err := ioutil.TempFile(".", "cmdg-draft-*.txt")
+						f, err := os.CreateTemp(".", "cmdg-draft-*.txt")
 						if err != nil {
 							return errors.Wrapf(err, "couldn't open local file")
 						}
 						if _, err := f.Write([]byte(msg)); err != nil {
-							f.Close()
+							_ = f.Close()
 							return errors.Wrapf(err, "couldn't write to local file")
 						}
 						if err := f.Close(); err != nil {
@@ -270,9 +271,11 @@ func compose(ctx context.Context, conn *cmdg.CmdG, headOps []headOp, keys *input
 					break
 				}
 			}
-			if a == "S" {
-				// TODO: also archive.
-			}
+			/*
+				if a == "S" {
+					// TODO: also archive.
+				}
+			*/
 			return nil
 		case "d":
 			st := time.Now()
@@ -289,10 +292,11 @@ func compose(ctx context.Context, conn *cmdg.CmdG, headOps []headOp, keys *input
 				break
 			}
 			if err != nil {
-				dialog.Message("Failed to attach", fmt.Sprintf("Failed to attach file: %v", err), keys)
+				_ = dialog.Message("Failed to attach", fmt.Sprintf("Failed to attach file: %v", err), keys)
+			} else {
+				doEdit = false
+				attachments = append(attachments, f)
 			}
-			doEdit = false
-			attachments = append(attachments, f)
 		default:
 			return fmt.Errorf("can't happen! Got %q from compose question", a)
 		}
@@ -308,7 +312,7 @@ func chooseFile(ctx context.Context, keys *input.Input) (*file, error) {
 	startDir := "."
 	for {
 		log.Infof("Choosing file in %q", startDir)
-		fis, err := ioutil.ReadDir(startDir)
+		fis, err := os.ReadDir(startDir)
 		if err != nil {
 			return nil, errors.Wrapf(err, "listing directory %q", startDir)
 		}
@@ -321,7 +325,7 @@ func chooseFile(ctx context.Context, keys *input.Input) (*file, error) {
 		}
 		for n, f := range fis {
 			label := f.Name()
-			if f.Mode().IsDir() {
+			if f.Type().IsDir() {
 				label += "/"
 			}
 			opts = append(opts, &dialog.Option{
@@ -337,8 +341,8 @@ func chooseFile(ctx context.Context, keys *input.Input) (*file, error) {
 			if opts[j].KeyInt < 0 {
 				return false
 			}
-			di := fis[opts[i].KeyInt].Mode().IsDir()
-			dj := fis[opts[j].KeyInt].Mode().IsDir()
+			di := fis[opts[i].KeyInt].Type().IsDir()
+			dj := fis[opts[j].KeyInt].Type().IsDir()
 			if di && !dj {
 				return true
 			}
@@ -357,14 +361,17 @@ func chooseFile(ctx context.Context, keys *input.Input) (*file, error) {
 		if o.KeyInt < 0 {
 			startDir = path.Clean(path.Join(startDir, ".."))
 			continue
-		} else if fis[o.KeyInt].Mode().IsDir() {
+		} else if fis[o.KeyInt].Type().IsDir() {
 			startDir = path.Clean(path.Join(startDir, fis[o.KeyInt].Name()))
 			continue
 		}
 		// File chosen.
 		full := path.Join(startDir, fis[o.KeyInt].Name())
 		// TODO: attach a ReadCloser?
-		b, err := ioutil.ReadFile(full)
+		b, err := os.ReadFile(full)
+		if err != nil {
+			return nil, err
+		}
 		return &file{
 			name:    fis[o.KeyInt].Name(),
 			content: b,

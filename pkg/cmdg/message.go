@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime"
 	"mime/multipart"
 	"mime/quotedprintable"
@@ -36,8 +35,6 @@ const (
 )
 
 const (
-	tmpfilePattern = "cmdg-*"
-
 	defaultInboxBG = "#ffffff"
 	defaultInboxFG = "#000000"
 )
@@ -305,12 +302,12 @@ func (msg *Message) AddLabelIDLocal(labelID string) {
 // RemoveLabelIDLocal removes a local label from the local cache *only*. It'll be overwritten at next sync.
 // It's used for faster UI response time on label removing.
 func (msg *Message) RemoveLabelIDLocal(labelID string) {
+	msg.m.Lock()
+	defer msg.m.Unlock()
 	if msg.Response == nil {
 		return
 	}
-	nl := make([]string, len(msg.Response.LabelIds))
-	msg.m.Lock()
-	defer msg.m.Unlock()
+	nl := make([]string, 0, len(msg.Response.LabelIds))
 	for _, l := range msg.Response.LabelIds {
 		if l != labelID {
 			nl = append(nl, l)
@@ -321,10 +318,12 @@ func (msg *Message) RemoveLabelIDLocal(labelID string) {
 
 // LocalLabels returns the label IDs, whatever they are. If we have not downloaded anything then empty list is returned.
 func (msg *Message) LocalLabels() []string {
+	msg.m.RLock()
+	defer msg.m.RUnlock()
 	if msg.Response == nil {
 		return nil
 	}
-	return msg.Response.LabelIds
+	return append([]string(nil), msg.Response.LabelIds...)
 }
 
 // AddLabelID adds a label to a message.
@@ -550,7 +549,7 @@ func (msg *Message) GetLabels(ctx context.Context, withUnread bool) ([]*Label, e
 	}
 	var ret []*Label
 	for _, l := range msg.Response.LabelIds {
-		if l == Unread {
+		if l == Unread && !withUnread {
 			continue
 		}
 		l2 := &Label{
@@ -746,8 +745,8 @@ func (msg *Message) GetHeader(ctx context.Context, k string) (string, error) {
 // MIMEEncode does mime decode for gmail. Seems to be special version of base64.
 func MIMEEncode(s string) string {
 	s = base64.StdEncoding.EncodeToString([]byte(s))
-	s = strings.Replace(s, "+", "-", -1)
-	s = strings.Replace(s, "/", "_", -1)
+	s = strings.ReplaceAll(s, "+", "-")
+	s = strings.ReplaceAll(s, "/", "_")
 	return s
 }
 
@@ -800,7 +799,31 @@ func makeBodyAlt(ctx context.Context, part *gmail.MessagePart, preferHTML bool) 
 	var ret []string
 	var alt []string
 	for _, p := range part.Parts {
+		if p == nil {
+			continue
+		}
 		if partIsAttachment(p) {
+			continue
+		}
+		log.Debugf("Alt mimetype: %q", p.MimeType)
+
+		switch p.MimeType {
+		case "multipart/alternative", "multipart/related", "multipart/signed", "multipart/mixed", "message/rfc822":
+			t, err := makeBody(ctx, p, preferHTML)
+			if err == errNoUsablePart {
+				continue
+			}
+			if err != nil {
+				return "", err
+			}
+			// However it was rendered it should be rendered.
+			ret = append(ret, t)
+			alt = append(alt, t)
+			continue
+		}
+
+		if p.Body == nil {
+			log.Warningf("Skipping body part with nil body of type %q", p.MimeType)
 			continue
 		}
 		dec, err := MIMEDecode(string(p.Body.Data))
@@ -815,7 +838,6 @@ func makeBodyAlt(ctx context.Context, part *gmail.MessagePart, preferHTML bool) 
 			}
 		}
 
-		log.Debugf("Alt mimetype: %q", p.MimeType)
 		switch p.MimeType {
 		case wantT:
 			if len(strings.Trim(dec, "\n\r \t")) > 0 {
@@ -825,14 +847,6 @@ func makeBodyAlt(ctx context.Context, part *gmail.MessagePart, preferHTML bool) 
 			if len(strings.Trim(dec, "\n\r \t")) > 0 {
 				alt = append(alt, dec)
 			}
-		case "multipart/alternative", "multipart/related", "multipart/signed", "multipart/mixed", "message/rfc822":
-			t, err := makeBodyAlt(ctx, p, preferHTML)
-			if err != nil {
-				return "", err
-			}
-			// However it was rendered it should be rendered.
-			ret = append(ret, t)
-			alt = append(alt, t)
 		case "application/pkcs7-signature":
 			// Ignored for now.
 		default:
@@ -842,11 +856,17 @@ func makeBodyAlt(ctx context.Context, part *gmail.MessagePart, preferHTML bool) 
 	if len(ret) > 0 {
 		return strings.Join(ret, "\n"), nil
 	}
-	return strings.Join(alt, "\n"), nil
+	if len(alt) > 0 {
+		return strings.Join(alt, "\n"), nil
+	}
+	return "", errNoUsablePart
 }
 
 func makeBody(ctx context.Context, part *gmail.MessagePart, preferHTML bool) (string, error) {
 	if len(part.Parts) == 0 {
+		if part.Body == nil {
+			return "", errNoUsablePart
+		}
 		log.Infof("Single part body of type %q with input len %d", part.MimeType, len(part.Body.Data))
 		data, err := MIMEDecode(string(part.Body.Data))
 		if err != nil {
@@ -1021,8 +1041,11 @@ func (msg *Message) tryGPGEncrypted(ctx context.Context) error {
 			log.Warningf("Found unexpected part in encrypted packet: %q", p.MimeType)
 		}
 	}
-	if partMeta == nil || partData == nil {
-		log.Warningf("Encrypted packet missing either meta or data")
+	if partMeta == nil {
+		log.Warningf("Encrypted packet missing meta")
+	}
+	if partData == nil {
+		return fmt.Errorf("encrypted packet missing data")
 	}
 
 	// Fetch data attachment.
@@ -1066,7 +1089,10 @@ func (msg *Message) tryGPGEncrypted(ctx context.Context) error {
 				return errors.Wrap(err, "failed to get mime part")
 			}
 			dec, err := toUTF8Reader(map[string][]string(p.Header), p)
-			t, err := ioutil.ReadAll(dec)
+			if err != nil {
+				return errors.Wrap(err, "creating utf8reading for mime part")
+			}
+			t, err := io.ReadAll(dec)
 			if err != nil {
 				return errors.Wrap(err, "utf8reading mime part")
 			}
@@ -1087,13 +1113,16 @@ func (msg *Message) tryGPGEncrypted(ctx context.Context) error {
 					return errors.Wrap(err, "failed to decrypt")
 				}
 			} else {
-				// TODO: handle attachment.
+				_ = "TODO: handle attachment"
 			}
 		}
 
 	} else {
 		r, err := toUTF8Reader(map[string][]string(msg2.Header), msg2.Body)
-		t, err := ioutil.ReadAll(r)
+		if err != nil {
+			return err
+		}
+		t, err := io.ReadAll(r)
 		if err != nil {
 			return err
 		}
