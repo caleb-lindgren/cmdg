@@ -1,6 +1,9 @@
 package display
 
 import (
+	"io"
+	"os"
+	"strings"
 	"testing"
 )
 
@@ -143,5 +146,56 @@ func TestSetCursorClampsNegativeColumn(t *testing.T) {
 	}
 	if got, want := s.cursor.x, 0; got != want {
 		t.Fatalf("cursor x got %d, want %d", got, want)
+	}
+}
+
+func TestExpandTabs(t *testing.T) {
+	for _, test := range []struct {
+		in  string
+		out string
+	}{
+		{"", ""},
+		{"no tabs", "no tabs"},
+		{"\tx", "        x"},
+		{"\t\tx", "                x"},
+		{"ab\tx", "ab      x"},
+		{"12345678\tx", "12345678        x"},
+		{"\x1b[1mab\x1b[0m\tx", "\x1b[1mab\x1b[0m      x"},
+		{"räk\tx", "räk     x"},
+		{"ಠ_ಠ\tx", "ಠ_ಠ     x"},
+	} {
+		if got, want := ExpandTabs(test.in), test.out; got != want {
+			t.Errorf("For %q: got %q, want %q", test.in, got, want)
+		}
+	}
+}
+
+// TestDrawSendsNoTabs checks that a tab never reaches the terminal. A
+// terminal skips over the cells a tab covers rather than clearing them,
+// so a tab-indented line drawn over another would leave the start of
+// the old line showing through.
+func TestDrawSendsNoTabs(t *testing.T) {
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	stdout := os.Stdout
+	os.Stdout = w
+	s := NewScreen2(20, 2)
+	s.Printlnf(0, "Hi Dustin,")
+	s.Draw()
+	s.Printlnf(0, "\t- As you")
+	s.Draw()
+	os.Stdout = stdout
+	w.Close()
+	out, err := io.ReadAll(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(out), "\t") {
+		t.Errorf("Draw wrote a tab: %q", out)
+	}
+	if want := "        - As you    "; !strings.Contains(string(out), want) {
+		t.Errorf("Draw output %q does not contain %q", out, want)
 	}
 }

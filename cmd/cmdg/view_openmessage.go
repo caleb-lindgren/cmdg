@@ -469,6 +469,9 @@ func (ov *OpenMessageView) Run(ctx context.Context) (*MessageViewOp, error) {
 			} else {
 				lines = []string{}
 				for _, l := range strings.Split(b, "\n") {
+					// Expanded before wrapping, so a tab
+					// counts as the columns it will take.
+					l = display.ExpandTabs(l)
 					if len(l) == 0 {
 						lines = append(lines, "")
 						continue

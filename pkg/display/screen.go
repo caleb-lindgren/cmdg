@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/mattn/go-runewidth"
 	log "github.com/sirupsen/logrus"
@@ -204,7 +205,7 @@ func (s *Screen) Draw() {
 			continue
 		}
 		log.Debugf("Line redraw miss: %d %q", n, l)
-		l = FixedANSIWidthRight(l, s.Width)
+		l = FixedANSIWidthRight(ExpandTabs(l), s.Width)
 		o = append(o, fmt.Sprintf("\033[%d;%dH%s%s%s", n+1, 1, NoWrap, l, Reset))
 	}
 	s.prevBuffer = s.buffer
@@ -253,6 +254,46 @@ func stripANSI(s string) string {
 // StringWidth returns the render width of a string.
 func StringWidth(s string) int {
 	return runewidth.StringWidth(stripANSI(s))
+}
+
+// tabWidth is the distance between tab stops, which is what terminals
+// default to.
+const tabWidth = 8
+
+// ExpandTabs replaces each tab in s with the spaces that reach the next
+// tab stop, counting columns the way StringWidth does, so that ANSI
+// codes take up none.
+//
+// A line has to have this done before it is drawn. A terminal does not
+// print a tab, it moves the cursor over the cells up to the next tab
+// stop and leaves whatever was in them before, and runewidth counts a
+// tab as zero columns wide, so padding a line to the screen width does
+// not paint those cells either.
+func ExpandTabs(s string) string {
+	if !strings.Contains(s, "\t") {
+		return s
+	}
+	var b strings.Builder
+	col := 0
+	for len(s) > 0 {
+		loc := stripANSIRE.FindStringIndex(s)
+		if loc != nil && loc[0] == 0 {
+			b.WriteString(s[:loc[1]])
+			s = s[loc[1]:]
+			continue
+		}
+		r, size := utf8.DecodeRuneInString(s)
+		s = s[size:]
+		if r == '\t' {
+			n := tabWidth - col%tabWidth
+			b.WriteString(strings.Repeat(" ", n))
+			col += n
+			continue
+		}
+		b.WriteRune(r)
+		col += runewidth.RuneWidth(r)
+	}
+	return b.String()
 }
 
 // FixedWidth returns a fixed width version of a string.
