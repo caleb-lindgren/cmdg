@@ -1,8 +1,11 @@
 package dialog
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
+
+	"github.com/ThomasHabets/cmdg/pkg/display"
 )
 
 func TestTrimOneChar(t *testing.T) {
@@ -51,5 +54,23 @@ func TestFilterSubmatch(t *testing.T) {
 		if got, want := filterSubmatch(test.in, test.filter), test.out; !reflect.DeepEqual(got, want) {
 			t.Errorf("For %q with filter %q got %q, want %q", test.in, test.filter, got, want)
 		}
+	}
+}
+
+// TestDrawOptionsFitsScreen draws more options than fit below the prompt and
+// checks that only those that fit are drawn and selectable.
+func TestDrawOptionsFitsScreen(t *testing.T) {
+	var opts []string
+	for i := 0; i < 1000; i++ {
+		opts = append(opts, fmt.Sprintf("a%d@example.com", i))
+	}
+	screen := display.NewScreen2(40, 8)
+	got := drawOptions(screen, 3, "", Strings2Options(opts), 0)
+	if got != 5 {
+		t.Errorf("drew %d options on 5 free rows, want 5", got)
+	}
+	got = drawOptions(screen, 3, "", Strings2Options(opts[:2]), 0)
+	if got != 2 {
+		t.Errorf("drew %d of 2 options, want 2", got)
 	}
 }

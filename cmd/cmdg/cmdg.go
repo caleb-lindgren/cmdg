@@ -31,6 +31,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"runtime/debug"
 	"sync"
 	"syscall"
 	"time"
@@ -135,6 +136,30 @@ func run(ctx context.Context) error {
 	keys.Stop()
 	log.Infof("Shutting down")
 	return nil
+}
+
+// buildDescription says which commit this binary was built from, so that a
+// log shows whether a change was in the build that wrote it. go build
+// records the commit when run in a git checkout.
+func buildDescription() string {
+	bi, ok := debug.ReadBuildInfo()
+	if !ok {
+		return "no build info"
+	}
+	vcs := map[string]string{}
+	for _, s := range bi.Settings {
+		vcs[s.Key] = s.Value
+	}
+	if vcs["vcs.revision"] == "" {
+		return fmt.Sprintf("module version %s, no commit recorded",
+			bi.Main.Version)
+	}
+	desc := fmt.Sprintf("built from commit %s of %s", vcs["vcs.revision"],
+		vcs["vcs.time"])
+	if vcs["vcs.modified"] == "true" {
+		desc += " with uncommitted changes"
+	}
+	return desc
 }
 
 func main() {
@@ -292,6 +317,7 @@ func main() {
 			})
 		}
 	}
+	log.Infof("cmdg %s, %s", version, buildDescription())
 
 	// Add people the user has emailed or been emailed by. This runs after
 	// logging is redirected because the first scan takes over a minute.

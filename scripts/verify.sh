@@ -1,10 +1,11 @@
 #!/bin/bash
-# Build, vet, gofmt-check and test this tree, writing the result to
-# logs/verify.log, including each step's exit status, which terminal scrollback
-# does not carry. Run it, then commit logs/verify.log and push, so the outcome
-# can be read back from the repo rather than pasted from a terminal. It exists
-# because the sandbox Claude Code runs in has no Go toolchain, so an upstream
-# merge cannot be compiled there.
+# Build, vet, gofmt-check and test this tree, and build ./cmdg, writing the
+# result to logs/verify.log, including each step's exit status, which
+# terminal scrollback does not carry. Run it, then commit logs/verify.log and
+# push, so the outcome can be read back from the repo rather than pasted from
+# a terminal. It exists because the sandbox Claude Code runs in has no Go
+# toolchain in its image, so a change made there is not compiled on the
+# machine it will run on.
 
 cd "$(dirname "$0")/.." || exit 1
 mkdir -p logs
@@ -43,6 +44,12 @@ run() {
 }
 
 run go build ./...
+# Also build the cmdg binary itself, at ./cmdg (ignored by git): go build
+# ./... checks that everything compiles but writes no binary.
+run go build -o cmdg ./cmd/cmdg
+echo "=== ./cmdg built from ==="
+go version -m cmdg | grep -E 'vcs\.(revision|modified)'
+echo
 run go vet ./...
 run go test ./...
 

@@ -223,6 +223,28 @@ func Entry(prompt string, keys *input.Input) (string, error) {
 	}
 }
 
+// drawOptions draws as many of opts as fit from row start to the bottom of
+// the screen, marking the selected one, and blanks the rows below them. It
+// returns how many it drew, which are the only ones that can be selected.
+// Drawing every option instead tried thousands of rows past the bottom of
+// the screen for an address book.
+func drawOptions(screen *display.Screen, start int, prefix string,
+	opts []*Option, selected int) int {
+	rows := max(screen.Height-start, 0)
+	shown := min(len(opts), rows)
+	for n, o := range opts[:shown] {
+		sstr := display.Reset + " "
+		if selected == n {
+			sstr = display.Bold + ">"
+		}
+		screen.Printlnf(n+start, "%s%s %s", prefix, sstr, o)
+	}
+	for n := shown; n < rows; n++ {
+		screen.Printlnf(n+start, "")
+	}
+	return shown
+}
+
 // Selection asks the user for a choice, with populated suggestions that can be searched in.
 // If `free` is `true` then the user can input anything. If `false` then the options listed are the only valid ones.
 // Example: Email recipient choice.
@@ -244,19 +266,8 @@ func Selection(opts []*Option, prompt string, free bool, keys *input.Input) (*Op
 		content := fmt.Sprintf("%s%s%s", prefix, prompt, cur)
 		screen.Printlnf(2, "%s", content)
 		screen.SetCursor(2, display.StringWidth(content)+1)
-		for n, o := range visible[scroll:] {
-			sstr := display.Reset + " "
-			if selected == n {
-				sstr = display.Bold + ">"
-			}
-			screen.Printlnf(n+start, "%s%s %s", prefix, sstr, o)
-		}
-
-		// Clear the area.
-		for n := len(visible); n < len(opts); n++ {
-			screen.Printlnf(n+start, "")
-		}
-
+		shown := drawOptions(screen, start, prefix, visible[scroll:],
+			selected)
 		screen.Draw()
 
 		key := <-keys.Chan()
@@ -274,8 +285,8 @@ func Selection(opts []*Option, prompt string, free bool, keys *input.Input) (*Op
 			return visible[selected], nil
 		case input.CtrlN, input.Down:
 			selected++
-			if selected >= len(visible) {
-				selected = len(visible) - 1
+			if selected >= shown {
+				selected = shown - 1
 			}
 		case input.CtrlP, input.Up:
 			if selected > -1 {
@@ -361,19 +372,8 @@ func MultiSelection(opts []*Option, prompt string, keys *input.Input) (string, e
 		content := fmt.Sprintf("%s%s%s", prefix, prompt, cur)
 		screen.Printlnf(2, "%s", content)
 		screen.SetCursor(2, display.StringWidth(content)+1)
-		for n, o := range visible[scroll:] {
-			sstr := display.Reset + " "
-			if selected == n {
-				sstr = display.Bold + ">"
-			}
-			screen.Printlnf(n+start, "%s%s %s", prefix, sstr, o)
-		}
-
-		// Clear the area.
-		for n := len(visible); n < len(opts); n++ {
-			screen.Printlnf(n+start, "")
-		}
-
+		shown := drawOptions(screen, start, prefix, visible[scroll:],
+			selected)
 		screen.Draw()
 
 		key := <-keys.Chan()
@@ -397,8 +397,8 @@ func MultiSelection(opts []*Option, prompt string, keys *input.Input) (string, e
 			}
 		case input.CtrlN, input.Down:
 			selected++
-			if selected >= len(visible) {
-				selected = len(visible) - 1
+			if selected >= shown {
+				selected = shown - 1
 			}
 		case input.CtrlP, input.Up:
 			if selected > -1 {
