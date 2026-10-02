@@ -84,9 +84,19 @@ a ClientID and ClientSecret. You can do this with the following steps:
      1. Gmail - `https://console.developers.google.com/apis/api/gmail.googleapis.com/overview`
      1. Google Drive API `https://console.developers.google.com/apis/api/drive.googleapis.com/overview`
      1. People API - `https://console.developers.google.com/apis/api/people.googleapis.com/overview`
-  1. Navigate to the "OAuth consent screen" page.
-  1. Fill out the OAuth consent screen.
-  1. Make sure to add scopes for the various APIs you'll need.  You may need to enter the following URLs under "Manually add scopes":
+  1. Navigate to the "Google Auth Platform" page (called "OAuth consent
+     screen" in older versions of the console) and fill in the app name and
+     support email under "Branding".
+  1. Under "Audience", choose "External". Either leave the app in "Testing"
+     and add your Google account as a test user, or click "Publish app". In
+     "Testing", Google expires the sign-in after 7 days and you have to rerun
+     `cmdg -configure`; a published app keeps working without being
+     verified, at the cost of a "Google hasn't verified this app" warning
+     when you sign in.
+  1. Leave the scope list under "Data Access" empty. `cmdg` asks for the
+     scopes it needs when you sign in, and listing sensitive scopes there
+     makes the console ask you to submit the app for verification, which a
+     personal app does not need. The scopes it asks for are:
      1. Gmail API - `https://www.googleapis.com/auth/gmail.modify`
      1. Google Drive API - `https://www.googleapis.com/auth/drive.appdata`
      1. People API - `https://www.googleapis.com/auth/contacts`
@@ -107,7 +117,20 @@ Cut and paste this URL into your browser:
 Returned code: <code shows up here, just FYI>
 $
 ```
-This creates `~/.cmdg/cmdg.conf`.
+This creates `~/.cmdg/cmdg.conf`. To use another file, for example one per
+account, pass `-config /path/to/file.conf` both here and when running `cmdg`.
+
+### Updating an existing configuration
+When a new version of `cmdg` needs a scope your sign-in did not grant, such
+as `contacts.other.readonly` for suggesting people you have emailed, run
+`cmdg -configure` again, with the same `-config` if you use one. It reuses
+the ClientID and ClientSecret already in the file and only replaces the
+sign-in, so the Cloud project needs no changes. If you are signed in to
+several Google accounts, pick the one that file is for.
+
+To check that it worked, run `cmdg -log /tmp/cmdg.log` (by default nothing is
+logged) and, after a couple of minutes, look for `Loaded correspondents`
+without a `Failed to load Other contacts` line.
 
 ## Running
 ```
