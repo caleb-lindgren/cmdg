@@ -23,11 +23,12 @@ var (
 	rfc5322commentRE = regexp.MustCompile(`^[A-Za-z0-9]+$`)
 )
 
-// Contacts returns a list of all contacts.
+// Contacts returns a list of all contacts, followed by anyone else found by
+// LoadCorrespondents.
 func (c *CmdG) Contacts() []string {
 	c.m.RLock()
 	defer c.m.RUnlock()
-	return append([]string{"me"}, c.contacts...)
+	return append([]string{"me"}, c.addressBook...)
 }
 
 // LoadContacts reads all contacts from the cloud.
@@ -39,6 +40,7 @@ func (c *CmdG) LoadContacts(ctx context.Context) error {
 	c.m.Lock()
 	defer c.m.Unlock()
 	c.contacts = co
+	c.rebuildAddressBook()
 	return nil
 }
 
@@ -56,24 +58,7 @@ func (c *CmdG) GetContacts(ctx context.Context) ([]string, error) {
 	if err := c.people.People.Connections.List("people/me").Context(ctx).PageSize(contactBatchSize).PersonFields("names,emailAddresses").Pages(ctx, func(r *people.ListConnectionsResponse) error {
 		log.Infof("Got batch of %d contacts, total %d", len(r.Connections), r.TotalItems)
 		for _, p := range r.Connections {
-			// Use name first listed.
-			var name string
-			if len(p.Names) > 0 {
-				name = p.Names[0].DisplayName
-			}
-			for _, e := range p.EmailAddresses {
-				if strings.Contains(e.Value, " ") {
-					// Name already there.
-					log.Warningf("Contact email address contains a space: %q", e.Value)
-					ret = append(ret, e.Value)
-				} else {
-					if len(name) > 0 {
-						ret = append(ret, fmt.Sprintf(`%s <%s>`, quoteNameIfNeeded(name), e.Value))
-					} else {
-						ret = append(ret, e.Value)
-					}
-				}
-			}
+			ret = append(ret, personAddresses(p)...)
 		}
 		return nil
 	}); err != nil {
@@ -83,4 +68,34 @@ func (c *CmdG) GetContacts(ctx context.Context) ([]string, error) {
 		return strings.TrimLeft(ret[i], `"`) < strings.TrimLeft(ret[j], `"`)
 	})
 	return ret, nil
+}
+
+// personAddresses returns a person's email addresses in "Name Name
+// <email@example.com>" format.
+func personAddresses(p *people.Person) []string {
+	// Use name first listed.
+	var name string
+	if len(p.Names) > 0 {
+		name = p.Names[0].DisplayName
+	}
+	var ret []string
+	for _, e := range p.EmailAddresses {
+		if strings.Contains(e.Value, " ") {
+			// Name already there.
+			log.Warningf("Contact address contains a space: %q",
+				e.Value)
+			ret = append(ret, e.Value)
+		} else {
+			ret = append(ret, formatAddress(name, e.Value))
+		}
+	}
+	return ret
+}
+
+// formatAddress formats an address the way contacts are listed.
+func formatAddress(name, addr string) string {
+	if len(name) == 0 {
+		return addr
+	}
+	return fmt.Sprintf(`%s <%s>`, quoteNameIfNeeded(name), addr)
 }

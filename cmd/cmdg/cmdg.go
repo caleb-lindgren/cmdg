@@ -293,6 +293,20 @@ func main() {
 		}
 	}
 
+	// Add people the user has emailed or been emailed by. This runs after
+	// logging is redirected because the first scan takes over a minute.
+	go func() {
+		ch := time.Tick(labelReloadTime)
+		for {
+			if err := conn.LoadCorrespondents(ctx); err != nil {
+				log.Errorf("Loading correspondents: %v", err)
+			} else {
+				log.Infof("Loaded correspondents")
+			}
+			<-ch
+		}
+	}()
+
 	if err := run(ctx); err != nil {
 		log.Fatal(err)
 	}

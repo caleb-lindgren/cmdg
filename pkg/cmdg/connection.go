@@ -29,8 +29,11 @@ import (
 )
 
 const (
-	// Scope for email, contacts, and appdata.
-	scope = "https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/contacts https://www.googleapis.com/auth/drive.appdata"
+	// Scope for email, contacts, other contacts, and appdata.
+	scope = "https://www.googleapis.com/auth/gmail.modify" +
+		" https://www.googleapis.com/auth/contacts" +
+		" https://www.googleapis.com/auth/contacts.other.readonly" +
+		" https://www.googleapis.com/auth/drive.appdata"
 
 	pageSize = 100
 
@@ -88,6 +91,14 @@ type CmdG struct {
 	labelCache   map[string]*Label
 	contacts     []string
 	settings     Settings
+
+	// Addresses found by LoadCorrespondents, and contacts merged with
+	// them, which is what Contacts returns.
+	otherContacts       []string
+	recent              []string
+	addressBook         []string
+	otherContactsFailed bool
+	scan                correspondentScan
 }
 
 func userAgent() string {

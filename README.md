@@ -26,7 +26,10 @@ benefits.
   even if the machine it runs on gets hacked.
 * The "labels" model is native in the cmdg UI, unlike IMAP clients
   that try to map GMail labels onto IMAP.
-* Contacts are taken from your Google contacts
+* Contacts are taken from your Google contacts, your Google "Other
+  contacts" (people you have emailed), and the senders and recipients of
+  your 2000 newest messages, which are scanned in the background after
+  startup
 * TODO: other benefits, I'm sure.
 
 ### Benefits over the GMail web UI
@@ -87,6 +90,7 @@ a ClientID and ClientSecret. You can do this with the following steps:
      1. Gmail API - `https://www.googleapis.com/auth/gmail.modify`
      1. Google Drive API - `https://www.googleapis.com/auth/drive.appdata`
      1. People API - `https://www.googleapis.com/auth/contacts`
+     1. People API - `https://www.googleapis.com/auth/contacts.other.readonly`
   1. Navigate to the "Credentials"  page.
   1. Click "+ CREATE CREDENTIALS"
   1. Select "OAuth client ID" from the drop down.
