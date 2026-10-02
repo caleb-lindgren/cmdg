@@ -146,10 +146,27 @@ $ cmdg
 ```
 For keyboard shortcuts press '?' or F1 in most screens.
 
-### Multi-recipient Autocompletion
-When prompted for recipients (e.g., `To>`), you can enter multiple email addresses separated by commas (`,`) or semicolons (`;`).
-* **Tab**: Completes the currently highlighted contact and appends a comma and space.
-* **Right Arrow**: Same as Tab, allowing you to quickly chain multiple recipients from the contact list.
-* **Enter**: Completes the currently highlighted contact (if any), validates all addresses, and submits the list.
+### Recipients
+Composing or forwarding a message starts with three lines, To, CC and BCC,
+with To selected. Each line takes a list of addresses separated by commas, and
+suggests contacts matching the address the cursor is in.
+
+* **Tab** / **Shift-Tab**: Moves to the next or previous line.
+* **Down** / **Up** (or **Ctrl-N** / **Ctrl-P**): Moves into the suggestions
+  and through them, and back up to the line.
+* **Enter** on a suggestion: Puts it in the line in place of the address being
+  typed.
+* **Enter** on a line: Sends all three lines to the editor.
+* **,**: Starts a new address. Inside quotes, as in `"Smith, John"
+  <john@example.com>`, a comma is part of the name instead. An unquoted name
+  with a comma is two addresses.
+* **Left**, **Right**, **Home**, **End**, **Backspace**, **Delete**: Edit the
+  line as text. **Ctrl-U** clears it.
+
+A pasted list may be separated by commas, tabs or newlines, and becomes a
+comma-separated list. Suggestions are for its last address, so a list pasted
+with a trailing separator shows none until more is typed. Empty addresses,
+such as from a trailing comma, are dropped when the lines are sent to the
+editor. `me` is replaced by your own address.
 
 To quit, press 'q'.

@@ -8,7 +8,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/ThomasHabets/cmdg/pkg/cmdg"
@@ -48,7 +47,9 @@ func replyQuoted(s string) string {
 // Args:
 //
 //	msg: Message to reply or forward.
-func replyOrForward(ctx context.Context, conn *cmdg.CmdG, keys *input.Input, to, cc, subjPrefix string, rmPrefix *regexp.Regexp, msg *cmdg.Message, attachments []*file) error {
+func replyOrForward(ctx context.Context, conn *cmdg.CmdG, keys *input.Input,
+	to, cc, bcc, subjPrefix string, rmPrefix *regexp.Regexp,
+	msg *cmdg.Message, attachments []*file) error {
 	b, err := msg.GetUnpatchedBody(ctx)
 	if err != nil {
 		return err
@@ -67,11 +68,9 @@ func replyOrForward(ctx context.Context, conn *cmdg.CmdG, keys *input.Input, to,
 	}
 	headers := []string{
 		fmt.Sprintf("To: %s", to),
+		fmt.Sprintf("CC: %s", cc),
+		fmt.Sprintf("BCC: %s", bcc),
 	}
-	if len(cc) != 0 {
-		headers = append(headers, fmt.Sprintf("CC: %s", cc))
-	}
-
 	headers = append(headers, fmt.Sprintf("Subject: %s%s", subjPrefix, rmPrefix.ReplaceAllString(subj, "")))
 	body := []string{
 		fmt.Sprintf("On %s, %s said:", date.Format("Mon, 2 Jan 2006 15:04:05 -0700"), orig),
@@ -125,7 +124,8 @@ func reply(ctx context.Context, conn *cmdg.CmdG, keys *input.Input, msg *cmdg.Me
 	if err != nil {
 		return err
 	}
-	return replyOrForward(ctx, conn, keys, to, "", replyPrefix, replyPrefixes, msg, nil)
+	return replyOrForward(ctx, conn, keys, to, "", "", replyPrefix,
+		replyPrefixes, msg, nil)
 }
 
 func replyAll(ctx context.Context, conn *cmdg.CmdG, keys *input.Input, msg *cmdg.Message) error {
@@ -133,23 +133,16 @@ func replyAll(ctx context.Context, conn *cmdg.CmdG, keys *input.Input, msg *cmdg
 	if err != nil {
 		return err
 	}
-	return replyOrForward(ctx, conn, keys, to, cc, replyPrefix, replyPrefixes, msg, nil)
+	return replyOrForward(ctx, conn, keys, to, cc, "", replyPrefix,
+		replyPrefixes, msg, nil)
 }
 
 func forward(ctx context.Context, conn *cmdg.CmdG, keys *input.Input, msg *cmdg.Message) error {
-	// Get recipient
-	to, err := dialog.MultiSelection(dialog.Strings2Options(conn.Contacts()), "To> ", keys)
+	to, cc, bcc, err := askRecipients(ctx, conn, keys)
 	if err == dialog.ErrAborted {
 		return nil
 	} else if err != nil {
 		return err
-	}
-	if strings.EqualFold(to, "me") {
-		p, err := conn.GetProfile(ctx)
-		if err != nil {
-			return errors.Wrap(err, "failed to get own email address")
-		}
-		to = p.EmailAddress
 	}
 
 	var atts []*file
@@ -167,5 +160,6 @@ func forward(ctx context.Context, conn *cmdg.CmdG, keys *input.Input, msg *cmdg.
 		log.Errorf("Failed to get attachments: %v", err)
 	}
 
-	return replyOrForward(ctx, conn, keys, to, "", forwardPrefix, forwardPrefixes, msg, atts)
+	return replyOrForward(ctx, conn, keys, to, cc, bcc, forwardPrefix,
+		forwardPrefixes, msg, atts)
 }

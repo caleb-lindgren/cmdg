@@ -74,31 +74,65 @@ func getInput(ctx context.Context, prefill string, keys *input.Input) (string, e
 	return string(b), nil
 }
 
+// askRecipients asks for the To, CC and BCC addresses of a message, with
+// "me" replaced by the user's own address.
+func askRecipients(ctx context.Context, conn *cmdg.CmdG,
+	keys *input.Input) (to, cc, bcc string, err error) {
+	to, cc, bcc, err = dialog.Addresses(
+		dialog.Strings2Options(conn.Contacts()), keys)
+	if err != nil {
+		return "", "", "", err
+	}
+	self := ""
+	expand := func(list string) (string, error) {
+		as := dialog.SplitAddresses(list)
+		for n, a := range as {
+			if !strings.EqualFold(a, "me") {
+				continue
+			}
+			if self == "" {
+				p, err := conn.GetProfile(ctx)
+				if err != nil {
+					return "", errors.Wrap(err, "failed "+
+						"to get own email address")
+				}
+				self = p.EmailAddress
+			}
+			as[n] = self
+		}
+		return strings.Join(as, ", "), nil
+	}
+	if to, err = expand(to); err != nil {
+		return "", "", "", err
+	}
+	if cc, err = expand(cc); err != nil {
+		return "", "", "", err
+	}
+	if bcc, err = expand(bcc); err != nil {
+		return "", "", "", err
+	}
+	return to, cc, bcc, nil
+}
+
 func composeNew(ctx context.Context, conn *cmdg.CmdG, keys *input.Input) error {
-	to, err := dialog.MultiSelection(dialog.Strings2Options(conn.Contacts()), "To> ", keys)
+	to, cc, bcc, err := askRecipients(ctx, conn, keys)
 	if err == dialog.ErrAborted {
 		return nil
 	} else if err != nil {
 		return err
 	}
 
-	if strings.EqualFold(to, "me") {
-		p, err := conn.GetProfile(ctx)
-		if err != nil {
-			return errors.Wrap(err, "failed to get own email address")
-		}
-		to = p.EmailAddress
-	}
 	var sig string
 	if signature != "" {
 		sig = "--\n" + signature + "\n"
 	}
 
 	prefill := fmt.Sprintf(`To: %s
-CC:
+CC: %s
+BCC: %s
 Subject:
 
-%s`, to, sig)
+%s`, to, cc, bcc, sig)
 
 	headOps := []headOp{
 		func(h *mail.Header) {

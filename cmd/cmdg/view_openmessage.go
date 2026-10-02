@@ -234,6 +234,12 @@ func (ov *OpenMessageView) Draw(lines []string, scroll int) error {
 	ov.screen.Printlnf(line, "CC: %s", cc)
 	line++
 
+	// BCC, which only the sender's copy has.
+	if bcc, err := ov.msg.GetHeader(ctx, "BCC"); err == nil && bcc != "" {
+		ov.screen.Printlnf(line, "BCC: %s", bcc)
+		line++
+	}
+
 	// Date.
 
 	if date, err := ov.msg.GetOriginalTime(ctx); err != nil {

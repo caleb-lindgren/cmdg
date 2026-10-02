@@ -25,7 +25,9 @@ const (
 const (
 	EscChar = 27
 
+	CtrlA  = "\x01"
 	CtrlC  = "\x03"
+	CtrlE  = "\x05"
 	CtrlH  = "\x08"
 	Tab    = "\x09"
 	Return = "\x0a"
@@ -48,6 +50,8 @@ const (
 	Down              = "\x1B[B"
 	Right             = "\x1B[C"
 	Left              = "\x1B[D"
+	BackTab           = "\x1B[Z"
+	Delete            = "\x1B[3~"
 	F1                = "\x1BOP"
 	F2                = "\x1BOQ"
 	F3                = "\x1BOR"
@@ -58,6 +62,13 @@ const (
 	PgDown            = "\x1B[6~"
 	XEnd              = "\x1B[E"
 	XHome             = "\x1B[H"
+
+	// PasteStart and PasteEnd are what a terminal in bracketed paste mode
+	// (display.BracketedPasteOn) sends around pasted text. The input loop
+	// sends a whole paste as one key: PasteStart followed by the pasted
+	// text, without PasteEnd.
+	PasteStart = "\x1B[200~"
+	PasteEnd   = "\x1B[201~"
 )
 
 var (
@@ -67,6 +78,11 @@ var (
 
 	readKeyTimeout       = 50 * time.Millisecond
 	readMultibyteTimeout = 10 * time.Millisecond
+
+	// pasteTimeout is how long a paste may go without a byte arriving
+	// before what has arrived is taken as the whole paste, in case the
+	// terminal never sends PasteEnd.
+	pasteTimeout = time.Second
 )
 
 // Input is an input handler. Singleton, really.
@@ -327,6 +343,32 @@ func readKey(fd int) (string, error) {
 	return key, nil
 }
 
+// readPaste reads the text of a bracketed paste, after its PasteStart, up to
+// PasteEnd, and returns it prefixed with PasteStart.
+func readPaste(fd int) string {
+	var b strings.Builder
+	b.WriteString(PasteStart)
+	idle := time.Duration(0)
+	for idle < pasteTimeout {
+		key, err := readKey(fd)
+		if errors.Cause(err) == errTimeout {
+			idle += readKeyTimeout
+			continue
+		}
+		idle = 0
+		if err != nil {
+			log.Errorf("Reading pasted key: %v", err)
+			continue
+		}
+		if key == PasteEnd {
+			return b.String()
+		}
+		b.WriteString(key)
+	}
+	log.Warningf("Paste had no end marker after %v idle", pasteTimeout)
+	return b.String()
+}
+
 // Start turns on raw mode and the key-receive loop.
 func (i *Input) Start() error {
 	log.Infof("Starting keyboard input")
@@ -368,6 +410,9 @@ func (i *Input) Start() error {
 			if key == "" {
 				log.Errorf("Read key successfully, but it was empty string")
 				continue
+			}
+			if key == PasteStart {
+				key = readPaste(fd)
 			}
 
 			// log.Infof("read done")

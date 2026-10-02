@@ -70,6 +70,12 @@ const (
 	Suspend       = "\033P=1s\033\\" // https://gitlab.freedesktop.org/terminal-wg/specifications/-/merge_requests/2
 	Resume        = "\033P=2s\033\\"
 
+	// BracketedPasteOn makes the terminal wrap pasted text in
+	// input.PasteStart and input.PasteEnd, so that a pasted newline or tab
+	// can be told apart from Enter or Tab. BracketedPasteOff stops it.
+	BracketedPasteOn  = "\033[?2004h"
+	BracketedPasteOff = "\033[?2004l"
+
 	// Normal is not the same as Reset, because Reset resets Bold/Underline/Reverse.
 	Normal = White + BgBlack
 )

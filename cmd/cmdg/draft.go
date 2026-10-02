@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/textproto"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -64,10 +65,12 @@ func continueDraft(ctx context.Context, conn *cmdg.CmdG, keys *input.Input) erro
 	keep := map[string]bool{
 		"To":      true,
 		"Cc":      true,
+		"Bcc":     true,
 		"Subject": true,
 	}
 	for _, h := range draft.Response.Message.Payload.Headers {
-		if keep[h.Name] {
+		// The editor may have written "CC" or "BCC".
+		if keep[textproto.CanonicalMIMEHeaderKey(h.Name)] {
 			headers = append(headers, fmt.Sprintf("%s: %s", h.Name, h.Value))
 		}
 	}
