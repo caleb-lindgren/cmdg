@@ -21,6 +21,7 @@ type fakeMailbox struct {
 	m        sync.Mutex
 	messages []*gmail.Message // Newest first.
 	gets     map[string]int   // Message ID -> times fetched.
+	order    []string         // Message IDs in the order fetched.
 	throttle map[string]int   // Message ID -> 429s to answer first.
 	noOther  bool             // Refuse Other contacts, as without scope.
 	others   int              // Times Other contacts were listed.
@@ -64,6 +65,7 @@ func (f *fakeMailbox) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		for _, m := range f.messages {
 			if m.Id == id {
 				f.gets[id]++
+				f.order = append(f.order, id)
 				_ = enc.Encode(m)
 				return
 			}
@@ -131,7 +133,8 @@ func TestLoadCorrespondents(t *testing.T) {
 			// Beyond the first two, so read only if sent.
 			fakeMessage("m0", 500, []string{"SENT"},
 				"From", "me@example.com",
-				"To", "erin@example.com"),
+				"To", "erin@example.com, "+
+					"Robert <bob@example.com>"),
 			fakeMessage("mx", 400, []string{"INBOX"},
 				"From", "frank@example.com"),
 		},
@@ -150,13 +153,19 @@ func TestLoadCorrespondents(t *testing.T) {
 	if err := conn.LoadCorrespondents(ctx); err != nil {
 		t.Fatal(err)
 	}
-	// Carol only once, as the contact; Bob with his name from m2; Olga
+	// Sent messages first, newest first, then the rest.
+	want := []string{"m1", "m0", "m2"}
+	if !reflect.DeepEqual(f.order, want) {
+		t.Errorf("fetched %q, want %q", f.order, want)
+	}
+	// Carol only once, as the contact; Bob with his name from m2, the
+	// newest to name him, though m0 was read before it; Olga
 	// from Other contacts; not me, and not list@, which only received.
 	// Bob first, last seen in m2; Carol and Olga, both last seen in m1,
 	// alphabetically; Erin, from the older sent m0; Alice, never seen,
 	// last. Not Frank, whose message is older than the first two and was
 	// not sent.
-	want := []string{
+	want = []string{
 		"me",
 		`"Bob Builder" <bob@example.com>`,
 		"Carol <carol@example.com>",

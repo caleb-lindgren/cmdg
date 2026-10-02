@@ -102,6 +102,7 @@ type correspondentScan struct {
 type correspondent struct {
 	entry string // Formatted address book entry.
 	last  int64  // Date of the newest message, ms since the epoch.
+	named int64  // Date of the message entry's name is from, or 0.
 }
 
 // LoadCorrespondents adds to the address book everyone in Google's "Other
@@ -167,10 +168,10 @@ func (c *CmdG) GetOtherContacts(ctx context.Context) ([]string, error) {
 	return ret, err
 }
 
-// scanRecent reads the address headers of those of the newest
-// correspondentScanSize messages, and of the newest sentScanSize sent
-// messages, that it has not read before. It updates the address book after
-// every correspondentBatchSize messages.
+// scanRecent reads the address headers of those of the newest sentScanSize
+// sent messages, and then of the newest correspondentScanSize messages, that
+// it has not read before. It updates the address book after every
+// correspondentBatchSize messages.
 func (c *CmdG) scanRecent(ctx context.Context) error {
 	s := &c.scan
 	s.m.Lock()
@@ -195,11 +196,11 @@ func (c *CmdG) scanRecent(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	// Newest first: the sent messages not in the first set are older
-	// than all of it.
+	// Sent messages first: they reach further back for each get, and
+	// only they show who the user emailed. Each list is newest first.
 	var todo []string
 	listed := make(map[string]bool)
-	for _, id := range append(ids, sent...) {
+	for _, id := range append(sent, ids...) {
 		if !listed[id] {
 			listed[id] = true
 			if !s.scanned[id] {
@@ -295,7 +296,6 @@ feed:
 	close(work)
 	wg.Wait()
 
-	// Newest first, so the first named entry for an address wins.
 	for i, as := range results {
 		if errs[i] {
 			failed++
@@ -313,10 +313,14 @@ feed:
 			if k == s.self {
 				continue
 			}
-			// Set the entry unless it already has a name.
+			// Use the name from the newest message that has
+			// one, whatever order the messages are read in.
 			f, seen := s.found[k]
-			if !seen || f.entry == k {
+			if !seen || (a.Name != "" && dates[i] > f.named) {
 				f.entry = formatAddress(a.Name, a.Address)
+				if a.Name != "" {
+					f.named = dates[i]
+				}
 			}
 			if dates[i] > f.last {
 				f.last = dates[i]
