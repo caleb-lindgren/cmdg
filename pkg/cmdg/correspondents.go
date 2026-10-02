@@ -2,7 +2,9 @@ package cmdg
 
 import (
 	"context"
+	"fmt"
 	"mime"
+	"net/http"
 	"net/mail"
 	"regexp"
 	"sort"
@@ -14,6 +16,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/html/charset"
 	gmail "google.golang.org/api/gmail/v1"
+	"google.golang.org/api/googleapi"
 	people "google.golang.org/api/people/v1"
 )
 
@@ -22,7 +25,25 @@ const (
 	// and a messages.get costs 5. 25 gets a second uses half of that,
 	// leaving the rest for the UI. 2000 messages then take 80 seconds.
 	correspondentGetsPerSecond = 25
-	correspondentWorkers       = 5
+
+	// Gmail also limits how many requests a user may have in flight at
+	// once, to a number it does not document, and the message list
+	// fetches every visible row it lacks in parallel. Over that limit
+	// both fail with 429 "Too many concurrent requests for user", so the
+	// scan keeps to two.
+	correspondentWorkers = 2
+
+	// How long a scan get rate limited by Gmail waits before giving up
+	// on the message until the next reload. Waits double from
+	// scanBackoff (below) until their total passes this.
+	maxScanBackoff = 2 * time.Minute
+
+	// Other contacts are listed in full each time, and the People API
+	// limits how often that may be done ("Sync quota exceeded"), so
+	// they are reloaded hourly rather than with each scan, and retried
+	// sooner after a failure.
+	otherContactsReloadTime = time.Hour
+	otherContactsRetryTime  = 10 * time.Minute
 
 	listPageSize          = 500
 	otherContactsPageSize = 1000
@@ -44,6 +65,9 @@ var (
 	// that suggestions are sorted soon after startup rather than at the
 	// end of the first scan. 250 gets take 10 seconds.
 	correspondentBatchSize = 250
+
+	// First wait after Gmail rate limits a scan get.
+	scanBackoff = time.Second
 )
 
 var (
@@ -67,6 +91,13 @@ type correspondentScan struct {
 	self    string                   // Own address, lowercased.
 	scanned map[string]bool          // Message IDs already read.
 	found   map[string]correspondent // Keyed by lowercased address.
+	oldest  int64                    // Date of oldest message read, ms.
+
+	// When Other contacts were last listed, and whether it succeeded.
+	// Not guarded by m: only LoadCorrespondents uses them, and it is not
+	// called concurrently.
+	otherTried time.Time
+	otherOK    bool
 }
 
 // correspondent is an address found by the scan.
@@ -79,22 +110,44 @@ type correspondent struct {
 // contacts" (people the user has emailed), everyone the newest
 // correspondentScanSize messages were sent to or received from, and
 // everyone the newest sentScanSize sent messages were sent to. Failing to
-// read Other contacts, which needs the contacts.other.readonly scope, is
-// logged and does not stop the scan.
+// read Other contacts is logged, keeps the previous list, and does not stop
+// the scan.
 func (c *CmdG) LoadCorrespondents(ctx context.Context) error {
-	if oc, err := c.GetOtherContacts(ctx); err != nil {
-		if !c.otherContactsFailed {
+	c.loadOtherContacts(ctx)
+	return c.scanRecent(ctx)
+}
+
+// loadOtherContacts lists Other contacts if otherContactsReloadTime has
+// passed since the last success, or otherContactsRetryTime since a failure.
+func (c *CmdG) loadOtherContacts(ctx context.Context) {
+	s := &c.scan
+	wait := otherContactsReloadTime
+	if !s.otherOK {
+		wait = otherContactsRetryTime
+	}
+	if !s.otherTried.IsZero() && time.Since(s.otherTried) < wait {
+		return
+	}
+	s.otherTried = time.Now()
+	oc, err := c.GetOtherContacts(ctx)
+	s.otherOK = err == nil
+	if err != nil {
+		if e, ok := errors.Cause(err).(*googleapi.Error); ok &&
+			e.Code == http.StatusForbidden {
+			// Missing the contacts.other.readonly scope.
 			log.Warningf("Failed to load Other contacts; rerun "+
 				"-configure to grant the scope: %v", err)
-			c.otherContactsFailed = true
+		} else {
+			log.Warningf("Failed to load Other contacts, "+
+				"retrying in %v: %v", otherContactsRetryTime,
+				err)
 		}
-	} else {
-		c.m.Lock()
-		c.otherContacts = oc
-		c.rebuildAddressBook()
-		c.m.Unlock()
+		return
 	}
-	return c.scanRecent(ctx)
+	c.m.Lock()
+	c.otherContacts = oc
+	c.rebuildAddressBook()
+	c.m.Unlock()
 }
 
 // GetOtherContacts gets the addresses in Google's "Other contacts", in the
@@ -147,39 +200,67 @@ func (c *CmdG) scanRecent(ctx context.Context) error {
 	// Newest first: the sent messages not in the first set are older
 	// than all of it.
 	var todo []string
-	queued := make(map[string]bool)
+	listed := make(map[string]bool)
 	for _, id := range append(ids, sent...) {
-		if !s.scanned[id] && !queued[id] {
-			queued[id] = true
-			todo = append(todo, id)
+		if !listed[id] {
+			listed[id] = true
+			if !s.scanned[id] {
+				todo = append(todo, id)
+			}
 		}
 	}
 	if len(todo) == 0 {
 		return nil
 	}
-	log.Infof("Scanning %d new messages for addresses", len(todo))
+	log.Infof("Address scan: %d new messages to read, of %d listed "+
+		"(%d newest, %d newest sent)", len(todo), len(listed),
+		len(ids), len(sent))
 
 	tick := time.NewTicker(time.Second / correspondentGetsPerSecond)
 	defer tick.Stop()
+	read, failed := 0, 0
 	for b := 0; b < len(todo); b += correspondentBatchSize {
 		end := min(b+correspondentBatchSize, len(todo))
-		c.scanBatch(ctx, todo[b:end], tick.C)
+		r, f := c.scanBatch(ctx, todo[b:end], tick.C)
+		read += r
+		failed += f
 		c.publishCorrespondents()
+		log.Infof("Address scan: %d of %d new messages done, %d of "+
+			"them failed; %s", end, len(todo), failed,
+			s.coverage())
 		if err := ctx.Err(); err != nil {
 			return err
 		}
 	}
+	if failed > 0 {
+		log.Warningf("Address scan: read %d of %d new messages; %d "+
+			"failed, retried on the next reload", read, len(todo),
+			failed)
+	}
 	return nil
 }
 
+// coverage describes how far back the scan has read. Caller holds s.m.
+func (s *correspondentScan) coverage() string {
+	if s.oldest == 0 {
+		return "no messages read yet"
+	}
+	return fmt.Sprintf("read %d messages in all, back to %s, dating %d "+
+		"addresses", len(s.scanned),
+		time.UnixMilli(s.oldest).Format("2006-01-02"), len(s.found))
+}
+
 // scanBatch reads the address headers of the messages ids, newest first,
-// one per tick, and adds what it finds to c.scan. Caller holds c.scan.m.
+// one per tick, and adds what it finds to c.scan. It returns how many
+// messages it read and how many failed; any others were cut off by ctx.
+// Caller holds c.scan.m.
 func (c *CmdG) scanBatch(ctx context.Context, ids []string,
-	tick <-chan time.Time) {
+	tick <-chan time.Time) (read, failed int) {
 	s := &c.scan
 	results := make([][]*mail.Address, len(ids))
 	dates := make([]int64, len(ids))
 	ok := make([]bool, len(ids))
+	errs := make([]bool, len(ids))
 	work := make(chan int)
 	var wg sync.WaitGroup
 	for w := 0; w < correspondentWorkers; w++ {
@@ -187,10 +268,15 @@ func (c *CmdG) scanBatch(ctx context.Context, ids []string,
 		go func() {
 			defer wg.Done()
 			for i := range work {
-				m, err := c.getAddressHeaders(ctx, ids[i])
+				m, err := c.getAddressHeadersBackoff(ctx,
+					ids[i])
 				if err != nil {
-					log.Warningf("Scanning message %q: %v",
-						ids[i], err)
+					if ctx.Err() == nil {
+						log.Warningf("Scanning "+
+							"message %q: %v",
+							ids[i], err)
+						errs[i] = true
+					}
 					continue
 				}
 				results[i] = messageCorrespondents(m)
@@ -213,10 +299,17 @@ feed:
 
 	// Newest first, so the first named entry for an address wins.
 	for i, as := range results {
+		if errs[i] {
+			failed++
+		}
 		if !ok[i] {
 			continue // Retried on the next reload.
 		}
+		read++
 		s.scanned[ids[i]] = true
+		if d := dates[i]; d > 0 && (s.oldest == 0 || d < s.oldest) {
+			s.oldest = d
+		}
 		for _, a := range as {
 			k := strings.ToLower(a.Address)
 			if k == s.self {
@@ -233,6 +326,7 @@ feed:
 			s.found[k] = f
 		}
 	}
+	return read, failed
 }
 
 // publishCorrespondents puts what the scan has found so far into the address
@@ -282,6 +376,28 @@ func (c *CmdG) listRecentIDs(ctx context.Context, label string, n int) (
 		ids = ids[:n]
 	}
 	return ids, nil
+}
+
+// getAddressHeadersBackoff is getAddressHeaders, retried with growing waits
+// while Gmail answers 429, which it does both for too many requests a second
+// and for too many at once.
+func (c *CmdG) getAddressHeadersBackoff(ctx context.Context, id string) (
+	*gmail.Message, error) {
+	var waited time.Duration
+	for wait := scanBackoff; ; wait *= 2 {
+		m, err := c.getAddressHeaders(ctx, id)
+		e, ok := errors.Cause(err).(*googleapi.Error)
+		if !ok || e.Code != http.StatusTooManyRequests ||
+			waited >= maxScanBackoff {
+			return m, err
+		}
+		select {
+		case <-time.After(wait):
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+		waited += wait
+	}
 }
 
 // getAddressHeaders gets only a message's date, labels and address headers.

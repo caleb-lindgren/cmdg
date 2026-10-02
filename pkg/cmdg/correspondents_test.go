@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	gmail "google.golang.org/api/gmail/v1"
 )
@@ -20,7 +21,9 @@ type fakeMailbox struct {
 	m        sync.Mutex
 	messages []*gmail.Message // Newest first.
 	gets     map[string]int   // Message ID -> times fetched.
+	throttle map[string]int   // Message ID -> 429s to answer first.
 	noOther  bool             // Refuse Other contacts, as without scope.
+	others   int              // Times Other contacts were listed.
 }
 
 func (f *fakeMailbox) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -30,6 +33,7 @@ func (f *fakeMailbox) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	enc := json.NewEncoder(w)
 	switch {
 	case strings.HasSuffix(p, "/otherContacts"):
+		f.others++
 		if f.noOther {
 			w.WriteHeader(http.StatusForbidden)
 			return
@@ -52,6 +56,11 @@ func (f *fakeMailbox) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		_ = enc.Encode(&resp)
 	case strings.Contains(p, "/users/me/messages/"):
 		id := p[strings.LastIndex(p, "/")+1:]
+		if f.throttle[id] > 0 {
+			f.throttle[id]--
+			w.WriteHeader(http.StatusTooManyRequests)
+			return
+		}
 		for _, m := range f.messages {
 			if m.Id == id {
 				f.gets[id]++
@@ -96,16 +105,21 @@ func fakeMessage(id string, date int64, labels []string,
 
 func TestLoadCorrespondents(t *testing.T) {
 	// Read the two newest messages and the ten newest sent ones, one
-	// message per batch, so that the scan publishes after each.
-	defer func(a, b, c int) {
+	// message per batch, so that the scan publishes after each, and wait
+	// only briefly when rate limited.
+	defer func(a, b, c int, d time.Duration) {
 		correspondentScanSize, sentScanSize = a, b
-		correspondentBatchSize = c
-	}(correspondentScanSize, sentScanSize, correspondentBatchSize)
+		correspondentBatchSize, scanBackoff = c, d
+	}(correspondentScanSize, sentScanSize, correspondentBatchSize,
+		scanBackoff)
 	correspondentScanSize, sentScanSize, correspondentBatchSize = 2, 10, 1
+	scanBackoff = time.Millisecond
 
 	ctx := context.Background()
 	f := &fakeMailbox{
 		gets: map[string]int{},
+		// Bob's message is read on the third try.
+		throttle: map[string]int{"m2": 2},
 		messages: []*gmail.Message{
 			fakeMessage("m2", 2000, []string{"INBOX"},
 				"From", "Bob Builder <bob@example.com>",
@@ -154,7 +168,9 @@ func TestLoadCorrespondents(t *testing.T) {
 		t.Errorf("Contacts() = %q, want %q", got, want)
 	}
 
-	// A reload fetches only the new message.
+	// A reload fetches only the new message, and lists Other contacts
+	// again only once their retry time has passed.
+	conn.scan.otherTried = time.Time{}
 	f.m.Lock()
 	f.messages = append([]*gmail.Message{
 		fakeMessage("m3", 3000, nil, "From", "dave@example.com"),
@@ -167,6 +183,12 @@ func TestLoadCorrespondents(t *testing.T) {
 	wantGets := map[string]int{"m0": 1, "m1": 1, "m2": 1, "m3": 1}
 	if !reflect.DeepEqual(f.gets, wantGets) {
 		t.Errorf("gets = %v, want %v", f.gets, wantGets)
+	}
+	if err := conn.LoadCorrespondents(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if f.others != 2 {
+		t.Errorf("Other contacts listed %d times, want 2", f.others)
 	}
 	// A failed Other contacts load keeps the previous result. Dave, from
 	// the newest message, goes first.

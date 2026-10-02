@@ -135,7 +135,10 @@ several Google accounts, pick the one that file is for.
 
 To check that it worked, run `cmdg -log /tmp/cmdg.log` (by default nothing is
 logged) and, after up to five minutes, look for `Loaded correspondents`
-without a `Failed to load Other contacts` line.
+without a `Failed to load Other contacts` line. The `Address scan:` lines in
+between report the scan's progress: how many messages it has read, how many
+failed, and the date of the oldest one read, which is how far back the
+suggestions' dates reach.
 
 ## Running
 ```
