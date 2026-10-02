@@ -103,6 +103,7 @@ func (a *Attachment) Download(ctx context.Context) ([]byte, error) {
 // Message is an email message.
 type Message struct {
 	m       sync.RWMutex
+	preload sync.Mutex // Held by Preload while it fetches.
 	conn    *CmdG
 	level   DataLevel
 	headers map[string]string
@@ -1182,24 +1183,57 @@ func (msg *Message) Reload(ctx context.Context, level DataLevel) error {
 }
 
 // Preload loads message data, unless it's already loaded.
+//
+// Concurrent calls for one message fetch it once: the message list asks for
+// each visible row it lacks on every redraw, while the page's own preload is
+// still fetching the same messages.
 func (msg *Message) Preload(ctx context.Context, level DataLevel) error {
 	if msg.HasData(level) {
 		return nil
 	}
+	msg.preload.Lock()
+	defer msg.preload.Unlock()
+	if msg.HasData(level) {
+		return nil // Fetched by another call while this one waited.
+	}
 	return msg.load(ctx, level)
+}
+
+// maxConcurrentGets is how many message gets may be in flight at once. Past
+// a number of concurrent requests per user that it does not document, Gmail
+// answers 429 "Too many concurrent requests for user". Ten is a guess at
+// staying under it, not a documented figure.
+const maxConcurrentGets = 10
+
+var getSlots = make(chan struct{}, maxConcurrentGets)
+
+// acquireGet waits for one of the maxConcurrentGets slots, and returns the
+// function that gives it back.
+func acquireGet(ctx context.Context) (func(), error) {
+	select {
+	case getSlots <- struct{}{}:
+		return func() { <-getSlots }, nil
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
 }
 
 func (msg *Message) load(ctx context.Context, level DataLevel) error {
 	st := time.Now()
 	log.Debugf("Loading message %q at level %v, stack %s", msg.ID, level, string(debug.Stack()))
+	release, err := acquireGet(ctx)
+	if err != nil {
+		return err
+	}
 	var msg2 *gmail.Message
-	err := wrapLogRPC("gmail.Users.Messages.Get", func() (err error) {
+	err = wrapLogRPC("gmail.Users.Messages.Get", func() (err error) {
 		msg2, err = msg.conn.gmail.Users.Messages.Get(email, msg.ID).
 			Format(string(level)).
 			Context(ctx).
 			Do()
 		return
 	}, "email=%q msgID=%v level=%s", email, msg.ID, level)
+	release()
 	if err != nil {
 		return err
 	}

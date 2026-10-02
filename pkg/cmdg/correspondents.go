@@ -27,10 +27,8 @@ const (
 	correspondentGetsPerSecond = 25
 
 	// Gmail also limits how many requests a user may have in flight at
-	// once, to a number it does not document, and the message list
-	// fetches every visible row it lacks in parallel. Over that limit
-	// both fail with 429 "Too many concurrent requests for user", so the
-	// scan keeps to two.
+	// once (see maxConcurrentGets, whose slots the scan shares with the
+	// UI), so the scan keeps to two of them, leaving the rest free.
 	correspondentWorkers = 2
 
 	// How long a scan get rate limited by Gmail waits before giving up
@@ -403,8 +401,13 @@ func (c *CmdG) getAddressHeadersBackoff(ctx context.Context, id string) (
 // getAddressHeaders gets only a message's date, labels and address headers.
 func (c *CmdG) getAddressHeaders(ctx context.Context, id string) (
 	*gmail.Message, error) {
+	release, err := acquireGet(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
 	var m *gmail.Message
-	err := wrapLogRPC("gmail.Users.Messages.Get", func() (err error) {
+	err = wrapLogRPC("gmail.Users.Messages.Get", func() (err error) {
 		m, err = c.gmail.Users.Messages.Get(email, id).
 			Format(string(LevelMetadata)).
 			MetadataHeaders("From", "To", "Cc", "Bcc").

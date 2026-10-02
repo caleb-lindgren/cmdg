@@ -2,8 +2,8 @@ package cmdg
 
 import (
 	"context"
-	"log"
 
+	log "github.com/sirupsen/logrus"
 	gmail "google.golang.org/api/gmail/v1"
 )
 
@@ -42,10 +42,21 @@ func (p *Page) PreloadSubjects(ctx context.Context) error {
 	for t := 0; t < conc; t++ {
 		sem <- struct{}{}
 	}
+	// Logged through logrus, which cmdg sends to its log file. The
+	// standard log package writes to the terminal, over the UI.
+	failed := 0
+	var first error
 	for _, err := range errs {
 		if err != nil {
-			log.Printf("Preloading subjects: %v", err)
+			if first == nil {
+				first = err
+			}
+			failed++
 		}
+	}
+	if failed > 0 {
+		log.Warningf("Preloading subjects: %d of %d failed, first: %v",
+			failed, num, first)
 	}
 	return nil
 }

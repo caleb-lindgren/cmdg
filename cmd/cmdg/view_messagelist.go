@@ -946,18 +946,22 @@ func (mv *MessageView) Run(ctx context.Context) error {
 				}
 			case "u":
 				marked = map[string]bool{}
+			// UseCache only once it is certain to be drawn
+			// next: left set, it would apply to the next draw
+			// whatever came between, such as an opened message,
+			// and leave that showing.
 			case "N", "n", "j", input.CtrlN, input.Down:
-				screen.UseCache()
 				if !next() {
 					// If already on last one, don't redraw.
 					continue
 				}
-			case "P", "p", "k", input.CtrlP, input.Up:
 				screen.UseCache()
+			case "P", "p", "k", input.CtrlP, input.Up:
 				if !prev() {
 					// If already on first one, don't redraw.
 					continue
 				}
+				screen.UseCache()
 			case "r", input.CtrlR:
 				empty()
 				screen.Clear()

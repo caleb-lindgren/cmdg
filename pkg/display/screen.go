@@ -173,34 +173,57 @@ func (s *Screen) UseCache() {
 }
 
 // Draw redraws the screen.
+//
+// With UseCache, it first looks for a scroll that lines up most of the
+// previous buffer with the new one, has the terminal do that scroll, and then
+// redraws only the lines that still differ. That relies on prevBuffer being
+// what the terminal shows, so UseCache must only be called right before a
+// Draw, with nothing else drawn since the previous one.
 func (s *Screen) Draw() {
 	var o []string
+	prev := s.prevBuffer
+	// Lines of prev the terminal is known to show: not those scrolled in
+	// blank, nor any when the cache is not used.
+	known := make([]bool, len(s.buffer))
 	if s.useCache {
-		ofs, start := findScroll(s.prevBuffer, s.buffer)
-		if ofs != 0 {
-			head := s.prevBuffer[:start]
-			if ofs > 0 {
-				// Scroll down.
-				log.Debugf("Scroll %d First: %d", ofs, start)
-				o = append(o, fmt.Sprintf("\033[%d;%dr\033[%dS", start+1, len(s.buffer)-1, ofs))
-				// TODO: Don't needlessly redraw bottom.
-				s.prevBuffer = append(head, s.prevBuffer[start+ofs:]...)
-			} else {
-				// Scroll up.
-				log.Debugf("Scroll %d, first %d", ofs, start)
-				o = append(o, fmt.Sprintf("\033[%d;%dr\033[%dT", start, len(s.buffer)-1, -ofs))
-				head := s.prevBuffer[:start+ofs]
-				mid := make([]string, -ofs)
-				rest := s.prevBuffer[start+ofs:]
-				s.prevBuffer = append(head, append(mid, rest...)...)
-			}
+		for n := range known {
+			known[n] = n < len(prev)
 		}
-	} else {
-		s.prevBuffer = nil
+		ofs, start := findScroll(prev, s.buffer)
+		// Scroll only between the first line that moves and the line
+		// above the last, which holds the status. A region needs at
+		// least two lines: a terminal ignores a smaller one and would
+		// scroll the whole screen.
+		top := start
+		if ofs < 0 {
+			top = start + ofs
+		}
+		bottom := len(s.buffer) - 2
+		if ofs != 0 && bottom-top >= 1 {
+			// Rows are 1-based. S moves the region's lines up
+			// (ofs > 0), T down, both blanking what they uncover.
+			if ofs > 0 {
+				o = append(o, fmt.Sprintf("\033[%d;%dr\033[%dS",
+					top+1, bottom+1, ofs))
+			} else {
+				o = append(o, fmt.Sprintf("\033[%d;%dr\033[%dT",
+					top+1, bottom+1, -ofs))
+			}
+			log.Debugf("Scroll %d, region %d-%d", ofs, top, bottom)
+			moved := append([]string{}, prev...)
+			for n := top; n <= bottom; n++ {
+				if src := n + ofs; src >= top && src <= bottom {
+					moved[n] = prev[src]
+				} else {
+					known[n] = false
+				}
+			}
+			prev = moved
+		}
 	}
 	saved := 0
 	for n, l := range s.buffer {
-		if n < len(s.prevBuffer) && s.prevBuffer[n] == s.buffer[n] {
+		if known[n] && prev[n] == l {
 			saved++
 			continue
 		}
