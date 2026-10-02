@@ -399,53 +399,77 @@ func (msg *Message) GetReplyTo(ctx context.Context) (string, error) {
 	return msg.GetHeader(ctx, "From")
 }
 
-func filteredEmails(from string, cc map[string]bool) []string {
-	var ret []string
-	fa, err := mail.ParseAddress(from)
-	if err != nil {
+// filteredEmails splits each of the address-list headers into addresses and
+// returns them in order, dropping duplicates, the 'from' address (which goes
+// in To instead), and any address in 'self', so that reply-all does not CC the
+// user. Addresses are compared case-insensitively. A header that does not
+// parse as an address list is kept verbatim rather than dropped.
+func filteredEmails(from string, self []string, headers []string) []string {
+	seen := map[string]bool{}
+	if fa, err := mail.ParseAddress(from); err != nil {
 		log.Errorf("Failed to parse 'from' address %q: %v", from, err)
-		fa = &mail.Address{ // Dummy entry.
-			Address: "",
-		}
+	} else {
+		seen[strings.ToLower(fa.Address)] = true
 	}
-	seen := map[string]bool{
-		fa.Address: true,
+	for _, s := range self {
+		seen[strings.ToLower(s)] = true
 	}
-	for s := range cc {
-		a, err := mail.ParseAddress(s)
-		if err != nil {
-			log.Errorf("Failed to parse 'cc' address %q: %v", s, err)
-			ret = append(ret, s)
+	var ret []string
+	for _, h := range headers {
+		if len(h) == 0 {
 			continue
 		}
-		if !seen[a.Address] {
-			ret = append(ret, s)
-			seen[a.Address] = true
+		as, err := mail.ParseAddressList(h)
+		if err != nil {
+			log.Errorf("Failed to parse address list %q: %v",
+				h, err)
+			ret = append(ret, h)
+			continue
+		}
+		for _, a := range as {
+			k := strings.ToLower(a.Address)
+			if seen[k] {
+				continue
+			}
+			seen[k] = true
+			if a.Name == "" {
+				ret = append(ret, a.Address)
+			} else {
+				ret = append(ret, a.String())
+			}
 		}
 	}
 	return ret
 }
 
-// GetReplyToAll returns both To and CC lines for reply-all.
+// GetReplyToAll returns both To and CC lines for reply-all. The user's own
+// address is left out of CC.
 func (msg *Message) GetReplyToAll(ctx context.Context) (string, string, error) {
 	from, err := msg.GetReplyTo(ctx)
 	if err != nil {
 		return "", "", err
 	}
-	cc := make(map[string]bool)
+	var headers []string
 	if f, err := msg.GetHeader(ctx, "From"); err != nil {
 		return "", "", err
 	} else if f != from {
-		cc[f] = true
+		headers = append(headers, f)
 	}
-	if c, err := msg.GetHeader(ctx, "CC"); err == nil && len(c) != 0 {
-		cc[c] = true
+	if c, err := msg.GetHeader(ctx, "To"); err == nil {
+		headers = append(headers, c)
 	}
-	if c, err := msg.GetHeader(ctx, "To"); err == nil && len(c) != 0 {
-		// TODO: if this is not "me"
-		cc[c] = true
+	if c, err := msg.GetHeader(ctx, "CC"); err == nil {
+		headers = append(headers, c)
 	}
-	return from, strings.Join(filteredEmails(from, cc), ", "), err
+	var self []string
+	if p, err := msg.conn.GetProfile(ctx); err != nil {
+		log.Errorf("Failed to get own address, so it may be CCed: %v",
+			err)
+	} else {
+		self = append(self, p.EmailAddress)
+	}
+	cc := filteredEmails(from, self, headers)
+	return from, strings.Join(cc, ", "), nil
 }
 
 // GetFrom returns email address (not name) of sender.
