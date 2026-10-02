@@ -52,9 +52,15 @@ var (
 // between reloads so that each message is fetched only once.
 type correspondentScan struct {
 	m       sync.Mutex
-	self    string            // Own address, lowercased.
-	scanned map[string]bool   // Message IDs already read.
-	found   map[string]string // Lowercased address -> formatted entry.
+	self    string                   // Own address, lowercased.
+	scanned map[string]bool          // Message IDs already read.
+	found   map[string]correspondent // Keyed by lowercased address.
+}
+
+// correspondent is an address found by the scan.
+type correspondent struct {
+	entry string // Formatted address book entry.
+	last  int64  // Date of the newest message, ms since the epoch.
 }
 
 // LoadCorrespondents adds to the address book everyone in Google's "Other
@@ -105,7 +111,7 @@ func (c *CmdG) scanRecent(ctx context.Context) error {
 	defer s.m.Unlock()
 	if s.scanned == nil {
 		s.scanned = make(map[string]bool)
-		s.found = make(map[string]string)
+		s.found = make(map[string]correspondent)
 	}
 	if s.self == "" {
 		p, err := c.GetProfile(ctx)
@@ -131,6 +137,7 @@ func (c *CmdG) scanRecent(ctx context.Context) error {
 	log.Infof("Scanning %d new messages for addresses", len(todo))
 
 	results := make([][]*mail.Address, len(todo))
+	dates := make([]int64, len(todo))
 	ok := make([]bool, len(todo))
 	tick := time.NewTicker(time.Second / correspondentGetsPerSecond)
 	defer tick.Stop()
@@ -148,6 +155,7 @@ func (c *CmdG) scanRecent(ctx context.Context) error {
 					continue
 				}
 				results[i] = messageCorrespondents(m)
+				dates[i] = m.InternalDate
 				ok[i] = true
 			}
 		}()
@@ -175,18 +183,26 @@ feed:
 			if k == s.self {
 				continue
 			}
-			if old, seen := s.found[k]; seen && old != k {
-				continue // Already have it with a name.
+			// Set the entry unless it already has a name.
+			f, seen := s.found[k]
+			if !seen || f.entry == k {
+				f.entry = formatAddress(a.Name, a.Address)
 			}
-			s.found[k] = formatAddress(a.Name, a.Address)
+			if dates[i] > f.last {
+				f.last = dates[i]
+			}
+			s.found[k] = f
 		}
 	}
 	recent := make([]string, 0, len(s.found))
-	for _, e := range s.found {
-		recent = append(recent, e)
+	lastSeen := make(map[string]int64, len(s.found))
+	for k, f := range s.found {
+		recent = append(recent, f.entry)
+		lastSeen[k] = f.last
 	}
 	c.m.Lock()
 	c.recent = recent
+	c.lastSeen = lastSeen
 	c.rebuildAddressBook()
 	c.m.Unlock()
 	return ctx.Err()
@@ -219,7 +235,7 @@ func (c *CmdG) listRecentIDs(ctx context.Context) ([]string, error) {
 	return ids, nil
 }
 
-// getAddressHeaders gets only a message's labels and address headers.
+// getAddressHeaders gets only a message's date, labels and address headers.
 func (c *CmdG) getAddressHeaders(ctx context.Context, id string) (
 	*gmail.Message, error) {
 	var m *gmail.Message
@@ -227,7 +243,7 @@ func (c *CmdG) getAddressHeaders(ctx context.Context, id string) (
 		m, err = c.gmail.Users.Messages.Get(email, id).
 			Format(string(LevelMetadata)).
 			MetadataHeaders("From", "To", "Cc", "Bcc").
-			Fields("labelIds,payload/headers").
+			Fields("internalDate,labelIds,payload/headers").
 			Context(ctx).Do()
 		return
 	}, "email=%q id=%q", email, id)
@@ -301,7 +317,32 @@ func mergeAddresses(contacts []string, more ...[]string) []string {
 	return ret
 }
 
-// rebuildAddressBook recomputes the list Contacts returns. Caller holds c.m.
+// sortByLastSeen moves the entries of book whose address has a date in
+// lastSeen to the front, newest first, and leaves the rest after them in
+// their existing order. Equal dates also keep their order.
+func sortByLastSeen(book []string, lastSeen map[string]int64) []string {
+	type dated struct {
+		entry string
+		last  int64
+	}
+	ds := make([]dated, len(book))
+	for i, e := range book {
+		ds[i] = dated{e, lastSeen[addressKey(e)]}
+	}
+	sort.SliceStable(ds, func(i, j int) bool {
+		return ds[i].last > ds[j].last
+	})
+	for i, d := range ds {
+		book[i] = d.entry
+	}
+	return book
+}
+
+// rebuildAddressBook recomputes the list Contacts returns: everyone the scan
+// found, most recently emailed first, then everyone else alphabetically.
+// Caller holds c.m.
 func (c *CmdG) rebuildAddressBook() {
-	c.addressBook = mergeAddresses(c.contacts, c.otherContacts, c.recent)
+	c.addressBook = sortByLastSeen(
+		mergeAddresses(c.contacts, c.otherContacts, c.recent),
+		c.lastSeen)
 }

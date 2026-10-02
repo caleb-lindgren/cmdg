@@ -70,13 +70,15 @@ func (r *redirector) RoundTrip(req *http.Request) (*http.Response, error) {
 	return http.DefaultTransport.RoundTrip(r2)
 }
 
-// fakeMessage makes a message with labels and header name, value pairs.
-func fakeMessage(id string, labels []string, headers ...string) (
-	m *gmail.Message) {
+// fakeMessage makes a message with a date, labels, and header name, value
+// pairs.
+func fakeMessage(id string, date int64, labels []string,
+	headers ...string) (m *gmail.Message) {
 	m = &gmail.Message{
-		Id:       id,
-		LabelIds: labels,
-		Payload:  &gmail.MessagePart{},
+		Id:           id,
+		InternalDate: date,
+		LabelIds:     labels,
+		Payload:      &gmail.MessagePart{},
 	}
 	for i := 0; i < len(headers); i += 2 {
 		m.Payload.Headers = append(m.Payload.Headers,
@@ -93,10 +95,10 @@ func TestLoadCorrespondents(t *testing.T) {
 	f := &fakeMailbox{
 		gets: map[string]int{},
 		messages: []*gmail.Message{
-			fakeMessage("m2", []string{"INBOX"},
+			fakeMessage("m2", 2000, []string{"INBOX"},
 				"From", "Bob Builder <bob@example.com>",
 				"To", "me@example.com, list@example.com"),
-			fakeMessage("m1", []string{"SENT"},
+			fakeMessage("m1", 1000, []string{"SENT"},
 				"From", "me@example.com",
 				"To", "carol@example.com, BOB@example.com",
 				"Cc", "olga@example.com"),
@@ -108,18 +110,24 @@ func TestLoadCorrespondents(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	conn.contacts = []string{"Carol <carol@example.com>"}
+	conn.contacts = []string{
+		"Alice <alice@example.com>",
+		"Carol <carol@example.com>",
+	}
 
 	if err := conn.LoadCorrespondents(ctx); err != nil {
 		t.Fatal(err)
 	}
 	// Carol only once, as the contact; Bob with his name from m2; Olga
 	// from Other contacts; not me, and not list@, which only received.
+	// Bob first, last seen in m2; Carol and Olga, both last seen in m1,
+	// alphabetically; Alice, never seen, last.
 	want := []string{
 		"me",
 		`"Bob Builder" <bob@example.com>`,
 		"Carol <carol@example.com>",
 		"Olga <olga@example.com>",
+		"Alice <alice@example.com>",
 	}
 	if got := conn.Contacts(); !reflect.DeepEqual(got, want) {
 		t.Errorf("Contacts() = %q, want %q", got, want)
@@ -128,7 +136,7 @@ func TestLoadCorrespondents(t *testing.T) {
 	// A reload fetches only the new message.
 	f.m.Lock()
 	f.messages = append([]*gmail.Message{
-		fakeMessage("m3", nil, "From", "dave@example.com"),
+		fakeMessage("m3", 3000, nil, "From", "dave@example.com"),
 	}, f.messages...)
 	f.noOther = true
 	f.m.Unlock()
@@ -139,13 +147,15 @@ func TestLoadCorrespondents(t *testing.T) {
 	if !reflect.DeepEqual(f.gets, wantGets) {
 		t.Errorf("gets = %v, want %v", f.gets, wantGets)
 	}
-	// A failed Other contacts load keeps the previous result.
+	// A failed Other contacts load keeps the previous result. Dave, from
+	// the newest message, goes first.
 	want = []string{
 		"me",
+		"dave@example.com",
 		`"Bob Builder" <bob@example.com>`,
 		"Carol <carol@example.com>",
 		"Olga <olga@example.com>",
-		"dave@example.com",
+		"Alice <alice@example.com>",
 	}
 	if got := conn.Contacts(); !reflect.DeepEqual(got, want) {
 		t.Errorf("Contacts() = %q, want %q", got, want)
@@ -153,7 +163,7 @@ func TestLoadCorrespondents(t *testing.T) {
 }
 
 func TestMessageCorrespondentsDecodesNames(t *testing.T) {
-	m := fakeMessage("x", nil,
+	m := fakeMessage("x", 0, nil,
 		"From", "=?iso-8859-2?q?Pawe=B3?= <pawel@example.com>")
 	got := messageCorrespondents(m)
 	if len(got) != 1 || got[0].Name != "Paweł" {

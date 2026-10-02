@@ -23,8 +23,9 @@ var (
 	rfc5322commentRE = regexp.MustCompile(`^[A-Za-z0-9]+$`)
 )
 
-// Contacts returns a list of all contacts, followed by anyone else found by
-// LoadCorrespondents.
+// Contacts returns "me", then everyone LoadCorrespondents found in recent
+// messages, most recently emailed first, then all other contacts
+// alphabetically.
 func (c *CmdG) Contacts() []string {
 	c.m.RLock()
 	defer c.m.RUnlock()

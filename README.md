@@ -29,7 +29,8 @@ benefits.
 * Contacts are taken from your Google contacts, your Google "Other
   contacts" (people you have emailed), and the senders and recipients of
   your 2000 newest messages, which are scanned in the background after
-  startup
+  startup. Recipient suggestions list the people in those messages first,
+  most recently emailed first, then everyone else alphabetically
 * TODO: other benefits, I'm sure.
 
 ### Benefits over the GMail web UI

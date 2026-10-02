@@ -92,10 +92,12 @@ type CmdG struct {
 	contacts     []string
 	settings     Settings
 
-	// Addresses found by LoadCorrespondents, and contacts merged with
-	// them, which is what Contacts returns.
+	// Addresses found by LoadCorrespondents, the date each was last
+	// emailed, and contacts merged with them, which is what Contacts
+	// returns.
 	otherContacts       []string
 	recent              []string
+	lastSeen            map[string]int64 // Lowercased address -> ms.
 	addressBook         []string
 	otherContactsFailed bool
 	scan                correspondentScan
