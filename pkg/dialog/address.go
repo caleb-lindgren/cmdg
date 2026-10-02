@@ -22,12 +22,18 @@ var addrLabels = [...]string{"To:  ", "CC:  ", "BCC: "}
 
 // isAddrSeparator reports whether r separates addresses when not quoted.
 func isAddrSeparator(r rune) bool {
-	return r == ',' || r == '\t' || r == '\n' || r == '\r'
+	return r == ',' || r == ';' || isLineSeparator(r)
 }
 
-// addrSeparators returns the positions in s of the commas, tabs and newlines
-// outside quotes, which separate one address from the next. Inside quotes a
-// backslash escapes the next rune.
+// isLineSeparator reports whether r is a tab or newline, which separate
+// addresses in a pasted list.
+func isLineSeparator(r rune) bool {
+	return r == '\t' || r == '\n' || r == '\r'
+}
+
+// addrSeparators returns the positions in s of the commas, semicolons, tabs
+// and newlines outside quotes, which separate one address from the next.
+// Inside quotes a backslash escapes the next rune.
 func addrSeparators(s []rune) []int {
 	var ret []int
 	quoted, escaped := false, false
@@ -75,9 +81,9 @@ func splitAddrs(s []rune) []string {
 	return append(ret, string(s[start:]))
 }
 
-// SplitAddresses splits an address list separated by commas, tabs or
-// newlines into its addresses, trimmed, leaving out empty ones. Inside quotes
-// these are part of a name, not separators.
+// SplitAddresses splits an address list separated by commas, semicolons,
+// tabs or newlines into its addresses, trimmed, leaving out empty ones.
+// Inside quotes these are part of a name, not separators.
 func SplitAddresses(s string) []string {
 	var ret []string
 	for _, a := range splitAddrs([]rune(s)) {
@@ -98,7 +104,7 @@ func normalizeAddrs(s []rune) string {
 	var out []string
 	for n, a := range as {
 		a = strings.Map(func(r rune) rune {
-			if isAddrSeparator(r) && r != ',' {
+			if isLineSeparator(r) {
 				return ' '
 			}
 			return r
@@ -138,6 +144,25 @@ func validateEmails(s string) error {
 type addrLine struct {
 	text   []rune
 	cursor int
+	edited int // Index of the address last changed, as tokenIndex.
+}
+
+// tokenIndex returns which address on the line the cursor is in, counting
+// from 0.
+func (l *addrLine) tokenIndex() int {
+	n := 0
+	for _, p := range addrSeparators(l.text) {
+		if p < l.cursor {
+			n++
+		}
+	}
+	return n
+}
+
+// searching reports whether to search for the address the cursor is in: it
+// is the one last changed, not one the cursor was only moved into.
+func (l *addrLine) searching() bool {
+	return l.tokenIndex() == l.edited
 }
 
 // token returns the bounds of the address the cursor is in, from just after
@@ -164,10 +189,12 @@ func (l *addrLine) head(start int) string {
 	return string(l.text[:start-1]) + addrSeparator
 }
 
-// set replaces the line with head followed by tail, with the cursor between.
+// set replaces the line with head followed by tail, with the cursor between,
+// which makes the address the cursor is in the one last changed.
 func (l *addrLine) set(head, tail string) {
 	l.text = []rune(head + tail)
 	l.cursor = len([]rune(head))
+	l.edited = l.tokenIndex()
 }
 
 // query returns what to search for: the address the cursor is in.
@@ -187,13 +214,14 @@ func (l *addrLine) insert(s string) {
 }
 
 // comma starts a new address after the cursor, unless the cursor is inside
-// quotes, where a comma is part of a name. What is before the cursor in the
+// quotes, where a comma is part of a name. A semicolon does the same, and
+// becomes a comma like other separators. What is before the cursor in the
 // address it is in stays as the address before the new one, unless it is
 // only whitespace, in which case it is dropped. What is after the cursor
 // starts the new address.
-func (l *addrLine) comma() {
+func (l *addrLine) comma(sep string) {
 	if inQuote(l.text, l.cursor) {
-		l.insert(",")
+		l.insert(sep)
 		return
 	}
 	s, _ := l.token()
@@ -290,9 +318,14 @@ func newAddrPane(opts []*Option) *addrPane {
 }
 
 // refresh searches again if the focus or what to search for has changed,
-// returning from the results to the line.
+// returning from the results to the line. Moving the cursor into an address
+// other than the one last changed searches for nothing until it is changed.
 func (p *addrPane) refresh() {
-	q := p.lines[p.focus].query()
+	l := &p.lines[p.focus]
+	q := ""
+	if l.searching() {
+		q = l.query()
+	}
 	if s := fmt.Sprintf("%d %s", p.focus, q); s != p.searched {
 		p.searched = s
 		p.selected = -1
@@ -365,8 +398,8 @@ func (p *addrPane) key(key string) bool {
 		l.del()
 	case input.CtrlU:
 		*l = addrLine{}
-	case ",":
-		l.comma()
+	case ",", ";":
+		l.comma(key)
 	default:
 		if pasted, ok := strings.CutPrefix(key, input.PasteStart); ok {
 			l.paste(pasted)

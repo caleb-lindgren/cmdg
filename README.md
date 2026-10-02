@@ -148,8 +148,8 @@ For keyboard shortcuts press '?' or F1 in most screens.
 
 ### Recipients
 Composing or forwarding a message starts with three lines, To, CC and BCC,
-with To selected. Each line takes a list of addresses separated by commas, and
-suggests contacts matching the address the cursor is in.
+with To selected. Each line takes a list of addresses separated by commas or
+semicolons, and suggests contacts matching the address the cursor is in.
 
 * **Tab** / **Shift-Tab**: Moves to the next or previous line.
 * **Down** / **Up** (or **Ctrl-N** / **Ctrl-P**): Moves into the suggestions
@@ -157,16 +157,17 @@ suggests contacts matching the address the cursor is in.
 * **Enter** on a suggestion: Puts it in the line in place of the address being
   typed.
 * **Enter** on a line: Sends all three lines to the editor.
-* **,**: Starts a new address. Inside quotes, as in `"Smith, John"
-  <john@example.com>`, a comma is part of the name instead. An unquoted name
-  with a comma is two addresses.
+* **,** or **;**: Starts a new address. Inside quotes, as in `"Smith, John"
+  <john@example.com>`, it is part of the name instead. An unquoted name with a
+  comma is two addresses.
 * **Left**, **Right**, **Home**, **End**, **Backspace**, **Delete**: Edit the
-  line as text. **Ctrl-U** clears it.
+  line as text. **Ctrl-U** clears it. Moving the cursor into another address
+  shows no suggestions for it until you change it.
 
-A pasted list may be separated by commas, tabs or newlines, and becomes a
-comma-separated list. Suggestions are for its last address, so a list pasted
-with a trailing separator shows none until more is typed. Empty addresses,
-such as from a trailing comma, are dropped when the lines are sent to the
-editor. `me` is replaced by your own address.
+A pasted list may be separated by commas, semicolons, tabs or newlines, and
+becomes a comma-separated list. Suggestions are for its last address, so a list
+pasted with a trailing separator shows none until more is typed. Empty
+addresses, such as from a trailing comma, are dropped when the lines are sent
+to the editor. `me` is replaced by your own address.
 
 To quit, press 'q'.

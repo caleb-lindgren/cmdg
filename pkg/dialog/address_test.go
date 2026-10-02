@@ -18,6 +18,23 @@ func chars(s string) []string {
 	return ret
 }
 
+// repeat returns n presses of key.
+func repeat(key string, n int) []string {
+	var ret []string
+	for range n {
+		ret = append(ret, key)
+	}
+	return ret
+}
+
+func lefts(n int) []string {
+	return repeat(input.Left, n)
+}
+
+func rights(n int) []string {
+	return repeat(input.Right, n)
+}
+
 // paste returns the key the input loop sends for pasting s.
 func paste(s string) []string {
 	return []string{input.PasteStart + s}
@@ -91,9 +108,19 @@ func TestAddrPaneEditing(t *testing.T) {
 			chars("ali"), {input.Down, input.Enter}},
 			"alice@example.com|"},
 		{"enter on a result mid-list", [][]string{
-			chars("a@x, bo, c@z"), left, left, left, left, left,
-			{input.Down, input.Enter}},
+			chars("a@x, bob, c@z"), left, left, left, left, left,
+			{input.Backspace, input.Down, input.Enter}},
 			"a@x, bob@example.com|, c@z"},
+		{"semicolon starts a new address", [][]string{
+			chars("a@x.com;bo")},
+			"a@x.com, bo|"},
+		{"semicolon inside quotes", [][]string{chars(`"Smith; J`)},
+			`"Smith; J|`},
+		{"paste semicolons", [][]string{paste("a@x; b@y;\nc@z")},
+			"a@x, b@y, c@z|"},
+		{"paste quoted semicolon", [][]string{
+			paste(`"Doe; J" <j@x>;b@y`)},
+			`"Doe; J" <j@x>, b@y|`},
 		{"paste a list", [][]string{
 			paste("a@x.com\n\tb@y.com,   c\r\n")},
 			"a@x.com, b@y.com, c, |"},
@@ -144,6 +171,15 @@ func TestAddrPaneSearch(t *testing.T) {
 			[]string{"alice@example.com"}, -1},
 		{"quoted comma", [][]string{chars(`"smith, c`)},
 			[]string{`"Smith, Carol" <carol@example.com>`}, -1},
+		{"changed after moving to a previous address", [][]string{
+			chars("bob, ali"), lefts(5), {input.Backspace}},
+			[]string{"bob@example.com"}, -1},
+		{"moved back to the address changed", [][]string{
+			chars("bob, ali"), lefts(5), rights(5)},
+			[]string{"alice@example.com"}, -1},
+		{"moving within the address keeps results", [][]string{
+			chars("ali"), {input.Down}, {input.Home, input.End}},
+			[]string{"alice@example.com"}, 0},
 		{"down", [][]string{chars("example"), {input.Down}},
 			nil, 0},
 		{"down stops at last", [][]string{
@@ -175,9 +211,17 @@ func TestAddrPaneSearch(t *testing.T) {
 }
 
 func TestAddrPaneEmptySearch(t *testing.T) {
-	for _, keys := range [][]string{nil, chars("bob,"), paste("ali\n")} {
+	for _, keys := range [][][]string{
+		nil,
+		{chars("bob,")},
+		{paste("ali\n")},
+		// Moved into a previous address without changing it.
+		{chars("bob, ali"), lefts(5)},
+		{chars("bob, ali"), {input.Home}},
+		{paste("bob\nali"), {input.Home, input.Right}},
+	} {
 		p := testPane()
-		press(p, keys)
+		press(p, keys...)
 		if len(p.visible) != 0 {
 			t.Errorf("after %q found %d, want none", keys,
 				len(p.visible))
@@ -230,7 +274,8 @@ func TestSplitAddresses(t *testing.T) {
 			[]string{`"Smith, John" <j@x>`, "b@y"}},
 		{"\"Doe\nJane\" <j@x>", []string{"\"Doe\nJane\" <j@x>"}},
 		{"Smith, John <j@x>", []string{"Smith", "John <j@x>"}},
-		{"a@x; b@y", []string{"a@x; b@y"}},
+		{"a@x; b@y", []string{"a@x", "b@y"}},
+		{`"Doe; J" <j@x>; b@y`, []string{`"Doe; J" <j@x>`, "b@y"}},
 	} {
 		got := SplitAddresses(test.in)
 		if !reflect.DeepEqual(got, test.want) {
@@ -251,6 +296,8 @@ func TestValidateEmails(t *testing.T) {
 		{"Me, foo@bar.com", true},
 		{"foo@bar.com, baz@qux.com", true},
 		{"foo@bar.com, invalid", false},
+		{"foo@bar.com; baz@qux.com", true},
+		{"invalid; foo@bar.com", false},
 		{"Smith, John <j@x>", false},
 		{"foo@bar.com, ", true},
 		{"  foo@bar.com  ", true},
