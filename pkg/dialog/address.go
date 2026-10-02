@@ -300,15 +300,122 @@ func isPrintable(key string) bool {
 	return key != ""
 }
 
+// charClass groups runes the way vi's word motions do: 0 for whitespace, 1
+// for letters, digits and underscores, and 2 for other punctuation. With
+// big, as for W and B, everything but whitespace is 1.
+func charClass(r rune, big bool) int {
+	switch {
+	case unicode.IsSpace(r):
+		return 0
+	case big, r == '_', unicode.IsLetter(r), unicode.IsDigit(r):
+		return 1
+	}
+	return 2
+}
+
+// wordForward returns where vi's w moves from i: the start of the next word,
+// or the end of s.
+func wordForward(s []rune, i int, big bool) int {
+	if i >= len(s) {
+		return len(s)
+	}
+	c := charClass(s[i], big)
+	for i < len(s) && c != 0 && charClass(s[i], big) == c {
+		i++
+	}
+	for i < len(s) && charClass(s[i], big) == 0 {
+		i++
+	}
+	return i
+}
+
+// wordBack returns where vi's b moves from i: the start of the word i is in,
+// or of the one before if i is already at a start.
+func wordBack(s []rune, i int, big bool) int {
+	i = min(i, len(s))
+	for i > 0 && charClass(s[i-1], big) == 0 {
+		i--
+	}
+	if i == 0 {
+		return 0
+	}
+	c := charClass(s[i-1], big)
+	for i > 0 && charClass(s[i-1], big) == c {
+		i--
+	}
+	return i
+}
+
+// wordEnd returns the end, exclusive, of the word at i, which is as far as
+// vi's cw changes: unlike dw, not the whitespace after it. On whitespace it
+// is where w moves.
+func wordEnd(s []rune, i int, big bool) int {
+	if i >= len(s) || charClass(s[i], big) == 0 {
+		return wordForward(s, i, big)
+	}
+	c := charClass(s[i], big)
+	for i < len(s) && charClass(s[i], big) == c {
+		i++
+	}
+	return i
+}
+
+// clampNormal keeps the cursor on a character, as in vi's normal mode, where
+// it cannot be after the last one.
+func (l *addrLine) clampNormal() {
+	if l.cursor >= len(l.text) {
+		l.cursor = max(len(l.text)-1, 0)
+	}
+}
+
+// deleteRange deletes text[a:b], or text[b:a], leaving the cursor at the
+// start of it.
+func (l *addrLine) deleteRange(a, b int) {
+	a, b = max(min(a, b), 0), min(max(a, b), len(l.text))
+	if a >= b {
+		return
+	}
+	l.set(string(l.text[:a]), string(l.text[b:]))
+}
+
+// motion returns where a vi motion key moves the cursor, and false if key is
+// not a motion. For an operator, $ is past the last character.
+func (l *addrLine) motion(key string) (int, bool) {
+	switch key {
+	case "w", "W":
+		return wordForward(l.text, l.cursor, key == "W"), true
+	case "b", "B":
+		return wordBack(l.text, l.cursor, key == "B"), true
+	case "h", input.Left:
+		return max(l.cursor-1, 0), true
+	case "l", input.Right:
+		return min(l.cursor+1, len(l.text)), true
+	case "0", input.Home, input.XHome:
+		return 0, true
+	case "$", input.End, input.XEnd:
+		return len(l.text), true
+	}
+	return 0, false
+}
+
 // addrPane is the state of the Addresses dialog.
 type addrPane struct {
 	opts     []*Option
 	lines    [len(addrLabels)]addrLine
 	focus    int
 	visible  []*Option // Options matching the focused line's query.
-	shown    int       // How many of visible were drawn.
 	selected int       // Index into visible, or -1 for the line itself.
+	scroll   int       // Index into visible of the first drawn.
+	rows     int       // How many options fit on the screen.
 	searched string    // focus and query that visible is for.
+
+	// normal is vi's normal mode. In it, browsing is whether the search
+	// results from before Esc are still shown, to be moved through like
+	// less; changing the line or the address hides them. pending is an
+	// operator key, such as d or r, waiting for the key it applies to.
+	normal   bool
+	browsing bool
+	pending  string
 }
 
 func newAddrPane(opts []*Option) *addrPane {
@@ -320,6 +427,7 @@ func newAddrPane(opts []*Option) *addrPane {
 // refresh searches again if the focus or what to search for has changed,
 // returning from the results to the line. Moving the cursor into an address
 // other than the one last changed searches for nothing until it is changed.
+// Normal mode does not search, and shows results only while browsing.
 func (p *addrPane) refresh() {
 	l := &p.lines[p.focus]
 	q := ""
@@ -329,14 +437,21 @@ func (p *addrPane) refresh() {
 	if s := fmt.Sprintf("%d %s", p.focus, q); s != p.searched {
 		p.searched = s
 		p.selected = -1
+		p.scroll = 0
 		p.visible = nil
-		if q != "" {
+		p.browsing = false
+		if q != "" && !p.normal {
 			p.visible = filterSubmatch(p.opts, q)
 		}
 	}
+	if p.normal && !p.browsing {
+		p.visible = nil
+		p.selected = -1
+	}
 }
 
-// draw draws the address lines, then the options that fit below them.
+// draw draws the address lines, then the options that fit below them,
+// scrolled to show the selected one.
 func (p *addrPane) draw(screen *display.Screen) {
 	width := max(screen.Width-
 		display.StringWidth(addrPanePrefix+addrLabels[0])-1, 1)
@@ -356,14 +471,56 @@ func (p *addrPane) draw(screen *display.Screen) {
 			string(l.text[start:]))
 	}
 	optRow := addrPaneRow + len(p.lines) + 1
-	screen.Printlnf(optRow-1, "")
-	p.shown = drawOptions(screen, optRow, addrPanePrefix, p.visible,
-		p.selected)
+	mode := ""
+	if p.normal {
+		mode = addrPanePrefix + "-- NORMAL --"
+	}
+	screen.Printlnf(optRow-1, "%s", mode)
+	p.rows = max(screen.Height-optRow, 1)
+	if p.selected < p.scroll {
+		p.scroll = max(p.selected, 0)
+	}
+	if p.selected >= p.scroll+p.rows {
+		p.scroll = p.selected - p.rows + 1
+	}
+	p.scroll = min(p.scroll, len(p.visible))
+	drawOptions(screen, optRow, addrPanePrefix, p.visible[p.scroll:],
+		p.selected-p.scroll)
 	screen.SetCursor(addrPaneRow+p.focus, curX)
+}
+
+// moveSelection moves the selected option by n, stopping at the first and
+// last. From the line, it moves into the options.
+func (p *addrPane) moveSelection(n int) {
+	if len(p.visible) == 0 {
+		return
+	}
+	p.selected = max(min(p.selected+n, len(p.visible)-1), 0)
 }
 
 // key handles one key, returning true if it submits the addresses.
 func (p *addrPane) key(key string) bool {
+	// Esc and a key typed within readKey's 10ms of it arrive as one.
+	if k, ok := strings.CutPrefix(key, "Meta-"); ok {
+		p.key(input.Esc)
+		return p.key(k)
+	}
+	var submit bool
+	if p.normal {
+		submit = p.normalKey(key)
+	} else {
+		submit = p.insertKey(key)
+	}
+	if p.normal {
+		p.lines[p.focus].clampNormal()
+	}
+	p.refresh()
+	return submit
+}
+
+// insertKey handles a key in insert mode, which is the mode the pane starts
+// in, returning true if it submits the addresses.
+func (p *addrPane) insertKey(key string) bool {
 	l := &p.lines[p.focus]
 	switch key {
 	case input.Enter:
@@ -372,10 +529,12 @@ func (p *addrPane) key(key string) bool {
 		}
 		l.complete(p.visible[p.selected].Key)
 		p.selected = -1
+	case input.Esc:
+		p.normal = true
+		p.browsing = len(p.visible) > 0
+		l.cursor = max(l.cursor-1, 0)
 	case input.CtrlN, input.Down:
-		if p.selected < p.shown-1 {
-			p.selected++
-		}
+		p.moveSelection(1)
 	case input.CtrlP, input.Up:
 		if p.selected >= 0 {
 			p.selected--
@@ -407,15 +566,162 @@ func (p *addrPane) key(key string) bool {
 			l.insert(key)
 		}
 	}
-	p.refresh()
 	return false
+}
+
+// insertMode leaves normal mode, with the cursor at pos.
+func (p *addrPane) insertMode(pos int) {
+	l := &p.lines[p.focus]
+	l.cursor = max(min(pos, len(l.text)), 0)
+	p.normal = false
+	p.pending = ""
+	// Search again, as normal mode searched for nothing.
+	p.searched = "-"
+}
+
+// browseKey handles a key in normal mode while search results are shown,
+// moving through them like less. It returns false if key is not one of its
+// keys.
+func (p *addrPane) browseKey(key string) bool {
+	switch key {
+	case "j", input.Down, input.CtrlN:
+		p.moveSelection(1)
+	case "k", input.Up, input.CtrlP:
+		if p.selected >= 0 {
+			p.selected--
+		}
+	case "G":
+		p.moveSelection(len(p.visible))
+	case "f":
+		p.moveSelection(p.rows)
+	case "b":
+		p.moveSelection(-p.rows)
+	case "d":
+		p.moveSelection(max(p.rows/2, 1))
+	case "u":
+		p.moveSelection(-max(p.rows/2, 1))
+	case input.Enter:
+		if p.selected < 0 {
+			return false
+		}
+		p.lines[p.focus].complete(p.visible[p.selected].Key)
+	case input.Esc:
+		p.browsing = false
+	default:
+		return false
+	}
+	return true
+}
+
+// normalKey handles a key in vi's normal mode, returning true if it submits
+// the addresses.
+func (p *addrPane) normalKey(key string) bool {
+	l := &p.lines[p.focus]
+	if pending := p.pending; pending != "" {
+		p.pending = ""
+		p.pendingKey(pending, key)
+		return false
+	}
+	if p.browsing && len(p.visible) > 0 {
+		if key == "g" {
+			p.pending = key
+			return false
+		}
+		if p.browseKey(key) {
+			return false
+		}
+	}
+	if to, ok := l.motion(key); ok {
+		l.cursor = to
+		return false
+	}
+	switch key {
+	case input.Enter:
+		return true
+	case input.Backspace, input.CtrlH:
+		l.cursor = max(l.cursor-1, 0)
+	case "j", input.Down, input.CtrlN:
+		p.focus = min(p.focus+1, len(p.lines)-1)
+	case "k", input.Up, input.CtrlP:
+		p.focus = max(p.focus-1, 0)
+	case "G":
+		p.focus = len(p.lines) - 1
+	case input.Tab:
+		p.focus = (p.focus + 1) % len(p.lines)
+	case input.BackTab:
+		p.focus = (p.focus + len(p.lines) - 1) % len(p.lines)
+	case "x", input.Delete:
+		l.deleteRange(l.cursor, l.cursor+1)
+	case "D":
+		l.deleteRange(l.cursor, len(l.text))
+	case "C":
+		l.deleteRange(l.cursor, len(l.text))
+		p.insertMode(l.cursor)
+	case "d", "c", "r", "g":
+		p.pending = key
+	case "i":
+		p.insertMode(l.cursor)
+	case "a":
+		p.insertMode(l.cursor + 1)
+	case "I":
+		p.insertMode(0)
+	case "A":
+		p.insertMode(len(l.text))
+	case input.CtrlU:
+		*l = addrLine{}
+	default:
+		if pasted, ok := strings.CutPrefix(key, input.PasteStart); ok {
+			l.paste(pasted)
+		}
+	}
+	return false
+}
+
+// pendingKey handles the key after an operator key in normal mode: the
+// motion after d or c, the character after r, or the second g of gg.
+func (p *addrPane) pendingKey(op, key string) {
+	l := &p.lines[p.focus]
+	switch op {
+	case "g":
+		if key != "g" {
+			return
+		}
+		if p.browsing && len(p.visible) > 0 {
+			p.selected = 0
+		} else {
+			p.focus = 0
+		}
+	case "r":
+		if isPrintable(key) && len([]rune(key)) == 1 &&
+			l.cursor < len(l.text) {
+			l.set(string(l.text[:l.cursor])+key,
+				string(l.text[l.cursor+1:]))
+			l.cursor--
+		}
+	case "d", "c":
+		start, end := 0, len(l.text)
+		if key != op {
+			to, ok := l.motion(key)
+			if !ok {
+				return
+			}
+			if op == "c" && (key == "w" || key == "W") {
+				to = wordEnd(l.text, l.cursor, key == "W")
+			}
+			start, end = l.cursor, to
+		}
+		l.deleteRange(start, end)
+		if op == "c" {
+			p.insertMode(l.cursor)
+		}
+	}
 }
 
 // Addresses asks for the To, CC and BCC addresses of a message, on three
 // lines that Tab moves between. Each searches opts for the address the
 // cursor is in, and Down moves into what it found. Enter on a search result
 // puts it in the line; Enter on a line returns all three lines, as addresses
-// joined by ", ".
+// joined by ", ". Esc switches to vi's normal mode.
 func Addresses(opts []*Option, keys *input.Input) (to, cc, bcc string,
 	err error) {
 	screen, err := display.NewScreen()

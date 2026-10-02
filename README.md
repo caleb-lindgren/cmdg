@@ -164,6 +164,26 @@ semicolons, and suggests contacts matching the address the cursor is in.
   line as text. **Ctrl-U** clears it. Moving the cursor into another address
   shows no suggestions for it until you change it.
 
+**Esc** switches to vi's normal mode, shown by `-- NORMAL --`:
+
+* **h**, **l**, **w**, **b**, **W**, **B**, **0**, **$**: Move the cursor. **W**
+  and **B** move by whole address; **w** and **b** stop at `@` and `.`.
+* **x** deletes the character under the cursor, **r** replaces it, **D**
+  deletes to the end of the line and **C** changes to it.
+* **d** and **c** followed by one of the motions above delete or change that
+  far, and **dd** and **cc** the whole line.
+* **i**, **a**, **I**, **A**: Return to typing, before or after the cursor, or
+  at the start or end of the line.
+* **j** / **k**: Move to the line below or above, stopping at BCC and To.
+  **gg** and **G** go to To and BCC. **Tab** still cycles.
+* **Enter**: Sends all three lines to the editor.
+
+Normal mode does not search. If suggestions were shown when Esc was pressed,
+they stay, and **j**, **k**, **gg**, **G**, **f**, **b**, **d** and **u** move
+through them as in `less`, with **Enter** putting the selected one in the line.
+**Esc** again, or changing the address, hides them; **k** from the first goes
+back to the line.
+
 A pasted list may be separated by commas, semicolons, tabs or newlines, and
 becomes a comma-separated list. Suggestions are for its last address, so a list
 pasted with a trailing separator shows none until more is typed. Empty

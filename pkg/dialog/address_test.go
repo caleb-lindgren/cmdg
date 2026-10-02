@@ -1,6 +1,7 @@
 package dialog
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -322,5 +323,232 @@ func TestAddrLineScroll(t *testing.T) {
 	l.cursor = 5
 	if got := l.scroll(20); got != 0 {
 		t.Errorf("cursor near the start scrolled to %d, want 0", got)
+	}
+}
+
+var esc = []string{input.Esc}
+
+func TestAddrPaneViEditing(t *testing.T) {
+	for _, test := range []struct {
+		name   string
+		keys   [][]string
+		want   string // The To line.
+		normal bool
+	}{
+		{"esc moves left", [][]string{chars("abc"), esc}, "ab|c",
+			true},
+		{"0", [][]string{chars("abcd"), esc, {"0"}}, "|abcd", true},
+		{"$", [][]string{chars("abcd"), esc, {"0", "$"}}, "abc|d",
+			true},
+		{"l stops at the last", [][]string{chars("ab"), esc,
+			{"l", "l"}}, "a|b", true},
+		{"h", [][]string{chars("abc"), esc, {"h"}}, "a|bc", true},
+		{"w", [][]string{chars("alice@example.com"), esc, {"0", "w"}},
+			"alice|@example.com", true},
+		{"ww", [][]string{
+			chars("alice@example.com"), esc, {"0", "w", "w"}},
+			"alice@|example.com", true},
+		{"b", [][]string{
+			chars("alice@example.com"), esc, {"0", "w", "w", "b"}},
+			"alice|@example.com", true},
+		{"w at the end", [][]string{chars("a@x"), esc, {"0", "w", "w",
+			"w", "w"}}, "a@|x", true},
+		{"W", [][]string{chars("a@x, b@y"), esc, {"0", "W"}},
+			"a@x, |b@y", true},
+		{"B", [][]string{chars("a@x, b@y"), esc, {"B"}},
+			"a@x, |b@y", true},
+		{"x", [][]string{chars("abc"), esc, {"x"}}, "a|b", true},
+		{"x on empty line", [][]string{esc, {"x"}}, "|", true},
+		{"r", [][]string{chars("abc"), esc, {"0", "r", "z"}}, "|zbc",
+			true},
+		{"dw", [][]string{
+			chars("alice@example.com"), esc, {"0", "d", "w"}},
+			"|@example.com", true},
+		{"db", [][]string{chars("foo bar"), esc, {"d", "b"}},
+			"foo |r", true},
+		{"dh", [][]string{chars("abc"), esc, {"d", "h"}}, "a|c", true},
+		{"dd", [][]string{chars("abc"), esc, {"d", "d"}}, "|", true},
+		{"D", [][]string{chars("abcdef"), esc, {"0", "l", "l", "D"}},
+			"a|b", true},
+		{"esc cancels d", [][]string{chars("abc"), esc,
+			{"d", input.Esc, "x"}}, "a|b", true},
+		{"unknown motion cancels d", [][]string{chars("abc"), esc,
+			{"d", "z"}}, "ab|c", true},
+		{"cw", [][]string{chars("alice@example.com"), esc,
+			{"0", "c", "w"}, chars("bob")},
+			"bob|@example.com", false},
+		{"cc", [][]string{chars("abc"), esc, {"c", "c"}, chars("x")},
+			"x|", false},
+		{"C", [][]string{chars("abcdef"), esc, {"0", "l", "C"},
+			chars("z")}, "az|", false},
+		{"i", [][]string{chars("bc"), esc, {"i"}, chars("x")}, "bx|c",
+			false},
+		{"a", [][]string{chars("bc"), esc, {"a"}, chars("x")}, "bcx|",
+			false},
+		{"I", [][]string{chars("bc"), esc, {"I"}, chars("x")}, "x|bc",
+			false},
+		{"A", [][]string{chars("bc"), esc, {"0", "A"}, chars("x")},
+			"bcx|", false},
+		{"meta key is esc then key", [][]string{chars("abc"),
+			{"Meta-0"}}, "|abc", true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			p := testPane()
+			if press(p, test.keys...) {
+				t.Errorf("submitted")
+			}
+			if got := lineString(&p.lines[0]); got != test.want {
+				t.Errorf("got %q, want %q", got, test.want)
+			}
+			if p.normal != test.normal {
+				t.Errorf("normal mode %v, want %v", p.normal,
+					test.normal)
+			}
+		})
+	}
+}
+
+func TestAddrPaneViLines(t *testing.T) {
+	for _, test := range []struct {
+		keys  []string
+		focus int
+	}{
+		{[]string{"j"}, 1},
+		{[]string{"j", "j", "j"}, 2},
+		{[]string{"j", "k"}, 0},
+		{[]string{"k"}, 0},
+		{[]string{"G"}, 2},
+		{[]string{"G", "g", "g"}, 0},
+		{[]string{input.Tab, input.Tab, input.Tab}, 0},
+	} {
+		p := testPane()
+		press(p, esc, test.keys)
+		if p.focus != test.focus || !p.normal {
+			t.Errorf("after Esc %q on line %d, normal mode %v; "+
+				"want line %d in normal mode", test.keys,
+				p.focus, p.normal, test.focus)
+		}
+	}
+	p := testPane()
+	if !press(p, chars("a@x"), esc, []string{"j", input.Enter}) {
+		t.Errorf("Enter in normal mode did not submit")
+	}
+}
+
+// testManyPane returns a pane with more options than fit on its screen.
+func testManyPane() *addrPane {
+	var opts []string
+	for n := range 30 {
+		opts = append(opts, fmt.Sprintf("user%02d@example.com", n))
+	}
+	return newAddrPane(Strings2Options(opts))
+}
+
+func TestAddrPaneViBrowse(t *testing.T) {
+	// press draws on 12 rows, which leaves 6 for options.
+	for _, test := range []struct {
+		name     string
+		keys     []string
+		selected int
+		found    int
+	}{
+		{"esc keeps results", nil, -1, 30},
+		{"j", []string{"j"}, 0, 30},
+		{"jjj", []string{"j", "j", "j"}, 2, 30},
+		{"k back to the line", []string{"j", "k"}, -1, 30},
+		{"G", []string{"G"}, 29, 30},
+		{"gg", []string{"G", "g", "g"}, 0, 30},
+		{"f", []string{"f"}, 5, 30},
+		{"ff", []string{"f", "f"}, 11, 30},
+		{"b", []string{"f", "f", "b"}, 5, 30},
+		{"b stops at the first", []string{"f", "b"}, 0, 30},
+		{"d", []string{"d"}, 2, 30},
+		{"u", []string{"d", "d", "u"}, 2, 30},
+		{"moving in the address keeps results", []string{"0"}, -1, 30},
+		{"esc hides results", []string{input.Esc}, -1, 0},
+		{"editing hides results", []string{"x"}, -1, 0},
+		{"i searches again", []string{input.Esc, "i"}, -1, 30},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			p := testManyPane()
+			press(p, chars("user"), esc, test.keys)
+			if p.selected != test.selected {
+				t.Errorf("selected %d, want %d", p.selected,
+					test.selected)
+			}
+			if len(p.visible) != test.found {
+				t.Errorf("found %d, want %d", len(p.visible),
+					test.found)
+			}
+		})
+	}
+
+	p := testManyPane()
+	press(p, chars("user"), esc, []string{input.Esc, "j"})
+	if p.focus != 1 {
+		t.Errorf("j with results hidden went to line %d, want 1",
+			p.focus)
+	}
+
+	p = testManyPane()
+	press(p, chars("user"), esc, []string{"G"})
+	p.draw(display.NewScreen2(80, 12))
+	if p.scroll != 24 {
+		t.Errorf("selecting the last of 30 on 6 rows scrolled to %d, "+
+			"want 24", p.scroll)
+	}
+
+	p = testManyPane()
+	if press(p, chars("user"), esc, []string{"j", "j", input.Enter}) {
+		t.Errorf("Enter on a result submitted")
+	}
+	if got, want := p.lines[0].value(), "user01@example.com"; got != want {
+		t.Errorf("Enter on a result put %q in the line, want %q", got,
+			want)
+	}
+	if !p.normal || len(p.visible) != 0 {
+		t.Errorf("after Enter on a result normal mode %v, %d "+
+			"found; want normal mode, none found", p.normal,
+			len(p.visible))
+	}
+
+	p = testManyPane()
+	if !press(p, chars("user"), esc, []string{input.Enter}) {
+		t.Errorf("Enter on the line with results shown did not submit")
+	}
+}
+
+func TestAddrPaneInsertScrolls(t *testing.T) {
+	p := testManyPane()
+	press(p, chars("user"), repeat(input.Down, 10))
+	if p.selected != 9 {
+		t.Errorf("10 Downs selected %d, want 9", p.selected)
+	}
+}
+
+func TestWordMotions(t *testing.T) {
+	s := []rune("alice@example.com, b c")
+	for _, test := range []struct {
+		name string
+		got  int
+		want int
+	}{
+		{"w in word", wordForward(s, 1, false), 5},
+		{"w on punctuation", wordForward(s, 5, false), 6},
+		{"w to separator", wordForward(s, 14, false), 17},
+		{"w over separator", wordForward(s, 17, false), 19},
+		{"W", wordForward(s, 0, true), 19},
+		{"w at end", wordForward(s, len(s), false), len(s)},
+		{"b to word start", wordBack(s, 3, false), 0},
+		{"b from word start", wordBack(s, 6, false), 5},
+		{"b over whitespace", wordBack(s, 21, false), 19},
+		{"B", wordBack(s, 19, true), 0},
+		{"e", wordEnd(s, 0, false), 5},
+		{"e on whitespace", wordEnd(s, 18, false), 19},
+	} {
+		if test.got != test.want {
+			t.Errorf("%s: got %d, want %d", test.name, test.got,
+				test.want)
+		}
 	}
 }
