@@ -88,11 +88,13 @@ a ClientID and ClientSecret. You can do this with the following steps:
      screen" in older versions of the console) and fill in the app name and
      support email under "Branding".
   1. Under "Audience", choose "External". Either leave the app in "Testing"
-     and add your Google account as a test user, or click "Publish app". In
-     "Testing", Google expires the sign-in after 7 days and you have to rerun
-     `cmdg -configure`; a published app keeps working without being
-     verified, at the cost of a "Google hasn't verified this app" warning
-     when you sign in.
+     and add your Google account as a test user, or click "Publish app". A
+     published app keeps working without being verified, at the cost of a
+     "Google hasn't verified this app" warning when you sign in. Google's
+     documentation says a sign-in to an app in "Testing" expires after 7
+     days, after which you would have to rerun `cmdg -configure`; with an
+     enterprise-managed Google account it has been seen to last for months
+     instead.
   1. Leave the scope list under "Data Access" empty. `cmdg` asks for the
      scopes it needs when you sign in, and listing sensitive scopes there
      makes the console ask you to submit the app for verification, which a
