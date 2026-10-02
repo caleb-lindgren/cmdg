@@ -1,5 +1,5 @@
-date:   2026-10-02T20:10:06Z
-commit: d67387de384f4e9930b89aec733dc1b219181260
+date:   2026-10-02T20:15:15Z
+commit: 0970254905b6d3ed7744a7dc00d194bf3f285cad
 go:     go version go1.27.1-X:nodwarf5 linux/amd64
 
 === gofmt -l ===
@@ -12,28 +12,21 @@ clean
 --- exit 0 ---
 
 === ./cmdg built from ===
-	build	vcs.revision=d67387de384f4e9930b89aec733dc1b219181260
+	build	vcs.revision=0970254905b6d3ed7744a7dc00d194bf3f285cad
 	build	vcs.modified=true
 
 === go vet ./... ===
 --- exit 0 ---
 
 === go test ./... ===
-ok  	github.com/ThomasHabets/cmdg/cmd/cmdg	0.016s
+ok  	github.com/ThomasHabets/cmdg/cmd/cmdg	(cached)
 ?   	github.com/ThomasHabets/cmdg/cmd/med	[no test files]
-ok  	github.com/ThomasHabets/cmdg/internal/customize	0.004s
-ok  	github.com/ThomasHabets/cmdg/pkg/cmdg	0.252s
---- FAIL: TestAddrPaneViEditing (0.00s)
-    --- FAIL: TestAddrPaneViEditing/b (0.00s)
-        address_test.go:401: got "alice@|example.com", want "alice|@example.com"
-    --- FAIL: TestAddrPaneViEditing/dw (0.00s)
-        address_test.go:401: got "alice|@example.com", want "|@example.com"
-FAIL
-FAIL	github.com/ThomasHabets/cmdg/pkg/dialog	0.018s
-ok  	github.com/ThomasHabets/cmdg/pkg/display	0.691s
+ok  	github.com/ThomasHabets/cmdg/internal/customize	(cached)
+ok  	github.com/ThomasHabets/cmdg/pkg/cmdg	(cached)
+ok  	github.com/ThomasHabets/cmdg/pkg/dialog	0.010s
+ok  	github.com/ThomasHabets/cmdg/pkg/display	(cached)
 ok  	github.com/ThomasHabets/cmdg/pkg/gpg	(cached)
-ok  	github.com/ThomasHabets/cmdg/pkg/input	0.004s
-FAIL
---- exit 1 ---
+ok  	github.com/ThomasHabets/cmdg/pkg/input	(cached)
+--- exit 0 ---
 
-overall exit: 1
+overall exit: 0
