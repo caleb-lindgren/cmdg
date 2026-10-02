@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"reflect"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -40,12 +41,15 @@ func (f *fakeMailbox) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case strings.HasSuffix(p, "/users/me/profile"):
 		_ = enc.Encode(&gmail.Profile{EmailAddress: "Me@example.com"})
 	case strings.HasSuffix(p, "/users/me/messages"):
-		var r gmail.ListMessagesResponse
+		label := r.URL.Query().Get("labelIds")
+		var resp gmail.ListMessagesResponse
 		for _, m := range f.messages {
-			r.Messages = append(r.Messages,
-				&gmail.Message{Id: m.Id})
+			if label == "" || slices.Contains(m.LabelIds, label) {
+				resp.Messages = append(resp.Messages,
+					&gmail.Message{Id: m.Id})
+			}
 		}
-		_ = enc.Encode(&r)
+		_ = enc.Encode(&resp)
 	case strings.Contains(p, "/users/me/messages/"):
 		id := p[strings.LastIndex(p, "/")+1:]
 		for _, m := range f.messages {
@@ -91,6 +95,14 @@ func fakeMessage(id string, date int64, labels []string,
 }
 
 func TestLoadCorrespondents(t *testing.T) {
+	// Read the two newest messages and the ten newest sent ones, one
+	// message per batch, so that the scan publishes after each.
+	defer func(a, b, c int) {
+		correspondentScanSize, sentScanSize = a, b
+		correspondentBatchSize = c
+	}(correspondentScanSize, sentScanSize, correspondentBatchSize)
+	correspondentScanSize, sentScanSize, correspondentBatchSize = 2, 10, 1
+
 	ctx := context.Background()
 	f := &fakeMailbox{
 		gets: map[string]int{},
@@ -102,6 +114,12 @@ func TestLoadCorrespondents(t *testing.T) {
 				"From", "me@example.com",
 				"To", "carol@example.com, BOB@example.com",
 				"Cc", "olga@example.com"),
+			// Beyond the first two, so read only if sent.
+			fakeMessage("m0", 500, []string{"SENT"},
+				"From", "me@example.com",
+				"To", "erin@example.com"),
+			fakeMessage("mx", 400, []string{"INBOX"},
+				"From", "frank@example.com"),
 		},
 	}
 	ts := httptest.NewServer(f)
@@ -121,12 +139,15 @@ func TestLoadCorrespondents(t *testing.T) {
 	// Carol only once, as the contact; Bob with his name from m2; Olga
 	// from Other contacts; not me, and not list@, which only received.
 	// Bob first, last seen in m2; Carol and Olga, both last seen in m1,
-	// alphabetically; Alice, never seen, last.
+	// alphabetically; Erin, from the older sent m0; Alice, never seen,
+	// last. Not Frank, whose message is older than the first two and was
+	// not sent.
 	want := []string{
 		"me",
 		`"Bob Builder" <bob@example.com>`,
 		"Carol <carol@example.com>",
 		"Olga <olga@example.com>",
+		"erin@example.com",
 		"Alice <alice@example.com>",
 	}
 	if got := conn.Contacts(); !reflect.DeepEqual(got, want) {
@@ -143,7 +164,7 @@ func TestLoadCorrespondents(t *testing.T) {
 	if err := conn.LoadCorrespondents(ctx); err != nil {
 		t.Fatal(err)
 	}
-	wantGets := map[string]int{"m1": 1, "m2": 1, "m3": 1}
+	wantGets := map[string]int{"m0": 1, "m1": 1, "m2": 1, "m3": 1}
 	if !reflect.DeepEqual(f.gets, wantGets) {
 		t.Errorf("gets = %v, want %v", f.gets, wantGets)
 	}
@@ -155,6 +176,7 @@ func TestLoadCorrespondents(t *testing.T) {
 		`"Bob Builder" <bob@example.com>`,
 		"Carol <carol@example.com>",
 		"Olga <olga@example.com>",
+		"erin@example.com",
 		"Alice <alice@example.com>",
 	}
 	if got := conn.Contacts(); !reflect.DeepEqual(got, want) {

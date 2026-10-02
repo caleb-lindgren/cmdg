@@ -18,12 +18,6 @@ import (
 )
 
 const (
-	// How many of the newest messages to read addresses from. Only
-	// messages not already read are fetched, so after the first scan a
-	// reload costs the list calls (one per 500 IDs) plus one get per new
-	// message.
-	correspondentScanSize = 2000
-
 	// Gmail allows 15,000 quota units per user per minute (250 a second),
 	// and a messages.get costs 5. 25 gets a second uses half of that,
 	// leaving the rest for the UI. 2000 messages then take 80 seconds.
@@ -32,6 +26,24 @@ const (
 
 	listPageSize          = 500
 	otherContactsPageSize = 1000
+)
+
+// Variables rather than constants so that tests can shrink them.
+var (
+	// How many of the newest messages, sent and received, to read
+	// addresses from, and how many of the newest sent messages. The
+	// sent ones mostly overlap the first set; the rest reach further
+	// back for the same cost, since only sent mail shows who the user
+	// emailed. Only messages not already read are fetched, so after the
+	// first scan a reload costs the list calls (one per 500 IDs, so 14)
+	// plus one get per new message.
+	correspondentScanSize = 2000
+	sentScanSize          = 5000
+
+	// How many messages to read between updates of the address book, so
+	// that suggestions are sorted soon after startup rather than at the
+	// end of the first scan. 250 gets take 10 seconds.
+	correspondentBatchSize = 250
 )
 
 var (
@@ -64,8 +76,9 @@ type correspondent struct {
 }
 
 // LoadCorrespondents adds to the address book everyone in Google's "Other
-// contacts" (people the user has emailed), and everyone the newest
-// correspondentScanSize messages were sent to or received from. Failing to
+// contacts" (people the user has emailed), everyone the newest
+// correspondentScanSize messages were sent to or received from, and
+// everyone the newest sentScanSize sent messages were sent to. Failing to
 // read Other contacts, which needs the contacts.other.readonly scope, is
 // logged and does not stop the scan.
 func (c *CmdG) LoadCorrespondents(ctx context.Context) error {
@@ -104,7 +117,9 @@ func (c *CmdG) GetOtherContacts(ctx context.Context) ([]string, error) {
 }
 
 // scanRecent reads the address headers of those of the newest
-// correspondentScanSize messages it has not read before.
+// correspondentScanSize messages, and of the newest sentScanSize sent
+// messages, that it has not read before. It updates the address book after
+// every correspondentBatchSize messages.
 func (c *CmdG) scanRecent(ctx context.Context) error {
 	s := &c.scan
 	s.m.Lock()
@@ -121,13 +136,21 @@ func (c *CmdG) scanRecent(ctx context.Context) error {
 		s.self = strings.ToLower(p.EmailAddress)
 	}
 
-	ids, err := c.listRecentIDs(ctx)
+	ids, err := c.listRecentIDs(ctx, "", correspondentScanSize)
 	if err != nil {
 		return err
 	}
+	sent, err := c.listRecentIDs(ctx, "SENT", sentScanSize)
+	if err != nil {
+		return err
+	}
+	// Newest first: the sent messages not in the first set are older
+	// than all of it.
 	var todo []string
-	for _, id := range ids {
-		if !s.scanned[id] {
+	queued := make(map[string]bool)
+	for _, id := range append(ids, sent...) {
+		if !s.scanned[id] && !queued[id] {
+			queued[id] = true
 			todo = append(todo, id)
 		}
 	}
@@ -136,11 +159,27 @@ func (c *CmdG) scanRecent(ctx context.Context) error {
 	}
 	log.Infof("Scanning %d new messages for addresses", len(todo))
 
-	results := make([][]*mail.Address, len(todo))
-	dates := make([]int64, len(todo))
-	ok := make([]bool, len(todo))
 	tick := time.NewTicker(time.Second / correspondentGetsPerSecond)
 	defer tick.Stop()
+	for b := 0; b < len(todo); b += correspondentBatchSize {
+		end := min(b+correspondentBatchSize, len(todo))
+		c.scanBatch(ctx, todo[b:end], tick.C)
+		c.publishCorrespondents()
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// scanBatch reads the address headers of the messages ids, newest first,
+// one per tick, and adds what it finds to c.scan. Caller holds c.scan.m.
+func (c *CmdG) scanBatch(ctx context.Context, ids []string,
+	tick <-chan time.Time) {
+	s := &c.scan
+	results := make([][]*mail.Address, len(ids))
+	dates := make([]int64, len(ids))
+	ok := make([]bool, len(ids))
 	work := make(chan int)
 	var wg sync.WaitGroup
 	for w := 0; w < correspondentWorkers; w++ {
@@ -148,10 +187,10 @@ func (c *CmdG) scanRecent(ctx context.Context) error {
 		go func() {
 			defer wg.Done()
 			for i := range work {
-				m, err := c.getAddressHeaders(ctx, todo[i])
+				m, err := c.getAddressHeaders(ctx, ids[i])
 				if err != nil {
 					log.Warningf("Scanning message %q: %v",
-						todo[i], err)
+						ids[i], err)
 					continue
 				}
 				results[i] = messageCorrespondents(m)
@@ -161,9 +200,9 @@ func (c *CmdG) scanRecent(ctx context.Context) error {
 		}()
 	}
 feed:
-	for i := range todo {
+	for i := range ids {
 		select {
-		case <-tick.C:
+		case <-tick:
 		case <-ctx.Done():
 			break feed
 		}
@@ -177,7 +216,7 @@ feed:
 		if !ok[i] {
 			continue // Retried on the next reload.
 		}
-		s.scanned[todo[i]] = true
+		s.scanned[ids[i]] = true
 		for _, a := range as {
 			k := strings.ToLower(a.Address)
 			if k == s.self {
@@ -194,6 +233,12 @@ feed:
 			s.found[k] = f
 		}
 	}
+}
+
+// publishCorrespondents puts what the scan has found so far into the address
+// book. Caller holds c.scan.m.
+func (c *CmdG) publishCorrespondents() {
+	s := &c.scan
 	recent := make([]string, 0, len(s.found))
 	lastSeen := make(map[string]int64, len(s.found))
 	for k, f := range s.found {
@@ -205,32 +250,36 @@ feed:
 	c.lastSeen = lastSeen
 	c.rebuildAddressBook()
 	c.m.Unlock()
-	return ctx.Err()
 }
 
-// listRecentIDs lists the IDs of the newest correspondentScanSize messages,
-// sent and received, newest first.
-func (c *CmdG) listRecentIDs(ctx context.Context) ([]string, error) {
+// listRecentIDs lists the IDs of the newest n messages, newest first: those
+// with the label, or all of them, sent and received, if label is empty.
+func (c *CmdG) listRecentIDs(ctx context.Context, label string, n int) (
+	[]string, error) {
 	var ids []string
+	call := c.gmail.Users.Messages.List(email).
+		MaxResults(listPageSize).
+		Fields("messages/id,nextPageToken")
+	if label != "" {
+		call = call.LabelIds(label)
+	}
+	add := func(r *gmail.ListMessagesResponse) error {
+		for _, m := range r.Messages {
+			ids = append(ids, m.Id)
+		}
+		if len(ids) >= n {
+			return errScanListFull
+		}
+		return nil
+	}
 	err := wrapLogRPC("gmail.Users.Messages.List", func() error {
-		return c.gmail.Users.Messages.List(email).
-			MaxResults(listPageSize).
-			Fields("messages/id,nextPageToken").
-			Pages(ctx, func(r *gmail.ListMessagesResponse) error {
-				for _, m := range r.Messages {
-					ids = append(ids, m.Id)
-				}
-				if len(ids) >= correspondentScanSize {
-					return errScanListFull
-				}
-				return nil
-			})
-	}, "email=%q", email)
+		return call.Pages(ctx, add)
+	}, "email=%q label=%q", email, label)
 	if err != nil && err != errScanListFull {
 		return nil, err
 	}
-	if len(ids) > correspondentScanSize {
-		ids = ids[:correspondentScanSize]
+	if len(ids) > n {
+		ids = ids[:n]
 	}
 	return ids, nil
 }

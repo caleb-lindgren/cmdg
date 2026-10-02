@@ -27,10 +27,12 @@ benefits.
 * The "labels" model is native in the cmdg UI, unlike IMAP clients
   that try to map GMail labels onto IMAP.
 * Contacts are taken from your Google contacts, your Google "Other
-  contacts" (people you have emailed), and the senders and recipients of
-  your 2000 newest messages, which are scanned in the background after
-  startup. Recipient suggestions list the people in those messages first,
-  most recently emailed first, then everyone else alphabetically
+  contacts" (people you have emailed), the senders and recipients of your
+  2000 newest messages, and the recipients of your 5000 newest sent
+  messages. The messages are scanned in the background after startup,
+  which takes a few minutes the first time; suggestions update as it goes.
+  Recipient suggestions list the people in those messages first, most
+  recently emailed first, then everyone else alphabetically
 * TODO: other benefits, I'm sure.
 
 ### Benefits over the GMail web UI
@@ -132,7 +134,7 @@ sign-in, so the Cloud project needs no changes. If you are signed in to
 several Google accounts, pick the one that file is for.
 
 To check that it worked, run `cmdg -log /tmp/cmdg.log` (by default nothing is
-logged) and, after a couple of minutes, look for `Loaded correspondents`
+logged) and, after up to five minutes, look for `Loaded correspondents`
 without a `Failed to load Other contacts` line.
 
 ## Running
