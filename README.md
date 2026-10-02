@@ -152,11 +152,12 @@ with To selected. Each line takes a list of addresses separated by commas or
 semicolons, and suggests contacts matching the address the cursor is in.
 
 * **Tab** / **Shift-Tab**: Moves to the next or previous line.
-* **Down** / **Up** (or **Ctrl-N** / **Ctrl-P**): Moves into the suggestions
-  and through them, and back up to the line.
-* **Enter** on a suggestion: Puts it in the line in place of the address being
-  typed.
-* **Enter** on a line: Sends all three lines to the editor.
+* **Down** / **Up** (or **Ctrl-N** / **Ctrl-P**): Moves through the
+  suggestions. The first is selected until you move.
+* **Enter** with suggestions shown: Puts the selected one in the line in place
+  of the address being typed. It is not suggested again until you change it.
+* **Enter** with none shown: Sends all three lines to the editor. To send while
+  suggestions are shown, press **Esc** twice to hide them, then **Enter**.
 * **,** or **;**: Starts a new address. Inside quotes, as in `"Smith, John"
   <john@example.com>`, it is part of the name instead. An unquoted name with a
   comma is two addresses.
@@ -181,8 +182,7 @@ semicolons, and suggests contacts matching the address the cursor is in.
 Normal mode does not search. If suggestions were shown when Esc was pressed,
 they stay, and **j**, **k**, **gg**, **G**, **f**, **b**, **d** and **u** move
 through them as in `less`, with **Enter** putting the selected one in the line.
-**Esc** again, or changing the address, hides them; **k** from the first goes
-back to the line.
+**Esc** again, or changing the address, hides them.
 
 A pasted list may be separated by commas, semicolons, tabs or newlines, and
 becomes a comma-separated list. Suggestions are for its last address, so a list

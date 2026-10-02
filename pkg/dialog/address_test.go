@@ -165,31 +165,34 @@ func TestAddrPaneSearch(t *testing.T) {
 			"alice@example.com",
 			"bob@example.com",
 			`"Smith, Carol" <carol@example.com>`,
-		}, -1},
+		}, 0},
 		{"last address", [][]string{chars("alice@example.com, bo")},
-			[]string{"bob@example.com"}, -1},
+			[]string{"bob@example.com"}, 0},
 		{"pasted list", [][]string{paste("x@y\nali")},
-			[]string{"alice@example.com"}, -1},
+			[]string{"alice@example.com"}, 0},
 		{"quoted comma", [][]string{chars(`"smith, c`)},
-			[]string{`"Smith, Carol" <carol@example.com>`}, -1},
+			[]string{`"Smith, Carol" <carol@example.com>`}, 0},
 		{"changed after moving to a previous address", [][]string{
 			chars("bob, ali"), lefts(5), {input.Backspace}},
-			[]string{"bob@example.com"}, -1},
+			[]string{"bob@example.com"}, 0},
 		{"moved back to the address changed", [][]string{
 			chars("bob, ali"), lefts(5), rights(5)},
-			[]string{"alice@example.com"}, -1},
+			[]string{"alice@example.com"}, 0},
 		{"moving within the address keeps results", [][]string{
 			chars("ali"), {input.Down}, {input.Home, input.End}},
 			[]string{"alice@example.com"}, 0},
 		{"down", [][]string{chars("example"), {input.Down}},
-			nil, 0},
+			nil, 1},
 		{"down stops at last", [][]string{
 			chars("bob"), {input.Down, input.Down}}, nil, 0},
-		{"up returns to line", [][]string{
-			chars("bob"), {input.Down, input.Up}}, nil, -1},
-		{"typing returns to line", [][]string{
+		{"up stops at first", [][]string{
+			chars("example"), {input.Down, input.Up, input.Up}},
+			nil, 0},
+		{"typing searches again", [][]string{
 			chars("example"), {input.Down}, chars("x")}, nil, -1},
-		{"tab returns to line", [][]string{
+		{"typing back to the first", [][]string{
+			chars("exampl"), {input.Down}, chars("e")}, nil, 0},
+		{"tab searches the other line", [][]string{
 			chars("bob"), {input.Down, input.Tab}}, nil, -1},
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -233,7 +236,7 @@ func TestAddrPaneEmptySearch(t *testing.T) {
 func TestAddrPaneSubmit(t *testing.T) {
 	p := testPane()
 	submitted := press(p,
-		chars("ali"), // Results showing, but the line is selected.
+		chars("zed"), // Matches no contact, so Enter submits.
 		[]string{input.Tab}, chars("bob, "),
 		[]string{input.Tab}, paste(",\nc@z\n"),
 		[]string{input.Tab, input.Enter})
@@ -247,9 +250,37 @@ func TestAddrPaneSubmit(t *testing.T) {
 	for n := range p.lines {
 		got = append(got, p.lines[n].value())
 	}
-	if want := []string{"ali", "bob", "c@z"}; !reflect.DeepEqual(got,
+	if want := []string{"zed", "bob", "c@z"}; !reflect.DeepEqual(got,
 		want) {
 		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+// TestAddrPaneEnterCompletes checks that Enter with results shown puts the
+// first in the line without submitting, and that the address put in is not
+// searched for again, so that the next Enter submits.
+func TestAddrPaneEnterCompletes(t *testing.T) {
+	p := testPane()
+	if press(p, chars("bob, ali"), []string{input.Enter}) {
+		t.Fatalf("Enter with results shown submitted")
+	}
+	if got, want := lineString(&p.lines[0]),
+		"bob, alice@example.com|"; got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+	if len(p.visible) != 0 {
+		t.Errorf("found %d after Enter, want none", len(p.visible))
+	}
+	if !press(p, []string{input.Enter}) {
+		t.Errorf("Enter with no results shown did not submit")
+	}
+
+	// Changing the address put in searches for it again.
+	p = testPane()
+	press(p, chars("ali"), []string{input.Enter, input.Backspace})
+	if len(p.visible) != 1 {
+		t.Errorf("found %d after changing the address put in, want 1",
+			len(p.visible))
 	}
 }
 
@@ -457,23 +488,23 @@ func TestAddrPaneViBrowse(t *testing.T) {
 		selected int
 		found    int
 	}{
-		{"esc keeps results", nil, -1, 30},
-		{"j", []string{"j"}, 0, 30},
-		{"jjj", []string{"j", "j", "j"}, 2, 30},
-		{"k back to the line", []string{"j", "k"}, -1, 30},
+		{"esc keeps results", nil, 0, 30},
+		{"j", []string{"j"}, 1, 30},
+		{"jjj", []string{"j", "j", "j"}, 3, 30},
+		{"k stops at the first", []string{"j", "k", "k"}, 0, 30},
 		{"G", []string{"G"}, 29, 30},
 		{"gg", []string{"G", "g", "g"}, 0, 30},
-		{"f", []string{"f"}, 5, 30},
-		{"ff", []string{"f", "f"}, 11, 30},
-		{"b", []string{"f", "f", "b"}, 5, 30},
-		{"b stops at the first", []string{"f", "b"}, 0, 30},
-		{"b from the line", []string{"b"}, 0, 30},
-		{"d", []string{"d"}, 2, 30},
-		{"u", []string{"d", "d", "u"}, 2, 30},
-		{"moving in the address keeps results", []string{"0"}, -1, 30},
+		{"f", []string{"f"}, 6, 30},
+		{"ff", []string{"f", "f"}, 12, 30},
+		{"b", []string{"f", "f", "b"}, 6, 30},
+		{"b stops at the first", []string{"f", "b", "b"}, 0, 30},
+		{"d", []string{"d"}, 3, 30},
+		{"u", []string{"d", "d", "u"}, 3, 30},
+		{"moving in the address keeps results", []string{"j", "0"}, 1,
+			30},
 		{"esc hides results", []string{input.Esc}, -1, 0},
 		{"editing hides results", []string{"x"}, -1, 0},
-		{"i searches again", []string{input.Esc, "i"}, -1, 30},
+		{"i searches again", []string{input.Esc, "i"}, 0, 30},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			p := testManyPane()
@@ -505,7 +536,7 @@ func TestAddrPaneViBrowse(t *testing.T) {
 	}
 
 	p = testManyPane()
-	if press(p, chars("user"), esc, []string{"j", "j", input.Enter}) {
+	if press(p, chars("user"), esc, []string{"j", input.Enter}) {
 		t.Errorf("Enter on a result submitted")
 	}
 	if got, want := p.lines[0].value(), "user01@example.com"; got != want {
@@ -519,16 +550,23 @@ func TestAddrPaneViBrowse(t *testing.T) {
 	}
 
 	p = testManyPane()
-	if !press(p, chars("user"), esc, []string{input.Enter}) {
-		t.Errorf("Enter on the line with results shown did not submit")
+	if press(p, chars("user"), esc, []string{input.Enter}) {
+		t.Errorf("Enter with results shown submitted")
+	}
+	if got, want := p.lines[0].value(), "user00@example.com"; got != want {
+		t.Errorf("Enter without moving put %q in the line, want %q",
+			got, want)
+	}
+	if !press(p, []string{input.Enter}) {
+		t.Errorf("Enter with no results shown did not submit")
 	}
 }
 
 func TestAddrPaneInsertScrolls(t *testing.T) {
 	p := testManyPane()
 	press(p, chars("user"), repeat(input.Down, 10))
-	if p.selected != 9 {
-		t.Errorf("10 Downs selected %d, want 9", p.selected)
+	if p.selected != 10 {
+		t.Errorf("10 Downs selected %d, want 10", p.selected)
 	}
 }
 

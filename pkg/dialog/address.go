@@ -252,10 +252,13 @@ func (l *addrLine) paste(s string) {
 	l.set(head, tail)
 }
 
-// complete replaces the address the cursor is in with addr.
+// complete replaces the address the cursor is in with addr. It is not
+// searched for until changed, as it would find addr again, and Enter would
+// put that in instead of submitting.
 func (l *addrLine) complete(addr string) {
 	s, e := l.token()
 	l.set(l.head(s)+addr, string(l.text[e:]))
+	l.edited = -1
 }
 
 func (l *addrLine) backspace() {
@@ -404,7 +407,7 @@ type addrPane struct {
 	lines    [len(addrLabels)]addrLine
 	focus    int
 	visible  []*Option // Options matching the focused line's query.
-	selected int       // Index into visible, or -1 for the line itself.
+	selected int       // Index into visible, or -1 if it is empty.
 	scroll   int       // Index into visible of the first drawn.
 	rows     int       // How many options fit on the screen.
 	searched string    // focus and query that visible is for.
@@ -442,6 +445,9 @@ func (p *addrPane) refresh() {
 		p.browsing = false
 		if q != "" && !p.normal {
 			p.visible = filterSubmatch(p.opts, q)
+		}
+		if len(p.visible) > 0 {
+			p.selected = 0
 		}
 	}
 	if p.normal && !p.browsing {
@@ -490,7 +496,7 @@ func (p *addrPane) draw(screen *display.Screen) {
 }
 
 // moveSelection moves the selected option by n, stopping at the first and
-// last. From the line, it moves into the options.
+// last.
 func (p *addrPane) moveSelection(n int) {
 	if len(p.visible) == 0 {
 		return
@@ -498,7 +504,9 @@ func (p *addrPane) moveSelection(n int) {
 	p.selected = max(min(p.selected+n, len(p.visible)-1), 0)
 }
 
-// key handles one key, returning true if it submits the addresses.
+// key handles one key, returning true if it submits the addresses. While
+// search results are shown, Enter puts the selected one, at first the first,
+// in the line, and only submits when none are shown.
 func (p *addrPane) key(key string) bool {
 	// Esc and a key typed within readKey's 10ms of it arrive as one.
 	if k, ok := strings.CutPrefix(key, "Meta-"); ok {
@@ -524,11 +532,10 @@ func (p *addrPane) insertKey(key string) bool {
 	l := &p.lines[p.focus]
 	switch key {
 	case input.Enter:
-		if p.selected < 0 {
+		if len(p.visible) == 0 {
 			return true
 		}
 		l.complete(p.visible[p.selected].Key)
-		p.selected = -1
 	case input.Esc:
 		p.normal = true
 		p.browsing = len(p.visible) > 0
@@ -536,9 +543,7 @@ func (p *addrPane) insertKey(key string) bool {
 	case input.CtrlN, input.Down:
 		p.moveSelection(1)
 	case input.CtrlP, input.Up:
-		if p.selected >= 0 {
-			p.selected--
-		}
+		p.moveSelection(-1)
 	case input.Tab:
 		p.focus = (p.focus + 1) % len(p.lines)
 	case input.BackTab:
@@ -587,9 +592,7 @@ func (p *addrPane) browseKey(key string) bool {
 	case "j", input.Down, input.CtrlN:
 		p.moveSelection(1)
 	case "k", input.Up, input.CtrlP:
-		if p.selected >= 0 {
-			p.selected--
-		}
+		p.moveSelection(-1)
 	case "G":
 		p.moveSelection(len(p.visible))
 	case "f":
@@ -601,9 +604,6 @@ func (p *addrPane) browseKey(key string) bool {
 	case "u":
 		p.moveSelection(-max(p.rows/2, 1))
 	case input.Enter:
-		if p.selected < 0 {
-			return false
-		}
 		p.lines[p.focus].complete(p.visible[p.selected].Key)
 	case input.Esc:
 		p.browsing = false
@@ -719,9 +719,9 @@ func (p *addrPane) pendingKey(op, key string) {
 
 // Addresses asks for the To, CC and BCC addresses of a message, on three
 // lines that Tab moves between. Each searches opts for the address the
-// cursor is in, and Down moves into what it found. Enter on a search result
-// puts it in the line; Enter on a line returns all three lines, as addresses
-// joined by ", ". Esc switches to vi's normal mode.
+// cursor is in, and Down and Up move through what it found. Enter puts the
+// selected result in the line, or, with none shown, returns all three lines,
+// as addresses joined by ", ". Esc switches to vi's normal mode.
 func Addresses(opts []*Option, keys *input.Input) (to, cc, bcc string,
 	err error) {
 	screen, err := display.NewScreen()
