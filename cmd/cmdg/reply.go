@@ -138,7 +138,7 @@ func replyAll(ctx context.Context, conn *cmdg.CmdG, keys *input.Input, msg *cmdg
 }
 
 func forward(ctx context.Context, conn *cmdg.CmdG, keys *input.Input, msg *cmdg.Message) error {
-	to, cc, bcc, err := askRecipients(ctx, conn, keys)
+	to, cc, bcc, err := askRecipients(ctx, conn, conn.Contacts(), keys)
 	if err == dialog.ErrAborted {
 		return nil
 	} else if err != nil {

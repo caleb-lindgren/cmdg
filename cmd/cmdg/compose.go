@@ -74,12 +74,12 @@ func getInput(ctx context.Context, prefill string, keys *input.Input) (string, e
 	return string(b), nil
 }
 
-// askRecipients asks for the To, CC and BCC addresses of a message, with
-// "me" replaced by the user's own address.
-func askRecipients(ctx context.Context, conn *cmdg.CmdG,
+// askRecipients asks for the To, CC and BCC addresses of a message,
+// suggesting contacts, with "me" replaced by the user's own address.
+func askRecipients(ctx context.Context, conn *cmdg.CmdG, contacts []string,
 	keys *input.Input) (to, cc, bcc string, err error) {
-	to, cc, bcc, err = dialog.Addresses(
-		dialog.Strings2Options(conn.Contacts()), keys)
+	to, cc, bcc, err = dialog.Addresses(dialog.Strings2Options(contacts),
+		keys)
 	if err != nil {
 		return "", "", "", err
 	}
@@ -114,12 +114,21 @@ func askRecipients(ctx context.Context, conn *cmdg.CmdG,
 	return to, cc, bcc, nil
 }
 
-func composeNew(ctx context.Context, conn *cmdg.CmdG, keys *input.Input) error {
-	to, cc, bcc, err := askRecipients(ctx, conn, keys)
+// composeNew composes and sends a new message, suggesting contacts as
+// recipients. If ready is not nil, it is called once the recipients are
+// known, to wait for the signature and settings to load.
+func composeNew(ctx context.Context, conn *cmdg.CmdG, contacts []string,
+	ready func() error, keys *input.Input) error {
+	to, cc, bcc, err := askRecipients(ctx, conn, contacts, keys)
 	if err == dialog.ErrAborted {
 		return nil
 	} else if err != nil {
 		return err
+	}
+	if ready != nil {
+		if err := ready(); err != nil {
+			return err
+		}
 	}
 
 	var sig string

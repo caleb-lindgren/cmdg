@@ -36,6 +36,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/ThomasHabets/cmdg/pkg/cmdg"
@@ -162,6 +163,44 @@ func buildDescription() string {
 	return desc
 }
 
+// redirectLog sends logging to the -log file, rather than the terminal,
+// and returns a function closing that file.
+func redirectLog() (func(), error) {
+	f, err := os.OpenFile(*logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY,
+		0600)
+	if err != nil {
+		return nil, errors.Wrapf(err, "can't create logfile %q",
+			*logFile)
+	}
+	log.SetOutput(f)
+	if *logJSON {
+		log.SetFormatter(&log.JSONFormatter{})
+	} else {
+		log.SetFormatter(&log.TextFormatter{
+			DisableColors: true,
+		})
+	}
+	return func() { _ = f.Close() }, nil
+}
+
+// runCompose runs a compose window, for -compose, and keeps the window
+// open to show an error if there is one.
+func runCompose(ctx context.Context) {
+	closeLog, err := redirectLog()
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Infof("cmdg %s compose window, %s", version, buildDescription())
+	err = composeMain(ctx)
+	closeLog()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "\033[H\033[2JFailed to compose: %v\n",
+			err)
+		waitToClose()
+		os.Exit(1)
+	}
+}
+
 func main() {
 	if InitID != "" {
 		cmdg.DefaultClientID = InitID
@@ -170,6 +209,15 @@ func main() {
 	syscall.Umask(0077)
 	flag.Parse()
 	cmdg.Version = version
+
+	if *composeFlag {
+		// A compose window closes as soon as cmdg exits, so an
+		// error has to be waited on to be read.
+		log.StandardLogger().ExitFunc = func(code int) {
+			waitToClose()
+			os.Exit(code)
+		}
+	}
 
 	cmdg.Lynx = *lynx
 
@@ -223,6 +271,11 @@ func main() {
 		log.Fatalf("Failed to connect: %v", err)
 	}
 	log.Infof("Connected")
+
+	if *composeFlag {
+		runCompose(ctx)
+		return
+	}
 
 	if *updateSignature {
 		p := path.Join(os.Getenv("HOME"), ".signature")
@@ -299,24 +352,11 @@ func main() {
 		}
 	}()
 
-	// Redirect logging.
-	{
-		f, err := os.OpenFile(*logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-		if err != nil {
-			log.Fatalf("Can't create logfile %q: %v", *logFile, err)
-		}
-		defer func() {
-			_ = f.Close()
-		}()
-		log.SetOutput(f)
-		if *logJSON {
-			log.SetFormatter(&log.JSONFormatter{})
-		} else {
-			log.SetFormatter(&log.TextFormatter{
-				DisableColors: true,
-			})
-		}
+	closeLog, err := redirectLog()
+	if err != nil {
+		log.Fatal(err)
 	}
+	defer closeLog()
 	log.Infof("cmdg %s, %s", version, buildDescription())
 
 	// Add people the user has emailed or been emailed by. This runs after

@@ -35,7 +35,7 @@ I                  — Mark marked mails as read
 l                  — Label marked messages
 L                  — Unlabel marked messages
 *                  — Toggle starred on highlighted message
-c                  — Compose new message
+c                  — Compose new message, in a new window
 C                  — Continue message from draft
 N, n, ^N, j, Down  — Next message
 P, p, ^P, k, Up    — Previous message
@@ -361,6 +361,20 @@ func (mv *MessageView) historyCheck(ctx context.Context) error {
 }
 
 // Run runs the messagelist view.
+// compose composes a new message, in a new window if there is one.
+func (mv *MessageView) compose(ctx context.Context) {
+	if composeInWindow() {
+		if err := startComposeWindow(conn, mv.errors); err != nil {
+			mv.errors <- errors.Wrap(err, "Opening compose window")
+		}
+		return
+	}
+	err := composeNew(ctx, conn, conn.Contacts(), nil, mv.keys)
+	if err != nil {
+		mv.errors <- errors.Wrapf(err, "Composing new message")
+	}
+}
+
 func (mv *MessageView) Run(ctx context.Context) error {
 	log.Infof("Running MessageView")
 	// TODO: defer a sync.WaitGroup.Wait() waiting on all goroutines spawned.
@@ -924,9 +938,7 @@ func (mv *MessageView) Run(ctx context.Context) error {
 					}
 				}
 			case "c":
-				if err := composeNew(ctx, conn, mv.keys); err != nil {
-					mv.errors <- errors.Wrapf(err, "Composing new message")
-				}
+				mv.compose(ctx)
 			case "C":
 				if err := continueDraft(ctx, conn, mv.keys); err != nil {
 					mv.errors <- errors.Wrapf(err, "Continuing draft")
