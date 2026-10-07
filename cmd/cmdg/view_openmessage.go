@@ -217,9 +217,11 @@ func (ov *OpenMessageView) Draw(lines []string, scroll int) error {
 	ov.screen.Printlnf(line, "From: %s%s", from, signed)
 	line++
 
-	// To.
+	// To, which a message sent only to CC or BCC addresses does not have.
 	to, err := ov.msg.GetHeader(ctx, "To")
-	if err != nil {
+	if errors.Cause(err) == cmdg.ErrMissing {
+		to = ""
+	} else if err != nil {
 		ov.errors <- err
 		to = fmt.Sprintf("Unknown: %q", err)
 	}

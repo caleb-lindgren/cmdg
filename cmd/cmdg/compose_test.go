@@ -210,6 +210,37 @@ Content-Type: text/plain; charset="UTF-8"
 World
 --[a-z0-9]+--`)),
 		},
+		{
+			// What composeNew prefills when only CC and BCC were
+			// given: an empty To line, which is left out.
+			name: "CC and BCC, empty To",
+			msg: "To: \nCC: foo@bar.com\nBCC: baz@baz.com\n" +
+				"Subject: hello\n\nWorld",
+			matching: regexp.MustCompile(crnl(`^Bcc: baz@baz.com
+Cc: foo@bar.com
+MIME-Version: 1.0
+Subject: hello
+Content-Type: multipart/mixed; boundary="[a-z0-9]+"
+Content-Disposition: inline
+
+--[a-z0-9]+
+Content-Disposition: inline
+Content-Type: text/plain; charset="UTF-8"
+
+World
+--[a-z0-9]+--`)),
+		},
+		{
+			name: "Only BCC",
+			msg: "To: \nCC: \nBCC: baz@baz.com\n" +
+				"Subject: hello\n\nWorld",
+			matching: regexp.MustCompile(crnl(`^Bcc: baz@baz.com
+MIME-Version: 1.0
+Subject: hello
+Content-Type: multipart/mixed; boundary="[a-z0-9]+"
+Content-Disposition: inline
+`)),
+		},
 	}
 
 	fs := fakeSend{}
