@@ -183,20 +183,19 @@ func redirectLog() (func(), error) {
 	return func() { _ = f.Close() }, nil
 }
 
-// runCompose runs a compose window, for -compose and the other flags that
-// compose one message, and keeps the window open to show an error if
-// there is one.
-func runCompose(ctx context.Context) {
+// runWindow runs a window of its own, for -read, -compose and the other
+// flags that do one thing and exit, and keeps the window open to show an
+// error if there is one.
+func runWindow(ctx context.Context) {
 	closeLog, err := redirectLog()
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Infof("cmdg %s compose window, %s", version, buildDescription())
-	err = composeMain(ctx)
+	log.Infof("cmdg %s window, %s", version, buildDescription())
+	err = windowMain(ctx)
 	closeLog()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "\033[H\033[2JFailed to compose: %v\n",
-			err)
+		fmt.Fprintf(os.Stderr, "\033[H\033[2JFailed: %v\n", err)
 		waitToClose()
 		os.Exit(1)
 	}
@@ -211,17 +210,18 @@ func main() {
 	flag.Parse()
 	cmdg.Version = version
 
-	if composeOnly() {
-		// A compose window closes as soon as cmdg exits, so an
-		// error has to be waited on to be read.
+	if windowOnly() {
+		// A window closes as soon as cmdg exits, so an error has
+		// to be waited on to be read.
 		log.StandardLogger().ExitFunc = func(code int) {
 			waitToClose()
 			os.Exit(code)
 		}
 	}
-	if composeFlagsSet() > 1 {
-		log.Fatalf("Only one of -compose, -reply, -reply_all, " +
-			"-forward and -continue_draft can be given.")
+	if windowFlagsSet() > 1 {
+		log.Fatalf("Only one of -read, -compose, -reply, " +
+			"-reply_all, -forward and -continue_draft can be " +
+			"given.")
 	}
 
 	cmdg.Lynx = *lynx
@@ -277,8 +277,8 @@ func main() {
 	}
 	log.Infof("Connected")
 
-	if composeOnly() {
-		runCompose(ctx)
+	if windowOnly() {
+		runWindow(ctx)
 		return
 	}
 

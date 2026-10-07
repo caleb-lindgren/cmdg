@@ -146,42 +146,51 @@ $ cmdg
 ```
 For keyboard shortcuts press '?' or F1 in most screens.
 
-### Composing in a new window
-Composing a new message (**c** in the message list), replying (**r**),
-replying to all (**a**), forwarding (**f**) and continuing a draft (**C**)
-each open a new terminal window, and the whole message is written there:
-choosing the draft, the recipients, the editor, attaching, and sending or
-saving it as a draft. The window closes when that is done. The mail stays
-usable meanwhile, and each of those keys opens another window, so several
-messages can be written at once.
+### Windows of their own
+Opening a message (**Enter** in the message list), composing a new one
+(**c**), replying (**r**), replying to all (**a**), forwarding (**f**) and
+continuing a draft (**C**) each open a new terminal window. A message is
+read there, and a message written there in full: choosing the draft, the
+recipients, the editor, attaching, and sending or saving it as a draft. The
+window closes when that is done. The message list stays usable meanwhile,
+and each of those keys opens another window, so several messages can be
+open and written at once. Replying from a message window opens yet another
+window, so the message stays readable while you write.
 
-The window runs a separate cmdg process, with the same flags as the one
-that opened it and one of `-compose`, `-reply=<message ID>`,
+In a message window, **^N** and **^P** move to the next and previous
+message of the list as it was when the window was opened. **u**, **q**,
+archiving, deleting and marking unread close the window. The message list
+shows a message as read as soon as it is opened, and other changes made in
+a window, such as archiving or labelling, when it next asks Gmail what has
+changed, every 10 seconds. Search results are not updated that way.
+
+Each window runs a separate cmdg process, with the same flags as the one that
+opened it and one of `-read=<message ID>`, `-compose`, `-reply=<message ID>`,
 `-reply_all=<message ID>`, `-forward=<message ID>` or `-continue_draft`. It
-runs in the same directory, so attachments are looked for and failed sends
-saved there. It fetches the message replied to or forwarded itself, and is
-given a copy of the address suggestions as they were when the key was
-pressed, in a temporary file it deletes when it starts. It stays open after
+runs in the same directory, so files are attached from and saved to there. It
+fetches the message itself, and is given a copy of the address suggestions, and
+for a message window the IDs of the listed messages, as they were when the key
+was pressed, in a temporary file it deletes when it starts. It stays open after
 a sign-in or network error until Enter is pressed, so that the error can be
-read, and if the terminal never ran it at all, the message list shows what
-the terminal printed.
+read, and if the terminal never ran it at all, the message list shows what the
+terminal printed.
 
 The terminal is opened with the `-terminal` flag, `st -e` by default: the
-command line of the compose window is appended to it. For other terminals,
+command line of the window is appended to it. For other terminals,
 pass a command that runs what follows it, such as `-terminal="xterm -e"`.
 With `-terminal=""`, or when neither `$DISPLAY` nor `$WAYLAND_DISPLAY` is
 set, as over ssh, all of these are done in the main window as before.
 
-With st under dwm, giving the window a class of its own lets a dwm rule
-place it, for instance floating:
+With st under dwm, giving the windows a class of their own lets a dwm rule
+place them, for instance floating:
 
 ```
-$ cmdg -terminal="st -c cmdg-compose -e"
+$ cmdg -terminal="st -c cmdg-window -e"
 ```
 
 ```
 /* config.h */
-{ "cmdg-compose", NULL, NULL, 0, 1, -1 },
+{ "cmdg-window", NULL, NULL, 0, 1, -1 },
 ```
 
 `cmdg -compose` and `cmdg -continue_draft` can also be run on their own,

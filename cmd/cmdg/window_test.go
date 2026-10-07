@@ -22,26 +22,31 @@ func TestPassedOnFlags(t *testing.T) {
 	fs.Bool("configure", false, "")
 	fs.String("terminal", "st -e", "")
 	fs.String("update_sender", "", "")
+	fs.String("read", "", "")
 	fs.String("reply", "", "")
 	fs.Bool("continue_draft", false, "")
+	fs.String("window_file", "", "")
 	if err := fs.Parse([]string{"-sign", "-log", "/tmp/a b.log",
 		"-configure", "-terminal=xterm -e",
-		"-update_sender=x@example.com", "-reply=18f2a",
-		"-continue_draft"}); err != nil {
+		"-update_sender=x@example.com", "-read=18f2a",
+		"-reply=18f2a", "-continue_draft",
+		"-window_file=/tmp/w"}); err != nil {
 		t.Fatal(err)
 	}
 	got := passedOnFlags(fs)
-	want := []string{"-log=/tmp/a b.log", "-sign=true"}
+	// -terminal is passed on for the windows a message window opens.
+	want := []string{"-log=/tmp/a b.log", "-sign=true",
+		"-terminal=xterm -e"}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("got %q, want %q", got, want)
 	}
 }
 
-func TestComposeWindowCommand(t *testing.T) {
-	got := composeWindowCommand(" st  -e ", "/usr/bin/cmdg",
-		[]string{"-log=/tmp/l"}, "-reply=18f2a", "/tmp/c.json")
+func TestWindowCommand(t *testing.T) {
+	got := windowCommand(" st  -e ", "/usr/bin/cmdg",
+		[]string{"-log=/tmp/l"}, "-reply=18f2a", "/tmp/w.json")
 	want := []string{"st", "-e", "/usr/bin/cmdg", "-log=/tmp/l",
-		"-reply=18f2a", "-contacts_file=/tmp/c.json"}
+		"-reply=18f2a", "-window_file=/tmp/w.json"}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("got %q, want %q", got, want)
 	}
@@ -61,9 +66,9 @@ func setTerminal(t *testing.T, s string) {
 	t.Cleanup(func() { *terminalFlag = old })
 }
 
-// TestComposeWindowNotStarted checks that a terminal that exits without
-// running cmdg is reported, and that the contacts file is removed.
-func TestComposeWindowNotStarted(t *testing.T) {
+// TestWindowNotStarted checks that a terminal that exits without running
+// cmdg is reported, and that the window file is removed.
+func TestWindowNotStarted(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("TMPDIR", dir)
 	term := filepath.Join(dir, "term")
@@ -73,7 +78,7 @@ func TestComposeWindowNotStarted(t *testing.T) {
 	}
 	setTerminal(t, term+" -e")
 	errs := make(chan error, 1)
-	err := startComposeWindow(fakeConn(t), "-compose", errs)
+	err := startWindow(fakeConn(t), "-compose", nil, errs)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -90,28 +95,29 @@ func TestComposeWindowNotStarted(t *testing.T) {
 	case <-time.After(10 * time.Second):
 		t.Fatal("no error reported")
 	}
-	left, err := filepath.Glob(filepath.Join(dir, "cmdg-contacts-*"))
+	left, err := filepath.Glob(filepath.Join(dir, "cmdg-window-*"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(left) != 0 {
-		t.Errorf("contacts files left: %q", left)
+		t.Errorf("window files left: %q", left)
 	}
 }
 
-// TestComposeWindowStarted runs a fake terminal that reads the contacts
-// file as cmdg -compose does, and checks that nothing is reported.
-func TestComposeWindowStarted(t *testing.T) {
+// TestWindowStarted runs a fake terminal that reads the window file as
+// cmdg -read does, and checks that it has the contacts and messages, and
+// that nothing is reported.
+func TestWindowStarted(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("TMPDIR", dir)
-	out := filepath.Join(dir, "contacts")
+	out := filepath.Join(dir, "state")
 	term := filepath.Join(dir, "term")
-	// The fake terminal finds -contacts_file among its arguments, and
-	// moves that file to out, as readContactsFile removes it.
+	// The fake terminal finds -window_file among its arguments, and
+	// moves that file to out, as readWindowFile removes it.
 	script := `#!/bin/sh
 for a; do
 	case "$a" in
-	-contacts_file=*) mv "${a#-contacts_file=}" ` + out + `.tmp &&
+	-window_file=*) mv "${a#-window_file=}" ` + out + `.tmp &&
 		mv ` + out + `.tmp ` + out + `;;
 	esac
 done
@@ -120,8 +126,10 @@ done
 		t.Fatal(err)
 	}
 	setTerminal(t, term+" -e")
+	conn := fakeConn(t)
+	conn.SetContacts([]string{"me", "a@example.com"})
 	errs := make(chan error, 1)
-	err := startComposeWindow(fakeConn(t), "-compose", errs)
+	err := startWindow(conn, "-read=m2", []string{"m1", "m2"}, errs)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -131,19 +139,23 @@ done
 			break
 		}
 		if time.Now().After(deadline) {
-			t.Fatal("fake terminal did not get the contacts file")
+			t.Fatal("fake terminal did not get the window file")
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
-	got, err := readContactsFile(out)
+	got, err := readWindowFile(out)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := []string{"me"}; !reflect.DeepEqual(got, want) {
-		t.Errorf("got contacts %q, want %q", got, want)
+	want := &windowState{
+		Contacts: []string{"me", "a@example.com"},
+		Messages: []string{"m1", "m2"},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %+v, want %+v", got, want)
 	}
 	if _, err := os.Stat(out); !os.IsNotExist(err) {
-		t.Errorf("readContactsFile left the file: %v", err)
+		t.Errorf("readWindowFile left the file: %v", err)
 	}
 	select {
 	case err := <-errs:

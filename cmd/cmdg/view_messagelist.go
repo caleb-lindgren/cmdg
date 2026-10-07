@@ -25,7 +25,7 @@ const (
 	scrollLimit = 5
 
 	messageListViewHelp = `?, F1              — Help
-enter, →           — Open message
+enter, →           — Open message, in a new window
 space, x           — Mark message and advance
 X                  — Mark message and step up
 u                  — Unmark all messages
@@ -366,6 +366,24 @@ func (mv *MessageView) compose(ctx context.Context) {
 	composeSomewhere("-compose", "composing new message", func() error {
 		return composeNew(ctx, conn, conn.Contacts(), nil, mv.keys)
 	}, mv.errors, mv.errors)
+}
+
+// openInWindow opens the current message in a new window, with the IDs of
+// the listed messages for ^N and ^P.
+func (mv *MessageView) openInWindow() {
+	msg := mv.messages[mv.pos]
+	ids := make([]string, len(mv.messages))
+	for n, m := range mv.messages {
+		ids[n] = m.ID
+	}
+	if err := startWindow(conn, "-read="+msg.ID, ids,
+		mv.errors); err != nil {
+		mv.errors <- errors.Wrap(err, "Opening message window")
+		return
+	}
+	// The window marks it read, which the next history check would
+	// show, but showing it now is less confusing.
+	msg.RemoveLabelIDLocal(cmdg.Unread)
 }
 
 // continueDraft continues a draft, in a new window if there can be one.
@@ -744,6 +762,10 @@ func (mv *MessageView) Run(ctx context.Context) error {
 					break
 				}
 				if mv.pos >= len(mv.messages) {
+					break
+				}
+				if useWindows() {
+					mv.openInWindow()
 					break
 				}
 				for {

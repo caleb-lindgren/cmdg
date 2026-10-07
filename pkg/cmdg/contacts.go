@@ -32,6 +32,20 @@ func (c *CmdG) Contacts() []string {
 	return append([]string{"me"}, c.addressBook...)
 }
 
+// SetContacts makes Contacts return list, as another Contacts returned it,
+// in place of loading contacts and scanning messages.
+func (c *CmdG) SetContacts(list []string) {
+	var book []string
+	for _, e := range list {
+		if e != "me" {
+			book = append(book, e)
+		}
+	}
+	c.m.Lock()
+	defer c.m.Unlock()
+	c.addressBook = book
+}
+
 // LoadContacts reads all contacts from the cloud.
 func (c *CmdG) LoadContacts(ctx context.Context) error {
 	co, err := c.GetContacts(ctx)
