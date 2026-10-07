@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"net/http"
 	"os"
@@ -21,9 +22,12 @@ func TestPassedOnFlags(t *testing.T) {
 	fs.Bool("configure", false, "")
 	fs.String("terminal", "st -e", "")
 	fs.String("update_sender", "", "")
+	fs.String("reply", "", "")
+	fs.Bool("continue_draft", false, "")
 	if err := fs.Parse([]string{"-sign", "-log", "/tmp/a b.log",
 		"-configure", "-terminal=xterm -e",
-		"-update_sender=x@example.com"}); err != nil {
+		"-update_sender=x@example.com", "-reply=18f2a",
+		"-continue_draft"}); err != nil {
 		t.Fatal(err)
 	}
 	got := passedOnFlags(fs)
@@ -35,9 +39,9 @@ func TestPassedOnFlags(t *testing.T) {
 
 func TestComposeWindowCommand(t *testing.T) {
 	got := composeWindowCommand(" st  -e ", "/usr/bin/cmdg",
-		[]string{"-log=/tmp/l"}, "/tmp/c.json")
+		[]string{"-log=/tmp/l"}, "-reply=18f2a", "/tmp/c.json")
 	want := []string{"st", "-e", "/usr/bin/cmdg", "-log=/tmp/l",
-		"-compose", "-contacts_file=/tmp/c.json"}
+		"-reply=18f2a", "-contacts_file=/tmp/c.json"}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("got %q, want %q", got, want)
 	}
@@ -69,7 +73,8 @@ func TestComposeWindowNotStarted(t *testing.T) {
 	}
 	setTerminal(t, term+" -e")
 	errs := make(chan error, 1)
-	if err := startComposeWindow(fakeConn(t), errs); err != nil {
+	err := startComposeWindow(fakeConn(t), "-compose", errs)
+	if err != nil {
 		t.Fatal(err)
 	}
 	select {
@@ -116,7 +121,8 @@ done
 	}
 	setTerminal(t, term+" -e")
 	errs := make(chan error, 1)
-	if err := startComposeWindow(fakeConn(t), errs); err != nil {
+	err := startComposeWindow(fakeConn(t), "-compose", errs)
+	if err != nil {
 		t.Fatal(err)
 	}
 	deadline := time.Now().Add(10 * time.Second)
@@ -143,5 +149,29 @@ done
 	case err := <-errs:
 		t.Errorf("got error %v", err)
 	case <-time.After(200 * time.Millisecond):
+	}
+}
+
+// TestComposeSomewhereHere checks that without a terminal, composing is
+// done by calling here, and its error is reported.
+func TestComposeSomewhereHere(t *testing.T) {
+	setTerminal(t, "")
+	errs := make(chan error, 1)
+	called := false
+	composeSomewhere("-reply=x", "replying", func() error {
+		called = true
+		return errors.New("no network")
+	}, errs, nil)
+	if !called {
+		t.Fatal("here was not called")
+	}
+	select {
+	case err := <-errs:
+		want := "Failed replying: no network"
+		if got := err.Error(); got != want {
+			t.Errorf("got error %q, want %q", got, want)
+		}
+	default:
+		t.Error("no error reported")
 	}
 }

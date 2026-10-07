@@ -147,27 +147,30 @@ $ cmdg
 For keyboard shortcuts press '?' or F1 in most screens.
 
 ### Composing in a new window
-**c** in the message list opens a new terminal window for the new message,
-and the whole message is written there: the recipients, the editor,
-attaching, and sending or saving it as a draft. The window closes when that
-is done. The message list stays usable meanwhile, and each **c** opens
-another window, so several messages can be written at once. Replies,
-forwards and drafts continued with **C** are still written in the main
-window.
+Composing a new message (**c** in the message list), replying (**r**),
+replying to all (**a**), forwarding (**f**) and continuing a draft (**C**)
+each open a new terminal window, and the whole message is written there:
+choosing the draft, the recipients, the editor, attaching, and sending or
+saving it as a draft. The window closes when that is done. The mail stays
+usable meanwhile, and each of those keys opens another window, so several
+messages can be written at once.
 
-The window runs `cmdg -compose`, a separate process with the same flags as
-the one that opened it, in the same directory, so attachments are looked
-for and failed sends saved there. It is given a copy of the address
-suggestions as they were when **c** was pressed, in a temporary file it
-deletes when it starts. It stays open after a sign-in or network error
-until Enter is pressed, so that the error can be read, and if the terminal
-never ran it at all, the message list shows what the terminal printed.
+The window runs a separate cmdg process, with the same flags as the one
+that opened it and one of `-compose`, `-reply=<message ID>`,
+`-reply_all=<message ID>`, `-forward=<message ID>` or `-continue_draft`. It
+runs in the same directory, so attachments are looked for and failed sends
+saved there. It fetches the message replied to or forwarded itself, and is
+given a copy of the address suggestions as they were when the key was
+pressed, in a temporary file it deletes when it starts. It stays open after
+a sign-in or network error until Enter is pressed, so that the error can be
+read, and if the terminal never ran it at all, the message list shows what
+the terminal printed.
 
 The terminal is opened with the `-terminal` flag, `st -e` by default: the
 command line of the compose window is appended to it. For other terminals,
 pass a command that runs what follows it, such as `-terminal="xterm -e"`.
 With `-terminal=""`, or when neither `$DISPLAY` nor `$WAYLAND_DISPLAY` is
-set, as over ssh, messages are composed in the main window as before.
+set, as over ssh, all of these are done in the main window as before.
 
 With st under dwm, giving the window a class of its own lets a dwm rule
 place it, for instance floating:
@@ -181,10 +184,10 @@ $ cmdg -terminal="st -c cmdg-compose -e"
 { "cmdg-compose", NULL, NULL, 0, 1, -1 },
 ```
 
-`cmdg -compose` can also be run on its own, for instance from a dwm key
-binding, to write one message without the message list. Its suggestions
-are then only your Google contacts, since the scan of sent and received
-mail is done by the message list.
+`cmdg -compose` and `cmdg -continue_draft` can also be run on their own,
+for instance from a dwm key binding, to write one message without the
+message list. Suggestions are then only your Google contacts, since the
+scan of sent and received mail is done by the message list.
 
 ### Recipients
 Composing or forwarding a message starts with three lines, To, CC and BCC,

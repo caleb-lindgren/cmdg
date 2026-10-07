@@ -137,12 +137,21 @@ func replyAll(ctx context.Context, conn *cmdg.CmdG, keys *input.Input, msg *cmdg
 		replyPrefixes, msg, nil)
 }
 
-func forward(ctx context.Context, conn *cmdg.CmdG, keys *input.Input, msg *cmdg.Message) error {
-	to, cc, bcc, err := askRecipients(ctx, conn, conn.Contacts(), keys)
+// forward forwards msg, suggesting contacts as recipients. If ready is
+// not nil, it is called once the recipients are known, to wait for the
+// signature and settings to load.
+func forward(ctx context.Context, conn *cmdg.CmdG, contacts []string,
+	ready func() error, keys *input.Input, msg *cmdg.Message) error {
+	to, cc, bcc, err := askRecipients(ctx, conn, contacts, keys)
 	if err == dialog.ErrAborted {
 		return nil
 	} else if err != nil {
 		return err
+	}
+	if ready != nil {
+		if err := ready(); err != nil {
+			return err
+		}
 	}
 
 	var atts []*file

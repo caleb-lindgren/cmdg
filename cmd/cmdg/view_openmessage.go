@@ -39,10 +39,10 @@ backspace      — Page up
 p, Up          — Scroll up
 ^P             — Previous message
 ^N             — Next message
-f              — Forward message
-r              — Reply
+f              — Forward message, in a new window
+r              — Reply, in a new window
 s, ^s          — Search within message
-a              — Reply all
+a              — Reply all, in a new window
 d              — Delete
 e              — Archive
 t, →           — Browse attachments (if any)
@@ -119,6 +119,11 @@ type OpenMessageView struct {
 
 	update chan struct{}
 	errors chan error
+
+	// windowErrors gets the errors of compose windows that fail after
+	// they were started, which may be after this view has closed. If it
+	// is nil, they go to errors.
+	windowErrors chan error
 
 	inIncrementalSearch bool
 	incrementalCount    int
@@ -305,6 +310,38 @@ func (ov *OpenMessageView) Draw(lines []string, scroll int) error {
 	}
 	ov.screen.Printlnf(ov.screen.Height-2, "%s", strings.Repeat("—", ov.screen.Width))
 	return nil
+}
+
+// composeSomewhere replies to or forwards the open message, as given by
+// flag, such as "-reply", in a new window if there can be one, and by
+// calling here otherwise.
+func (ov *OpenMessageView) composeSomewhere(flag, doing string,
+	here func() error) {
+	windowErrors := ov.windowErrors
+	if windowErrors == nil {
+		windowErrors = ov.errors
+	}
+	composeSomewhere(flag+"="+ov.msg.ID, doing, here, ov.errors,
+		windowErrors)
+}
+
+func (ov *OpenMessageView) forward(ctx context.Context) {
+	ov.composeSomewhere("-forward", "forwarding", func() error {
+		return forward(ctx, conn, conn.Contacts(), nil, ov.keys,
+			ov.msg)
+	})
+}
+
+func (ov *OpenMessageView) reply(ctx context.Context) {
+	ov.composeSomewhere("-reply", "replying", func() error {
+		return reply(ctx, conn, ov.keys, ov.msg)
+	})
+}
+
+func (ov *OpenMessageView) replyAll(ctx context.Context) {
+	ov.composeSomewhere("-reply_all", "replying to all", func() error {
+		return replyAll(ctx, conn, ov.keys, ov.msg)
+	})
 }
 
 func showError(oscreen *display.Screen, keys *input.Input, msg string) {
@@ -654,20 +691,11 @@ func (ov *OpenMessageView) Run(ctx context.Context) (*MessageViewOp, error) {
 					log.Infof("Failed to draw: %v", err)
 				}
 			case "f":
-				if err := forward(ctx, conn, ov.keys, ov.msg); err != nil {
-					//lint:ignore ST1005 UI-facing message intentionally starts with capital
-					ov.errors <- fmt.Errorf("Failed to forward: %v", err)
-				}
+				ov.forward(ctx)
 			case "r":
-				if err := reply(ctx, conn, ov.keys, ov.msg); err != nil {
-					//lint:ignore ST1005 UI-facing message intentionally starts with capital
-					ov.errors <- fmt.Errorf("Failed to reply: %v", err)
-				}
+				ov.reply(ctx)
 			case "a":
-				if err := replyAll(ctx, conn, ov.keys, ov.msg); err != nil {
-					//lint:ignore ST1005 UI-facing message intentionally starts with capital
-					ov.errors <- fmt.Errorf("Failed to replyAll: %v", err)
-				}
+				ov.replyAll(ctx)
 			case "H":
 				ov.preferHTML = !ov.preferHTML
 				scroll = 0

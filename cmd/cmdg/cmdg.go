@@ -183,8 +183,9 @@ func redirectLog() (func(), error) {
 	return func() { _ = f.Close() }, nil
 }
 
-// runCompose runs a compose window, for -compose, and keeps the window
-// open to show an error if there is one.
+// runCompose runs a compose window, for -compose and the other flags that
+// compose one message, and keeps the window open to show an error if
+// there is one.
 func runCompose(ctx context.Context) {
 	closeLog, err := redirectLog()
 	if err != nil {
@@ -210,13 +211,17 @@ func main() {
 	flag.Parse()
 	cmdg.Version = version
 
-	if *composeFlag {
+	if composeOnly() {
 		// A compose window closes as soon as cmdg exits, so an
 		// error has to be waited on to be read.
 		log.StandardLogger().ExitFunc = func(code int) {
 			waitToClose()
 			os.Exit(code)
 		}
+	}
+	if composeFlagsSet() > 1 {
+		log.Fatalf("Only one of -compose, -reply, -reply_all, " +
+			"-forward and -continue_draft can be given.")
 	}
 
 	cmdg.Lynx = *lynx
@@ -272,7 +277,7 @@ func main() {
 	}
 	log.Infof("Connected")
 
-	if *composeFlag {
+	if composeOnly() {
 		runCompose(ctx)
 		return
 	}

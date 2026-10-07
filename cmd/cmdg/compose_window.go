@@ -1,10 +1,11 @@
 package main
 
-// Composing in a window of its own. "c" in the message list starts a new
-// terminal running "cmdg -compose", a separate process that asks for the
-// addresses, runs the editor, attaches and sends, and then exits, so the
-// mail stays usable while a message is being written, and any number of
-// messages can be written at once.
+// Composing in a window of its own. Composing, replying, forwarding and
+// continuing a draft each start a new terminal running cmdg with -compose,
+// -reply, -reply_all, -forward or -continue_draft, a separate process that
+// asks for the addresses, runs the editor, attaches and sends, and then
+// exits, so the mail stays usable while a message is being written, and
+// any number of messages can be written at once.
 
 import (
 	"bufio"
@@ -35,9 +36,18 @@ var (
 		"nor $WAYLAND_DISPLAY is set.")
 	composeFlag = flag.Bool("compose", false, "Compose one new "+
 		"message, then exit.")
-	contactsFile = flag.String("contacts_file", "", "With -compose: "+
-		"read the address suggestions from this file, a JSON list "+
-		"of strings, and delete it, rather than loading Google "+
+	replyFlag = flag.String("reply", "", "Reply to the message with "+
+		"this ID, then exit.")
+	replyAllFlag = flag.String("reply_all", "", "Reply to all of the "+
+		"message with this ID, then exit.")
+	forwardFlag = flag.String("forward", "", "Forward the message "+
+		"with this ID, then exit.")
+	continueDraftFlag = flag.Bool("continue_draft", false, "Choose a "+
+		"draft, continue it, then exit.")
+	contactsFile = flag.String("contacts_file", "", "With -compose "+
+		"and the other flags that compose and exit: read the "+
+		"address suggestions from this file, a JSON list of "+
+		"strings, and delete it, rather than loading Google "+
 		"contacts.")
 
 	// notPassedOn are the flags a compose window is not given: those
@@ -51,9 +61,32 @@ var (
 		"update_sender":    true,
 		"terminal":         true,
 		"compose":          true,
+		"reply":            true,
+		"reply_all":        true,
+		"forward":          true,
+		"continue_draft":   true,
 		"contacts_file":    true,
 	}
 )
+
+// composeFlagsSet returns how many of -compose, -reply, -reply_all,
+// -forward and -continue_draft are set.
+func composeFlagsSet() int {
+	n := 0
+	for _, set := range []bool{*composeFlag, *replyFlag != "",
+		*replyAllFlag != "", *forwardFlag != "", *continueDraftFlag} {
+		if set {
+			n++
+		}
+	}
+	return n
+}
+
+// composeOnly says whether cmdg was started to compose one message and
+// exit, by -compose, -reply, -reply_all, -forward or -continue_draft.
+func composeOnly() bool {
+	return composeFlagsSet() > 0
+}
 
 // composeInWindow says whether to compose in a new terminal window.
 func composeInWindow() bool {
@@ -78,19 +111,22 @@ func passedOnFlags(fs *flag.FlagSet) []string {
 }
 
 // composeWindowCommand returns the command line that opens a compose
-// window, which runs exe with this process's flags.
+// window, which runs exe with this process's flags and what, the flag
+// saying what to compose.
 func composeWindowCommand(terminal, exe string, flags []string,
-	contacts string) []string {
+	what, contacts string) []string {
 	argv := strings.Fields(terminal)
 	argv = append(argv, exe)
 	argv = append(argv, flags...)
-	return append(argv, "-compose", "-contacts_file="+contacts)
+	return append(argv, what, "-contacts_file="+contacts)
 }
 
-// startComposeWindow opens a compose window, with conn's current address
-// suggestions, and returns once the terminal has been started. If the
-// window fails to start, the error is sent to errs later.
-func startComposeWindow(conn *cmdg.CmdG, errs chan<- error) error {
+// startComposeWindow opens a compose window, running cmdg with the flag
+// what, such as "-compose" or "-reply=<message ID>", and conn's current
+// address suggestions. It returns once the terminal has been started. If
+// the window fails to start, the error is sent to errs later.
+func startComposeWindow(conn *cmdg.CmdG, what string,
+	errs chan<- error) error {
 	exe, err := os.Executable()
 	if err != nil {
 		return errors.Wrap(err, "finding the cmdg binary")
@@ -114,7 +150,7 @@ func startComposeWindow(conn *cmdg.CmdG, errs chan<- error) error {
 	}
 
 	argv := composeWindowCommand(*terminalFlag, exe,
-		passedOnFlags(flag.CommandLine), f.Name())
+		passedOnFlags(flag.CommandLine), what, f.Name())
 	cmd := exec.Command(argv[0], argv[1:]...)
 	// A session of its own keeps the window open when this terminal
 	// is closed, which sends SIGHUP to the processes in its session.
@@ -169,8 +205,28 @@ func waitToClose() {
 	_, _ = bufio.NewReader(os.Stdin).ReadString('\n')
 }
 
-// composeMain is main for -compose: compose and send one message, then
-// return.
+// composeSomewhere composes in a new window, running cmdg with the flag
+// what, if there can be one, and by calling here otherwise. Errors go to
+// errs, except that a window failing after it was started goes to
+// windowErrs, so that it can be shown after the view that started it has
+// closed. doing names what is composed, for those errors.
+func composeSomewhere(what, doing string, here func() error,
+	errs, windowErrs chan<- error) {
+	if composeInWindow() {
+		err := startComposeWindow(conn, what, windowErrs)
+		if err != nil {
+			errs <- errors.Wrapf(err, "Opening window for %s",
+				doing)
+		}
+		return
+	}
+	if err := here(); err != nil {
+		errs <- errors.Wrapf(err, "Failed %s", doing)
+	}
+}
+
+// composeMain is main for -compose and the other flags that compose one
+// message: compose and send it, then return.
 func composeMain(ctx context.Context) error {
 	fmt.Print(display.TerminalTitle("cmdg compose"))
 	defer fmt.Print(display.TerminalTitle("Terminal"))
@@ -209,12 +265,51 @@ func composeMain(ctx context.Context) error {
 		return errors.Wrap(sigErr, "loading signature")
 	}
 
+	// A message replied to or forwarded is fetched in the meantime as
+	// well.
+	var msg *cmdg.Message
+	if id := *replyFlag + *replyAllFlag + *forwardFlag; id != "" {
+		msg = cmdg.NewMessage(conn, id)
+		go func() {
+			err := msg.Preload(ctx, cmdg.LevelFull)
+			if err != nil {
+				log.Errorf("Failed to load message %q: %v",
+					id, err)
+			}
+		}()
+	}
+
 	keys := input.New()
 	if err := keys.Start(); err != nil {
 		return err
 	}
-	err := composeNew(ctx, conn, contacts, ready, keys)
+	err := composeOne(ctx, contacts, ready, keys, msg)
 	keys.Stop()
 	display.Exit()
 	return err
+}
+
+// composeOne composes what the flags say to, with the message msg given
+// by -reply, -reply_all or -forward. ready waits for the signature and the
+// settings to load.
+func composeOne(ctx context.Context, contacts []string, ready func() error,
+	keys *input.Input, msg *cmdg.Message) error {
+	switch {
+	case *replyFlag != "":
+		if err := ready(); err != nil {
+			return err
+		}
+		return reply(ctx, conn, keys, msg)
+	case *replyAllFlag != "":
+		if err := ready(); err != nil {
+			return err
+		}
+		return replyAll(ctx, conn, keys, msg)
+	case *forwardFlag != "":
+		return forward(ctx, conn, contacts, ready, keys, msg)
+	case *continueDraftFlag:
+		return continueDraft(ctx, conn, keys)
+	default:
+		return composeNew(ctx, conn, contacts, ready, keys)
+	}
 }

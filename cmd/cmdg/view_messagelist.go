@@ -36,7 +36,7 @@ l                  — Label marked messages
 L                  — Unlabel marked messages
 *                  — Toggle starred on highlighted message
 c                  — Compose new message, in a new window
-C                  — Continue message from draft
+C                  — Continue message from draft, in a new window
 N, n, ^N, j, Down  — Next message
 P, p, ^P, k, Up    — Previous message
 r, ^R              — Reload current view
@@ -361,18 +361,18 @@ func (mv *MessageView) historyCheck(ctx context.Context) error {
 }
 
 // Run runs the messagelist view.
-// compose composes a new message, in a new window if there is one.
+// compose composes a new message, in a new window if there can be one.
 func (mv *MessageView) compose(ctx context.Context) {
-	if composeInWindow() {
-		if err := startComposeWindow(conn, mv.errors); err != nil {
-			mv.errors <- errors.Wrap(err, "Opening compose window")
-		}
-		return
-	}
-	err := composeNew(ctx, conn, conn.Contacts(), nil, mv.keys)
-	if err != nil {
-		mv.errors <- errors.Wrapf(err, "Composing new message")
-	}
+	composeSomewhere("-compose", "composing new message", func() error {
+		return composeNew(ctx, conn, conn.Contacts(), nil, mv.keys)
+	}, mv.errors, mv.errors)
+}
+
+// continueDraft continues a draft, in a new window if there can be one.
+func (mv *MessageView) continueDraft(ctx context.Context) {
+	composeSomewhere("-continue_draft", "continuing draft", func() error {
+		return continueDraft(ctx, conn, mv.keys)
+	}, mv.errors, mv.errors)
 }
 
 func (mv *MessageView) Run(ctx context.Context) error {
@@ -751,6 +751,7 @@ func (mv *MessageView) Run(ctx context.Context) error {
 					if err != nil {
 						mv.errors <- errors.Wrapf(err, "Opening message")
 					} else {
+						vo.windowErrors = mv.errors
 						op, err := vo.Run(ctx)
 						if err != nil {
 							mv.errors <- errors.Wrapf(err, "Running OpenMessageView")
@@ -940,9 +941,7 @@ func (mv *MessageView) Run(ctx context.Context) error {
 			case "c":
 				mv.compose(ctx)
 			case "C":
-				if err := continueDraft(ctx, conn, mv.keys); err != nil {
-					mv.errors <- errors.Wrapf(err, "Continuing draft")
-				}
+				mv.continueDraft(ctx)
 			case input.Home, input.XHome:
 				mv.pos = 0
 				scroll = 0
