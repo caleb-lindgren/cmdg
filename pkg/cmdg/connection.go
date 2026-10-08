@@ -220,9 +220,34 @@ func New(fn string) (*CmdG, error) {
 			//
 			// RedirectURL: oauthRedirectOffline,
 		}
-		conn.authedClient = cfg.Client(ctx, token)
+		// The token from the config is used until it is invalid,
+		// and a new one is fetched then; that fetch is logged, as
+		// it is part of the first RPC's time.
+		refresh := cfg.TokenSource(ctx, &oauth2.Token{
+			RefreshToken: token.RefreshToken,
+		})
+		src := oauth2.ReuseTokenSource(token,
+			loggingTokenSource{refresh})
+		conn.authedClient = oauth2.NewClient(ctx, src)
 	}
 	return conn, conn.setupClients()
+}
+
+// loggingTokenSource logs, with -log_rpc, each token fetched from src.
+type loggingTokenSource struct {
+	src oauth2.TokenSource
+}
+
+// Token fetches a token from s.src.
+func (s loggingTokenSource) Token() (*oauth2.Token, error) {
+	st := time.Now()
+	t, err := s.src.Token()
+	expiry := "unknown"
+	if t != nil {
+		expiry = t.Expiry.Format(time.RFC3339)
+	}
+	logRPC(st, err, "oauth2.Token(expiry=%s)", expiry)
+	return t, err
 }
 
 func (c *CmdG) setupClients() error {

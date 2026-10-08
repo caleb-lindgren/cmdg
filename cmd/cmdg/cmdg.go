@@ -163,6 +163,25 @@ func buildDescription() string {
 	return desc
 }
 
+// logTimeFormat is RFC 3339 with milliseconds.
+const logTimeFormat = "2006-01-02T15:04:05.000Z07:00"
+
+// pidHook adds the process ID to every log entry.
+type pidHook struct {
+	pid int
+}
+
+// Levels says the hook applies to all levels.
+func (h pidHook) Levels() []log.Level {
+	return log.AllLevels
+}
+
+// Fire adds the process ID to e.
+func (h pidHook) Fire(e *log.Entry) error {
+	e.Data["pid"] = h.pid
+	return nil
+}
+
 // redirectLog sends logging to the -log file, rather than the terminal,
 // and returns a function closing that file.
 func redirectLog() (func(), error) {
@@ -173,11 +192,19 @@ func redirectLog() (func(), error) {
 			*logFile)
 	}
 	log.SetOutput(f)
+	// Windows log to the same file as the process that opened them,
+	// so each line says which process wrote it, and when to the
+	// millisecond, to time a window's startup.
+	log.AddHook(pidHook{pid: os.Getpid()})
 	if *logJSON {
-		log.SetFormatter(&log.JSONFormatter{})
+		log.SetFormatter(&log.JSONFormatter{
+			TimestampFormat: logTimeFormat,
+		})
 	} else {
 		log.SetFormatter(&log.TextFormatter{
-			DisableColors: true,
+			DisableColors:   true,
+			FullTimestamp:   true,
+			TimestampFormat: logTimeFormat,
 		})
 	}
 	return func() { _ = f.Close() }, nil
