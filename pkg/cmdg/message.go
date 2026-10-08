@@ -32,6 +32,9 @@ const (
 	Trash   = "TRASH"
 	Unread  = "UNREAD"
 	Starred = "STARRED"
+
+	// Sent is the label Gmail gives the messages the user sent.
+	Sent = "SENT"
 )
 
 const (
@@ -391,8 +394,21 @@ func (msg *Message) GetReferences(ctx context.Context) ([]string, error) {
 	return []string{s}, nil
 }
 
-// GetReplyTo returns the address to use for replies as the `To` line.
+// GetReplyTo returns the address to use for replies as the `To` line. For
+// a message the user sent, that is the message's own To, so that a reply
+// goes to the people it was sent to rather than back to the user. It is
+// empty if that message was sent only to CC or BCC addresses.
 func (msg *Message) GetReplyTo(ctx context.Context) (string, error) {
+	if err := msg.Preload(ctx, LevelMetadata); err != nil {
+		return "", err
+	}
+	if msg.HasLabel(Sent) {
+		to, err := msg.GetHeader(ctx, "To")
+		if errors.Cause(err) == ErrMissing {
+			return "", nil
+		}
+		return to, err
+	}
 	s, err := msg.GetHeader(ctx, "Reply-To")
 	if err == nil && s != "" {
 		return s, nil
@@ -444,11 +460,22 @@ func filteredEmails(from string, self []string, headers []string) []string {
 }
 
 // GetReplyToAll returns both To and CC lines for reply-all. The user's own
-// address is left out of CC.
+// address is left out of CC. For a message the user sent, they are the
+// message's own To and CC, as GetReplyTo explains; its BCC is not
+// carried over.
 func (msg *Message) GetReplyToAll(ctx context.Context) (string, string, error) {
 	from, err := msg.GetReplyTo(ctx)
 	if err != nil {
 		return "", "", err
+	}
+	if msg.HasLabel(Sent) {
+		cc, err := msg.GetHeader(ctx, "CC")
+		if errors.Cause(err) == ErrMissing {
+			cc = ""
+		} else if err != nil {
+			return "", "", err
+		}
+		return from, cc, nil
 	}
 	var headers []string
 	if f, err := msg.GetHeader(ctx, "From"); err != nil {

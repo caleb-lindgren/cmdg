@@ -160,9 +160,14 @@ window, so the message stays readable while you write.
 In a message window, **^N** and **^P** move to the next and previous
 message of the list as it was when the window was opened. **u**, **q**,
 archiving, deleting and marking unread close the window. The message list
-shows a message as read as soon as it is opened, and other changes made in
-a window, such as archiving or labelling, when it next asks Gmail what has
-changed, every 10 seconds. Search results are not updated that way.
+shows the changes made in a message window as soon as they are made: the
+message read, starred, labelled or unlabelled, and taken out of the list
+when archived, deleted, or unlabelled from the label listed. The window
+tells the list over a Unix socket in a temporary directory only you can
+open, created when the first message window is opened and removed when
+cmdg exits. Should that fail, the list sees the changes when it next asks
+Gmail what has changed, every 10 seconds, except in search results, which
+are not updated that way.
 
 Each window runs a separate cmdg process, with the same flags as the one that
 opened it and one of `-read=<message ID>`, `-compose`, `-reply=<message ID>`,
@@ -197,6 +202,14 @@ $ cmdg -terminal="st -c cmdg-window -e"
 for instance from a dwm key binding, to write one message without the
 message list. Suggestions are then only your Google contacts, since the
 scan of sent and received mail is done by the message list.
+
+### Replying
+Replying (**r**) goes to the sender of the message, or its Reply-To, and
+replying to all (**a**) also to its To and CC, leaving you out. Replying to a
+message you sent instead goes to the people you sent it to: its To, and with
+**a** its CC as well, as Gmail does, so a follow-up to your own last message
+is not addressed to yourself. A message counts as sent by you when Gmail has
+given it the SENT label. Its BCC is not carried over.
 
 ### Recipients
 Composing or forwarding a message starts with three lines, To, CC and BCC,

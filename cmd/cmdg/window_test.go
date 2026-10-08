@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	gmail "google.golang.org/api/gmail/v1"
+
 	"github.com/ThomasHabets/cmdg/pkg/cmdg"
 )
 
@@ -78,7 +80,7 @@ func TestWindowNotStarted(t *testing.T) {
 	}
 	setTerminal(t, term+" -e")
 	errs := make(chan error, 1)
-	err := startWindow(fakeConn(t), "-compose", nil, errs)
+	err := startWindow(fakeConn(t), "-compose", nil, "", errs)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -129,7 +131,8 @@ done
 	conn := fakeConn(t)
 	conn.SetContacts([]string{"me", "a@example.com"})
 	errs := make(chan error, 1)
-	err := startWindow(conn, "-read=m2", []string{"m1", "m2"}, errs)
+	err := startWindow(conn, "-read=m2", []string{"m1", "m2"},
+		"/tmp/events", errs)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -150,6 +153,7 @@ done
 	want := &windowState{
 		Contacts: []string{"me", "a@example.com"},
 		Messages: []string{"m1", "m2"},
+		Notify:   "/tmp/events",
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("got %+v, want %+v", got, want)
@@ -185,5 +189,130 @@ func TestComposeSomewhereHere(t *testing.T) {
 		}
 	default:
 		t.Error("no error reported")
+	}
+}
+
+// TestWindowEvents checks that what tellOpener sends arrives on the
+// channel listenWindowEvents was given, and that Close removes the socket.
+func TestWindowEvents(t *testing.T) {
+	events := make(chan windowEvent, 2)
+	l, err := listenWindowEvents(events)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sent := []windowEvent{
+		{ID: "m1", RemoveLabels: []string{cmdg.Unread}},
+		{ID: "m2", AddLabels: []string{cmdg.Trash},
+			RemoveLabels: []string{cmdg.Inbox}, Drop: true},
+	}
+	for _, ev := range sent {
+		if err := tellOpener(l.Path(), ev); err != nil {
+			t.Fatal(err)
+		}
+		select {
+		case got := <-events:
+			if !reflect.DeepEqual(got, ev) {
+				t.Errorf("got %+v, want %+v", got, ev)
+			}
+		case <-time.After(5 * time.Second):
+			t.Fatalf("%+v not received", ev)
+		}
+	}
+	if err := l.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(l.dir); !os.IsNotExist(err) {
+		t.Errorf("socket directory left: %v", err)
+	}
+	if err := tellOpener(l.Path(), sent[0]); err == nil {
+		t.Error("sent to a closed socket")
+	}
+}
+
+// TestApplyWindowEvent checks the message list's handling of what a
+// message window changed.
+func TestApplyWindowEvent(t *testing.T) {
+	list := func(label string, pos int) *MessageView {
+		// A connection of its own, whose message cache has none
+		// of the messages changed by the cases before.
+		conn := fakeConn(t)
+		mv := &MessageView{label: label, pos: pos}
+		for _, id := range []string{"m0", "m1", "m2"} {
+			resp := &gmail.Message{Id: id, LabelIds: []string{
+				cmdg.Inbox, cmdg.Unread}}
+			mv.messages = append(mv.messages,
+				cmdg.NewMessageWithResponse(conn, id, resp,
+					cmdg.LevelMinimal))
+		}
+		return mv
+	}
+	ids := func(mv *MessageView) []string {
+		var ret []string
+		for _, m := range mv.messages {
+			ret = append(ret, m.ID)
+		}
+		return ret
+	}
+	// archived is what a window archiving id sends.
+	archived := func(id string) windowEvent {
+		return windowEvent{ID: id,
+			RemoveLabels: []string{cmdg.Inbox}, Drop: true}
+	}
+	for _, tc := range []struct {
+		name    string
+		label   string
+		pos     int
+		ev      windowEvent
+		wantInd int
+		wantIDs []string
+		wantPos int
+	}{
+		{"archived before the cursor", cmdg.Inbox, 2,
+			archived("m0"), 0, []string{"m1", "m2"}, 1},
+		{"archived after the cursor", cmdg.Inbox, 0,
+			archived("m1"), 1, []string{"m0", "m2"}, 0},
+		{"archived at the cursor, last", cmdg.Inbox, 2,
+			archived("m2"), 2, []string{"m0", "m1"}, 1},
+		{"archived in a search, still dropped", "", 1,
+			archived("m1"), 1, []string{"m0", "m2"}, 1},
+		{"label of the list removed", "Label_1", 0,
+			windowEvent{ID: "m0",
+				RemoveLabels: []string{"Label_1"}},
+			0, []string{"m1", "m2"}, 0},
+		{"marked read, kept", cmdg.Inbox, 1,
+			windowEvent{ID: "m1",
+				RemoveLabels: []string{cmdg.Unread}},
+			-1, []string{"m0", "m1", "m2"}, 1},
+		{"not listed", cmdg.Inbox, 1,
+			archived("m9"), -1, []string{"m0", "m1", "m2"}, 1},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			mv := list(tc.label, tc.pos)
+			got := mv.applyWindowEvent(tc.ev)
+			if got != tc.wantInd {
+				t.Errorf("got index %d, want %d", got,
+					tc.wantInd)
+			}
+			if got := ids(mv); !reflect.DeepEqual(got,
+				tc.wantIDs) {
+				t.Errorf("got %q, want %q", got, tc.wantIDs)
+			}
+			if mv.pos != tc.wantPos {
+				t.Errorf("got pos %d, want %d", mv.pos,
+					tc.wantPos)
+			}
+		})
+	}
+
+	// Labels are applied to the message, whether or not it is
+	// dropped.
+	mv := list(cmdg.Inbox, 0)
+	m1 := mv.messages[1]
+	mv.applyWindowEvent(windowEvent{ID: "m1",
+		AddLabels:    []string{cmdg.Starred},
+		RemoveLabels: []string{cmdg.Unread}})
+	if !m1.HasLabel(cmdg.Starred) || m1.HasLabel(cmdg.Unread) {
+		t.Errorf("got labels %q, want STARRED and not UNREAD",
+			m1.LocalLabels())
 	}
 }

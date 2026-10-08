@@ -377,13 +377,50 @@ func (mv *MessageView) openInWindow() {
 		ids[n] = m.ID
 	}
 	if err := startWindow(conn, "-read="+msg.ID, ids,
-		mv.errors); err != nil {
+		windowEventSocket(), mv.errors); err != nil {
 		mv.errors <- errors.Wrap(err, "Opening message window")
 		return
 	}
 	// The window marks it read, which the next history check would
 	// show, but showing it now is less confusing.
 	msg.RemoveLabelIDLocal(cmdg.Unread)
+}
+
+// applyWindowEvent applies to the list the change a message window made,
+// as the history check would, and as it would have been had the message
+// been opened in this terminal. It returns the index in the list of the
+// message removed, or -1 if none was.
+func (mv *MessageView) applyWindowEvent(ev windowEvent) int {
+	ind := -1
+	for n, m := range mv.messages {
+		if m.ID == ev.ID {
+			ind = n
+			break
+		}
+	}
+	if ind < 0 {
+		log.Infof("Window event for %q, which is not listed", ev.ID)
+		return -1
+	}
+	msg := mv.messages[ind]
+	for _, l := range ev.AddLabels {
+		msg.AddLabelIDLocal(l)
+	}
+	drop := ev.Drop
+	for _, l := range ev.RemoveLabels {
+		msg.RemoveLabelIDLocal(l)
+		if l == mv.label {
+			drop = true
+		}
+	}
+	if !drop {
+		return -1
+	}
+	mv.messages = append(mv.messages[:ind], mv.messages[ind+1:]...)
+	if ind < mv.pos || (mv.pos >= len(mv.messages) && mv.pos > 0) {
+		mv.pos--
+	}
+	return ind
 }
 
 // continueDraft continues a draft, in a new window if there can be one.
@@ -666,6 +703,14 @@ func (mv *MessageView) Run(ctx context.Context) error {
 						}
 					}
 				}
+			}
+
+		case ev := <-windowEvents:
+			if ind := mv.applyWindowEvent(ev); ind >= 0 {
+				if ind < scroll {
+					scroll--
+				}
+				mkMessagePos()
 			}
 
 		case <-timer.C: // Check history every now and then.

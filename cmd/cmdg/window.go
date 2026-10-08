@@ -7,6 +7,11 @@ package main
 // the addresses, runs the editor, attaches and sends, and then exits. The
 // message list stays usable meanwhile, and any number of windows can be
 // open at once.
+//
+// A message window tells the message list that opened it what it changed,
+// such as archiving the message, by a Unix socket the list listens on, so
+// that the list shows the change at once rather than at its next history
+// check, up to messageListHistoryCheckTime later.
 
 import (
 	"bufio"
@@ -15,8 +20,11 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
+	"net"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync"
 	"syscall"
@@ -93,6 +101,155 @@ type windowState struct {
 	// config, as the opening process did.
 	AccessToken string    `json:"access_token,omitempty"`
 	TokenExpiry time.Time `json:"token_expiry,omitzero"`
+
+	// Notify is the path of the socket to send windowEvents to, for
+	// -read, or empty to send none.
+	Notify string `json:"notify,omitempty"`
+}
+
+// windowEvent is what a message window tells the message list that opened
+// it about a change it made to a message.
+type windowEvent struct {
+	// ID is the ID of the message changed.
+	ID string `json:"id"`
+
+	// AddLabels and RemoveLabels are the IDs of the labels added to
+	// it and removed from it.
+	AddLabels    []string `json:"add_labels,omitempty"`
+	RemoveLabels []string `json:"remove_labels,omitempty"`
+
+	// Drop says to take the message out of the list whatever its
+	// labels, as archiving or deleting a message opened in the same
+	// terminal does.
+	Drop bool `json:"drop,omitempty"`
+}
+
+// windowEventListener listens for windowEvents on a Unix socket.
+type windowEventListener struct {
+	dir string
+	l   net.Listener
+}
+
+// listenWindowEvents listens for windowEvents on a new Unix socket, and
+// sends each one received to events. The socket is in a directory only
+// this user can open.
+func listenWindowEvents(events chan<- windowEvent) (*windowEventListener,
+	error) {
+	dir, err := os.MkdirTemp("", "cmdg-events-*")
+	if err != nil {
+		return nil, errors.Wrap(err, "creating window event directory")
+	}
+	l, err := net.Listen("unix", filepath.Join(dir, "socket"))
+	if err != nil {
+		_ = os.RemoveAll(dir)
+		return nil, errors.Wrap(err, "listening for window events")
+	}
+	go func() {
+		for {
+			c, err := l.Accept()
+			if err != nil {
+				log.Infof("No longer listening for window "+
+					"events: %v", err)
+				return
+			}
+			go readWindowEvents(c, events)
+		}
+	}()
+	return &windowEventListener{dir: dir, l: l}, nil
+}
+
+// readWindowEvents sends the windowEvents read from c to events, until c
+// is closed.
+func readWindowEvents(c net.Conn, events chan<- windowEvent) {
+	defer func() { _ = c.Close() }()
+	dec := json.NewDecoder(c)
+	for {
+		var ev windowEvent
+		if err := dec.Decode(&ev); err == io.EOF {
+			return
+		} else if err != nil {
+			log.Errorf("Failed to read window event: %v", err)
+			return
+		}
+		log.Infof("Got window event: %+v", ev)
+		events <- ev
+	}
+}
+
+// Path returns the path of the socket.
+func (w *windowEventListener) Path() string {
+	return w.l.Addr().String()
+}
+
+// Close stops listening, and removes the socket.
+func (w *windowEventListener) Close() error {
+	err := w.l.Close()
+	if rmErr := os.RemoveAll(w.dir); err == nil {
+		err = rmErr
+	}
+	return err
+}
+
+var (
+	// windowEvents gets the windowEvents sent to this process, for
+	// the message list to apply. The buffer is so that a window does
+	// not wait while the list is busy; a history check picks up any
+	// that the list never takes.
+	windowEvents = make(chan windowEvent, 100)
+
+	windowEventsOnce     sync.Once
+	windowEventsListener *windowEventListener
+)
+
+// windowEventSocket returns the path of the socket that sends to
+// windowEvents, listening on it the first time it is called, or empty if
+// that failed.
+func windowEventSocket() string {
+	windowEventsOnce.Do(func() {
+		var err error
+		windowEventsListener, err = listenWindowEvents(windowEvents)
+		if err != nil {
+			log.Errorf("Message windows will not update the "+
+				"message list until its next history "+
+				"check: %v", err)
+		}
+	})
+	if windowEventsListener == nil {
+		return ""
+	}
+	return windowEventsListener.Path()
+}
+
+// closeWindowEventSocket stops listening on the socket windowEventSocket
+// returned, if it was called.
+func closeWindowEventSocket() {
+	// Do rather than a plain read, so that a listener still starting
+	// is waited for, and none starts after this.
+	windowEventsOnce.Do(func() {})
+	if windowEventsListener == nil {
+		return
+	}
+	if err := windowEventsListener.Close(); err != nil {
+		log.Errorf("Failed to close window event socket: %v", err)
+	}
+}
+
+// tellOpener sends ev to the socket at path, of the message list that
+// opened this window.
+func tellOpener(path string, ev windowEvent) error {
+	c, err := net.DialTimeout("unix", path, time.Second)
+	if err != nil {
+		return errors.Wrap(err, "connecting to the message list")
+	}
+	if err := c.SetDeadline(time.Now().Add(time.Second)); err != nil {
+		_ = c.Close()
+		return errors.Wrap(err, "setting deadline")
+	}
+	if err := json.NewEncoder(c).Encode(&ev); err != nil {
+		_ = c.Close()
+		return errors.Wrap(err, "sending to the message list")
+	}
+	return c.Close()
 }
 
 // windowFlagsSet returns how many of -read, -compose, -reply,
@@ -151,11 +308,12 @@ func windowCommand(terminal, exe string, flags []string,
 
 // startWindow opens a window, running cmdg with the flag what, such as
 // "-compose" or "-reply=<message ID>", conn's current address
-// suggestions, and the IDs of the messages listed. It returns once the
+// suggestions, the IDs of the messages listed, and the path of the socket
+// to send windowEvents to, notify, if not empty. It returns once the
 // terminal has been started. If the window fails to start, the error is
 // sent to errs later.
 func startWindow(conn *cmdg.CmdG, what string, messages []string,
-	errs chan<- error) error {
+	notify string, errs chan<- error) error {
 	exe, err := os.Executable()
 	if err != nil {
 		return errors.Wrap(err, "finding the cmdg binary")
@@ -168,7 +326,8 @@ func startWindow(conn *cmdg.CmdG, what string, messages []string,
 	if err != nil {
 		return errors.Wrap(err, "creating window file")
 	}
-	state := windowState{Contacts: conn.Contacts(), Messages: messages}
+	state := windowState{Contacts: conn.Contacts(), Messages: messages,
+		Notify: notify}
 	state.AccessToken, state.TokenExpiry = conn.AccessToken()
 	if err := json.NewEncoder(f).Encode(&state); err != nil {
 		_ = f.Close()
@@ -244,7 +403,7 @@ func waitToClose() {
 func composeSomewhere(what, doing string, here func() error,
 	errs, windowErrs chan<- error) {
 	if useWindows() {
-		err := startWindow(conn, what, nil, windowErrs)
+		err := startWindow(conn, what, nil, "", windowErrs)
 		if err != nil {
 			errs <- errors.Wrapf(err, "Opening window for %s",
 				doing)
@@ -289,14 +448,16 @@ func windowMain(ctx context.Context) error {
 	}
 
 	if *readFlag != "" {
-		return readMain(ctx, *readFlag, state.Messages)
+		return readMain(ctx, *readFlag, state.Messages, state.Notify)
 	}
 	return composeMain(ctx, state.Contacts)
 }
 
 // readMain shows the message with the ID id, and, by ^N and ^P, the
-// messages before and after it in ids.
-func readMain(ctx context.Context, id string, ids []string) error {
+// messages before and after it in ids. It tells the changes it makes to
+// them to the socket at notify, if not empty.
+func readMain(ctx context.Context, id string, ids []string,
+	notify string) error {
 	pos := -1
 	for n, i := range ids {
 		if i == id {
@@ -332,6 +493,15 @@ func readMain(ctx context.Context, id string, ids []string) error {
 		if err != nil {
 			return errors.Wrap(err, "opening message")
 		}
+		if notify != "" {
+			ov.changed = func(ev windowEvent) {
+				if err := tellOpener(notify, ev); err != nil {
+					log.Errorf("Failed to tell the "+
+						"message list of %+v: %v",
+						ev, err)
+				}
+			}
+		}
 		op, err := ov.Run(ctx)
 		if err != nil {
 			return err
@@ -350,8 +520,9 @@ func readMain(ctx context.Context, id string, ids []string) error {
 		default:
 			// Closing the message, quitting, archiving,
 			// deleting and marking unread all close the
-			// window. The message list sees the changes in
-			// its next history check.
+			// window. The message list was told of the
+			// changes, or else sees them in its next history
+			// check.
 			return nil
 		}
 	}

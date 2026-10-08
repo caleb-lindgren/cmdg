@@ -405,7 +405,9 @@ func main() {
 		}
 	}()
 
-	if err := run(ctx); err != nil {
+	err = run(ctx)
+	closeWindowEventSocket()
+	if err != nil {
 		log.Fatal(err)
 	}
 }

@@ -125,6 +125,10 @@ type OpenMessageView struct {
 	// is nil, they go to errors.
 	windowErrors chan error
 
+	// changed, if not nil, is told of each change made to the labels
+	// of the message, for the message list of a window. Any goroutine.
+	changed func(windowEvent)
+
 	inIncrementalSearch bool
 	incrementalCount    int
 	incrementalCurrent  int
@@ -310,6 +314,32 @@ func (ov *OpenMessageView) Draw(lines []string, scroll int) error {
 	}
 	ov.screen.Printlnf(ov.screen.Height-2, "%s", strings.Repeat("—", ov.screen.Width))
 	return nil
+}
+
+// tell tells changed, if there is one, that the labels add were added to
+// the message and remove removed, and whether to drop it from the list.
+func (ov *OpenMessageView) tell(add, remove []string, drop bool) {
+	if ov.changed == nil {
+		return
+	}
+	ov.changed(windowEvent{
+		ID:           ov.msg.ID,
+		AddLabels:    add,
+		RemoveLabels: remove,
+		Drop:         drop,
+	})
+}
+
+// added tells changed, if there is one, that the labels ids were added to
+// the message.
+func (ov *OpenMessageView) added(ids ...string) {
+	ov.tell(ids, nil, false)
+}
+
+// removed tells changed, if there is one, that the labels ids were
+// removed from the message.
+func (ov *OpenMessageView) removed(ids ...string) {
+	ov.tell(nil, ids, false)
 }
 
 // composeSomewhere replies to or forwards the open message, as given by
@@ -541,11 +571,13 @@ func (ov *OpenMessageView) Run(ctx context.Context) (*MessageViewOp, error) {
 						ov.errors <- errors.Wrapf(err, "Failed to remove unread label")
 					} else {
 						log.Infof("Marked unread in %v", time.Since(st))
+						ov.removed(cmdg.Unread)
 					}
 				}
 				// Does not need to be signaled to
 				// messageview; label list gets
-				// updated by RemoveLabelID.
+				// updated by RemoveLabelID. A window's
+				// message list is told by removed.
 			}()
 			// Redraw could include fewer lines, because 'H' toggled HTML.
 			ov.screen.Clear()
@@ -582,10 +614,14 @@ func (ov *OpenMessageView) Run(ctx context.Context) (*MessageViewOp, error) {
 				if ov.msg.HasLabel(cmdg.Starred) {
 					if err := ov.msg.RemoveLabelID(ctx, cmdg.Starred); err != nil {
 						ov.errors <- errors.Wrap(err, "Removing STARRED label")
+					} else {
+						ov.removed(cmdg.Starred)
 					}
 				} else {
 					if err := ov.msg.AddLabelID(ctx, cmdg.Starred); err != nil {
 						ov.errors <- errors.Wrap(err, "Adding STARRED label")
+					} else {
+						ov.added(cmdg.Starred)
 					}
 				}
 				if err := ov.msg.ReloadLabels(ctx); err != nil {
@@ -613,6 +649,7 @@ func (ov *OpenMessageView) Run(ctx context.Context) (*MessageViewOp, error) {
 						ov.errors <- errors.Wrapf(err, "Failed to label")
 					} else {
 						log.Infof("Labelled: %v", time.Since(st))
+						ov.added(label.Key)
 					}
 					if err := ov.msg.ReloadLabels(ctx); err != nil {
 						ov.errors <- errors.Wrapf(err, "Failed to reload labels")
@@ -644,6 +681,7 @@ func (ov *OpenMessageView) Run(ctx context.Context) (*MessageViewOp, error) {
 							ov.errors <- errors.Wrapf(err, "Failed to unlabel")
 						} else {
 							log.Infof("Unlabelled: %v", time.Since(st))
+							ov.removed(label.Key)
 						}
 						if err := ov.msg.ReloadLabels(ctx); err != nil {
 							ov.errors <- errors.Wrapf(err, "Failed to reload labels")
@@ -666,6 +704,7 @@ func (ov *OpenMessageView) Run(ctx context.Context) (*MessageViewOp, error) {
 					//lint:ignore ST1005 UI-facing message intentionally starts with capital
 					ov.errors <- fmt.Errorf("Failed to mark unread : %v", err)
 				} else {
+					ov.added(cmdg.Unread)
 					return nil, nil
 				}
 			case input.Home, input.XHome:
@@ -706,6 +745,8 @@ func (ov *OpenMessageView) Run(ctx context.Context) (*MessageViewOp, error) {
 				if err := ov.msg.RemoveLabelID(ctx, cmdg.Inbox); err != nil {
 					ov.errors <- fmt.Errorf("Failed to archive : %v", err)
 				} else {
+					ov.tell(nil, []string{cmdg.Inbox},
+						true)
 					return OpRemoveCurrent(nil), nil
 				}
 			case "d": // Delete
@@ -717,6 +758,8 @@ func (ov *OpenMessageView) Run(ctx context.Context) (*MessageViewOp, error) {
 					ov.errors <- fmt.Errorf("Failed to delete (add Trash label) : %v", err)
 					break
 				}
+				ov.tell([]string{cmdg.Trash},
+					[]string{cmdg.Inbox}, true)
 				return OpRemoveCurrent(nil), nil
 			case "s", input.CtrlS: // Search
 				ns, err := ov.incrementalSearch(ctx, lines)
