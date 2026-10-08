@@ -20,6 +20,7 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -50,9 +51,11 @@ var (
 	windowFile = flag.String("window_file", "", "With -read, -compose "+
 		"and the other flags that do one thing and exit: read the "+
 		"address suggestions, and for -read the IDs of the messages "+
-		"^N and ^P move through, from this file, and delete it, "+
-		"rather than loading Google contacts. It is a JSON object "+
-		`with lists of strings "contacts" and "messages".`)
+		"^N and ^P move through, and the OAuth access token to "+
+		"start from, from this file, and delete it, rather than "+
+		"loading Google contacts. It is a JSON object with lists "+
+		`of strings "contacts" and "messages", and strings `+
+		`"access_token" and "token_expiry".`)
 
 	// notPassedOn are the flags a window is not given: those that do
 	// something once and exit or change settings, and those that
@@ -81,6 +84,15 @@ type windowState struct {
 	// Messages are the IDs of the messages in the message list, in
 	// order, for -read.
 	Messages []string `json:"messages,omitempty"`
+
+	// AccessToken is the OAuth access token of the process opening
+	// the window, and TokenExpiry when it expires, so that the window
+	// need not fetch one before its first RPC, which took 210-290ms in
+	// logs/window_timing.log.
+	// The refresh token is not passed: the window reads it from the
+	// config, as the opening process did.
+	AccessToken string    `json:"access_token,omitempty"`
+	TokenExpiry time.Time `json:"token_expiry,omitzero"`
 }
 
 // windowFlagsSet returns how many of -read, -compose, -reply,
@@ -157,6 +169,7 @@ func startWindow(conn *cmdg.CmdG, what string, messages []string,
 		return errors.Wrap(err, "creating window file")
 	}
 	state := windowState{Contacts: conn.Contacts(), Messages: messages}
+	state.AccessToken, state.TokenExpiry = conn.AccessToken()
 	if err := json.NewEncoder(f).Encode(&state); err != nil {
 		_ = f.Close()
 		_ = os.Remove(f.Name())
@@ -261,6 +274,13 @@ func windowMain(ctx context.Context) error {
 		}
 		// For windows started from this one.
 		conn.SetContacts(state.Contacts)
+		if state.AccessToken != "" {
+			conn.SetAccessToken(state.AccessToken,
+				state.TokenExpiry)
+			log.Infof("Using the access token of the process "+
+				"that opened this window, expiring %v",
+				state.TokenExpiry)
+		}
 	} else {
 		if err := conn.LoadContacts(ctx); err != nil {
 			return errors.Wrap(err, "loading contacts")

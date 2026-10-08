@@ -84,6 +84,7 @@ type (
 type CmdG struct {
 	m            sync.RWMutex
 	authedClient *http.Client
+	tokens       *tokenSource // Nil for NewFake.
 	gmail        *gmail.Service
 	drive        *drive.Service
 	people       *people.Service
@@ -226,9 +227,9 @@ func New(fn string) (*CmdG, error) {
 		refresh := cfg.TokenSource(ctx, &oauth2.Token{
 			RefreshToken: token.RefreshToken,
 		})
-		src := oauth2.ReuseTokenSource(token,
+		conn.tokens = newTokenSource(token,
 			loggingTokenSource{refresh})
-		conn.authedClient = oauth2.NewClient(ctx, src)
+		conn.authedClient = oauth2.NewClient(ctx, conn.tokens)
 	}
 	return conn, conn.setupClients()
 }
@@ -248,6 +249,87 @@ func (s loggingTokenSource) Token() (*oauth2.Token, error) {
 	}
 	logRPC(st, err, "oauth2.Token(expiry=%s)", expiry)
 	return t, err
+}
+
+// tokenSource gives out the OAuth tokens RPCs are made with: a token it
+// is given, until that is invalid, then tokens from refresh. It
+// remembers the last token it gave out, so that it can be handed to
+// windows.
+type tokenSource struct {
+	refresh oauth2.TokenSource
+
+	m    sync.Mutex
+	src  oauth2.TokenSource
+	last *oauth2.Token
+}
+
+// newTokenSource returns a tokenSource that starts from t.
+func newTokenSource(t *oauth2.Token,
+	refresh oauth2.TokenSource) *tokenSource {
+	s := &tokenSource{refresh: refresh}
+	s.start(t)
+	return s
+}
+
+// start makes s give out t until it is invalid, and tokens from
+// s.refresh after that.
+func (s *tokenSource) start(t *oauth2.Token) {
+	s.m.Lock()
+	defer s.m.Unlock()
+	s.src = oauth2.ReuseTokenSource(t, s.refresh)
+	s.last = t
+}
+
+// Token returns a valid token, fetching one if need be.
+func (s *tokenSource) Token() (*oauth2.Token, error) {
+	s.m.Lock()
+	src := s.src
+	s.m.Unlock()
+	t, err := src.Token()
+	if err != nil {
+		return nil, err
+	}
+	s.m.Lock()
+	s.last = t
+	s.m.Unlock()
+	return t, nil
+}
+
+// current returns the last token given out, or nil if it is no longer
+// valid. It never fetches one.
+func (s *tokenSource) current() *oauth2.Token {
+	s.m.Lock()
+	defer s.m.Unlock()
+	if s.last == nil || !s.last.Valid() {
+		return nil
+	}
+	return s.last
+}
+
+// AccessToken returns the OAuth access token RPCs are being made with,
+// and when it expires, which is the zero time if that is not known. It
+// returns "" if there is no valid one. It never fetches one, so that it
+// does not wait on the network.
+func (c *CmdG) AccessToken() (string, time.Time) {
+	if c.tokens == nil {
+		return "", time.Time{}
+	}
+	t := c.tokens.current()
+	if t == nil {
+		return "", time.Time{}
+	}
+	return t.AccessToken, t.Expiry
+}
+
+// SetAccessToken makes RPCs use the OAuth access token tok until expiry, and
+// fetch new tokens after that, as usual. A zero expiry means it never expires,
+// as for a token from the config. It is for a window to use the token of the
+// process that opened it, rather than fetching its own.
+func (c *CmdG) SetAccessToken(tok string, expiry time.Time) {
+	if c.tokens == nil {
+		return
+	}
+	c.tokens.start(&oauth2.Token{AccessToken: tok, Expiry: expiry})
 }
 
 func (c *CmdG) setupClients() error {
