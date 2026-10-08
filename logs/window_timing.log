@@ -1379,3 +1379,917 @@ time="2026-10-07T22:22:07.584-04:00" level=info msg="RPC> gmail.Users.Messages.G
 time="2026-10-07T22:22:07.615-04:00" level=info msg="Input loop told to stop" pid=2051
 time="2026-10-07T22:22:07.615-04:00" level=info msg="Keyboard input stopped" pid=2051
 time="2026-10-07T22:22:07.615-04:00" level=info msg="Shutting down" pid=2051
+time="2026-10-07T22:37:44.986-04:00" level=info msg="cmdg 1.05, built from commit dca68e22652a6080f244d36884177a38f823cf04 of 2026-10-08T02:32:57Z with uncommitted changes" pid=20391
+time="2026-10-07T22:37:44.986-04:00" level=info msg="Starting keyboard input" pid=20391
+time="2026-10-07T22:37:44.986-04:00" level=info msg="Running MessageView" pid=20391
+time="2026-10-07T22:37:45.111-04:00" level=info msg="RPC> gmail.Users.GetProfile(email=\"me\") => <nil> 125.434116ms" pid=20391
+time="2026-10-07T22:37:45.112-04:00" level=info msg="Initing history ID to 2307342" pid=20391
+time="2026-10-07T22:37:45.112-04:00" level=info msg="Listing messages on label \"INBOX\" query \"\" with token \"\"…" pid=20391
+time="2026-10-07T22:37:45.112-04:00" level=info msg="Got history update: {historyID:2307342 history:[]}" pid=20391
+time="2026-10-07T22:37:45.166-04:00" level=info msg="RPC> people.OtherContacts.List() => <nil> 179.745462ms" pid=20391
+time="2026-10-07T22:37:45.240-04:00" level=info msg="RPC> gmail.Users.Messages.List(email=\"me\" token= labelID=\"INBOX\" query=\"\" size=100 fields=\"messages,resultSizeEstimate,nextPageToken\")) => <nil> 128.156646ms" pid=20391
+time="2026-10-07T22:37:45.240-04:00" level=info msg="Next page token: \"\"" pid=20391
+time="2026-10-07T22:37:45.240-04:00" level=info msg="Listing messages took 128.344674ms" pid=20391
+time="2026-10-07T22:37:45.240-04:00" level=info msg="MessageListView: Got page!" pid=20391
+time="2026-10-07T22:37:45.240-04:00" level=info msg="All pages loaded" pid=20391
+time="2026-10-07T22:37:45.291-04:00" level=info msg="RPC> gmail.Users.GetProfile(email=\"me\") => <nil> 112.578164ms" pid=20391
+time="2026-10-07T22:37:45.356-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" msgID=1a000d4f1d6bae55 level=metadata) => <nil> 115.893094ms" pid=20391
+time="2026-10-07T22:37:45.364-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" msgID=19fa4f228ecc9017 level=metadata) => <nil> 121.641598ms" pid=20391
+time="2026-10-07T22:37:45.376-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" msgID=1a0b6cc6c3e44b00 level=metadata) => <nil> 135.742951ms" pid=20391
+time="2026-10-07T22:37:45.380-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" msgID=1a0eab0d7a62f4ba level=metadata) => <nil> 139.966072ms" pid=20391
+time="2026-10-07T22:37:45.385-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" msgID=1a02638dcbe2ed73 level=metadata) => <nil> 142.723311ms" pid=20391
+time="2026-10-07T22:37:45.388-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" msgID=19eef9cd592ec8cc level=metadata) => <nil> 146.853429ms" pid=20391
+time="2026-10-07T22:37:45.390-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" msgID=19e26ccf969fa71f level=metadata) => <nil> 148.239269ms" pid=20391
+time="2026-10-07T22:37:45.392-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" msgID=1967f7e7de6cce45 level=metadata) => <nil> 151.972797ms" pid=20391
+time="2026-10-07T22:37:45.397-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" msgID=1a011601029a09f3 level=metadata) => <nil> 154.832273ms" pid=20391
+time="2026-10-07T22:37:45.400-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" msgID=19e45b188196c458 level=metadata) => <nil> 158.205972ms" pid=20391
+time="2026-10-07T22:37:45.487-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" msgID=1a00240d644e541e level=metadata) => <nil> 130.493571ms" pid=20391
+time="2026-10-07T22:37:45.987-04:00" level=info msg="RPC> gmail.Users.Messages.List(email=\"me\" label=\"\") => enough message IDs listed 695.51314ms" pid=20391
+time="2026-10-07T22:37:46.327-04:00" level=info msg="RPC> gmail.Users.Messages.List(email=\"me\" label=\"SENT\") => <nil> 340.555881ms" pid=20391
+time="2026-10-07T22:37:46.330-04:00" level=info msg="Address scan: 2492 new messages to read, of 2492 listed (2000 newest, 697 newest sent)" pid=20391
+time="2026-10-07T22:37:46.496-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a119474fe3f865e\") => <nil> 125.003511ms" pid=20391
+time="2026-10-07T22:37:46.548-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a117ce6ab9d90af\") => <nil> 137.931255ms" pid=20391
+time="2026-10-07T22:37:46.641-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a112cd3b2007f56\") => <nil> 145.334771ms" pid=20391
+time="2026-10-07T22:37:46.675-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a112c577d9f9cae\") => <nil> 126.827962ms" pid=20391
+time="2026-10-07T22:37:46.743-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a109c8953aebe4c\") => <nil> 101.807847ms" pid=20391
+time="2026-10-07T22:37:46.815-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0fe0a3cdff634a\") => <nil> 139.445031ms" pid=20391
+time="2026-10-07T22:37:46.867-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0daf49a6dac78c\") => <nil> 123.418201ms" pid=20391
+time="2026-10-07T22:37:46.940-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0da819aae2842a\") => <nil> 125.046514ms" pid=20391
+time="2026-10-07T22:37:46.944-04:00" level=info msg="Started window, pid 20455: [\"st\" \"-e\" \"/home/caleb/system/cmdg/cmdg\" \"-config=../../.cmdg/personal.conf\" \"-log=logs/window_timing.log\" \"-log_rpc=true\" \"-read=1a02638dcbe2ed73\" \"-window_file=/tmp/cmdg-window-1524572690.json\"]" pid=20391
+time="2026-10-07T22:37:46.995-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0d93feb85f81d2\") => <nil> 127.987061ms" pid=20391
+time="2026-10-07T22:37:47.007-04:00" level=info msg="MessageListView got WINCH!" pid=20391
+time="2026-10-07T22:37:47.013-04:00" level=info msg="cmdg 1.05 window, built from commit dca68e22652a6080f244d36884177a38f823cf04 of 2026-10-08T02:32:57Z with uncommitted changes" pid=20467
+time="2026-10-07T22:37:47.014-04:00" level=info msg="Using the access token of the process that opened this window, expiring 2026-10-07 23:37:43.257165161 -0400 EDT" pid=20467
+time="2026-10-07T22:37:47.068-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0d93ea308815aa\") => <nil> 127.713748ms" pid=20391
+time="2026-10-07T22:37:47.110-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0d66867dc1f106\") => <nil> 114.915074ms" pid=20391
+time="2026-10-07T22:37:47.199-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0d5f626fbe61da\") => <nil> 131.337075ms" pid=20391
+time="2026-10-07T22:37:47.242-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0b9bff6e6aa0b1\") => <nil> 132.320098ms" pid=20391
+time="2026-10-07T22:37:47.309-04:00" level=info msg="RPC> gmail.Users.Labels.List(email=\"me\") => <nil> 295.235063ms" pid=20467
+time="2026-10-07T22:37:47.309-04:00" level=info msg="Loaded labels in 295.341818ms" pid=20467
+time="2026-10-07T22:37:47.310-04:00" level=info msg="Starting keyboard input" pid=20467
+time="2026-10-07T22:37:47.310-04:00" level=info msg="Running OpenMessageView" pid=20467
+time="2026-10-07T22:37:47.323-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0b9919849ed5f0\") => <nil> 123.690103ms" pid=20391
+time="2026-10-07T22:37:47.341-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" msgID=1a02638dcbe2ed73 level=full) => <nil> 326.526991ms" pid=20467
+time="2026-10-07T22:37:47.341-04:00" level=info msg="Message is type \"multipart/alternative\"" pid=20467
+time="2026-10-07T22:37:47.367-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0a838fc4070e65\") => <nil> 124.68435ms" pid=20391
+time="2026-10-07T22:37:47.390-04:00" level=info msg="Rendered HTML in 49.290079ms" pid=20467
+time="2026-10-07T22:37:47.390-04:00" level=info msg="Message is type \"multipart/alternative\"" pid=20467
+time="2026-10-07T22:37:47.409-04:00" level=info msg="Rendered HTML in 18.14681ms" pid=20467
+time="2026-10-07T22:37:47.409-04:00" level=info msg="Got full message in 98.828785ms" pid=20467
+time="2026-10-07T22:37:47.409-04:00" level=info msg="Message arrived" pid=20467
+time="2026-10-07T22:37:47.469-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0a807226e68c79\") => <nil> 101.952262ms" pid=20391
+time="2026-10-07T22:37:47.480-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0a8126b6b5adf3\") => <nil> 156.231692ms" pid=20391
+time="2026-10-07T22:37:47.609-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0980e2ed8d2b85\") => <nil> 128.881815ms" pid=20391
+time="2026-10-07T22:37:47.615-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0a7dd238f6aad5\") => <nil> 145.874282ms" pid=20391
+time="2026-10-07T22:37:47.738-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0980de81cc950c\") => <nil> 129.288521ms" pid=20391
+time="2026-10-07T22:37:47.751-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a096f7bbb82659e\") => <nil> 135.463865ms" pid=20391
+time="2026-10-07T22:37:47.863-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a09319300fcad8b\") => <nil> 124.724484ms" pid=20391
+time="2026-10-07T22:37:47.875-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a092d4458f9b85a\") => <nil> 124.505866ms" pid=20391
+time="2026-10-07T22:37:47.977-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a086f22356d64c0\") => <nil> 101.258585ms" pid=20391
+time="2026-10-07T22:37:47.997-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a086f25f777a277\") => <nil> 133.623972ms" pid=20391
+time="2026-10-07T22:37:48.088-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a086112726eb2ab\") => <nil> 110.739466ms" pid=20391
+time="2026-10-07T22:37:48.123-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0846ca3bda609a\") => <nil> 125.959332ms" pid=20391
+time="2026-10-07T22:37:48.186-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a082e182ea41878\") => <nil> 98.775888ms" pid=20391
+time="2026-10-07T22:37:48.273-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a073d3ee96fe675\") => <nil> 150.373655ms" pid=20391
+time="2026-10-07T22:37:48.327-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a073d2f858e2503\") => <nil> 140.875225ms" pid=20391
+time="2026-10-07T22:37:48.403-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a06f47d3981a04a\") => <nil> 128.980506ms" pid=20391
+time="2026-10-07T22:37:48.438-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0636a114f16507\") => <nil> 110.209426ms" pid=20391
+time="2026-10-07T22:37:48.527-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0598f14134d375\") => <nil> 124.808373ms" pid=20391
+time="2026-10-07T22:37:48.590-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0486918924798b\") => <nil> 152.453881ms" pid=20391
+time="2026-10-07T22:37:48.650-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0410b95316660a\") => <nil> 122.574181ms" pid=20391
+time="2026-10-07T22:37:48.711-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a040e349bceb569\") => <nil> 120.404412ms" pid=20391
+time="2026-10-07T22:37:48.782-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a03b9de240fb416\") => <nil> 131.428515ms" pid=20391
+time="2026-10-07T22:37:48.828-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a03b7f445924e0f\") => <nil> 116.971873ms" pid=20391
+time="2026-10-07T22:37:48.886-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a02ef2b905d3abd\") => <nil> 103.784528ms" pid=20391
+time="2026-10-07T22:37:48.962-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a02a832d71de391\") => <nil> 133.343579ms" pid=20391
+time="2026-10-07T22:37:48.986-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a02a778360cb219\") => <nil> 99.819904ms" pid=20391
+time="2026-10-07T22:37:49.110-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0119f244db1935\") => <nil> 124.414836ms" pid=20391
+time="2026-10-07T22:37:49.111-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a01420b07df0fa2\") => <nil> 149.354972ms" pid=20391
+time="2026-10-07T22:37:49.233-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a00ae2fe5b05deb\") => <nil> 121.896469ms" pid=20391
+time="2026-10-07T22:37:49.235-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a00e13373f7c39a\") => <nil> 124.746626ms" pid=20391
+time="2026-10-07T22:37:49.467-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0071125acd1460\") => <nil> 233.632358ms" pid=20391
+time="2026-10-07T22:37:49.467-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a00710c848b71a5\") => <nil> 231.730594ms" pid=20391
+time="2026-10-07T22:37:49.591-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0071034cc5acbe\") => <nil> 124.077421ms" pid=20391
+time="2026-10-07T22:37:49.595-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a006b631c52021f\") => <nil> 127.573553ms" pid=20391
+time="2026-10-07T22:37:49.689-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0038c68b515319\") => <nil> 97.82171ms" pid=20391
+time="2026-10-07T22:37:49.696-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0037de0a452338\") => <nil> 101.182797ms" pid=20391
+time="2026-10-07T22:37:49.797-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0024023cf7f3fd\") => <nil> 100.766497ms" pid=20391
+time="2026-10-07T22:37:49.819-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0026d9c3a33dd9\") => <nil> 130.21039ms" pid=20391
+time="2026-10-07T22:37:49.920-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0023ef4977657c\") => <nil> 100.327587ms" pid=20391
+time="2026-10-07T22:37:49.924-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0023f83f244cdf\") => <nil> 126.497308ms" pid=20391
+time="2026-10-07T22:37:50.045-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0023e7ad9f2b39\") => <nil> 124.574138ms" pid=20391
+time="2026-10-07T22:37:50.075-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a001be08ab15a8a\") => <nil> 151.080231ms" pid=20391
+time="2026-10-07T22:37:50.184-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a001a2a4ce36b16\") => <nil> 139.252064ms" pid=20391
+time="2026-10-07T22:37:50.208-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a0018a3da246777\") => <nil> 132.760793ms" pid=20391
+time="2026-10-07T22:37:50.315-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a00124f6adb66f2\") => <nil> 130.96322ms" pid=20391
+time="2026-10-07T22:37:50.326-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a001097f1f88838\") => <nil> 118.392445ms" pid=20391
+time="2026-10-07T22:37:50.445-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a00105f5b50d067\") => <nil> 129.767787ms" pid=20391
+time="2026-10-07T22:37:50.452-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a000e795b150168\") => <nil> 125.206749ms" pid=20391
+time="2026-10-07T22:37:50.572-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19ff401641008c5e\") => <nil> 126.877589ms" pid=20391
+time="2026-10-07T22:37:50.599-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19ff3fd01b1041b3\") => <nil> 146.626792ms" pid=20391
+time="2026-10-07T22:37:50.666-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19ff3f494091671b\") => <nil> 93.459594ms" pid=20391
+time="2026-10-07T22:37:50.739-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19ff37f65fc35787\") => <nil> 140.448585ms" pid=20391
+time="2026-10-07T22:37:50.789-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19ff294291fc06a7\") => <nil> 123.457601ms" pid=20391
+time="2026-10-07T22:37:50.863-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19ff287b8b57af68\") => <nil> 123.243466ms" pid=20391
+time="2026-10-07T22:37:50.950-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19fef06ff77a108e\") => <nil> 160.630243ms" pid=20391
+time="2026-10-07T22:37:50.992-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19feefc5502e2ff7\") => <nil> 129.005635ms" pid=20391
+time="2026-10-07T22:37:51.078-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19fe839f22a1a59e\") => <nil> 127.684642ms" pid=20391
+time="2026-10-07T22:37:51.126-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19fe8181a75ab049\") => <nil> 134.493997ms" pid=20391
+time="2026-10-07T22:37:51.179-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19fe8022bd8f7a5d\") => <nil> 100.72313ms" pid=20391
+time="2026-10-07T22:37:51.263-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19fe17c6876055bd\") => <nil> 136.211558ms" pid=20391
+time="2026-10-07T22:37:51.292-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19fdc923c748da21\") => <nil> 113.492318ms" pid=20391
+time="2026-10-07T22:37:51.386-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19fdc91caef87f30\") => <nil> 123.388946ms" pid=20391
+time="2026-10-07T22:37:51.445-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19fdc91294caf19a\") => <nil> 152.49583ms" pid=20391
+time="2026-10-07T22:37:51.496-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19fca4bf0634a409\") => <nil> 109.320344ms" pid=20391
+time="2026-10-07T22:37:51.583-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19fc7e2f8dfb84f3\") => <nil> 138.181868ms" pid=20391
+time="2026-10-07T22:37:51.626-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19fc7b8e677731c0\") => <nil> 130.344951ms" pid=20391
+time="2026-10-07T22:37:51.734-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19fc4360b133c675\") => <nil> 150.204246ms" pid=20391
+time="2026-10-07T22:37:51.753-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19fc2a699067ce2c\") => <nil> 126.494131ms" pid=20391
+time="2026-10-07T22:37:51.844-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19fb993e8f381718\") => <nil> 110.426356ms" pid=20391
+time="2026-10-07T22:37:51.879-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19fb93035648aef2\") => <nil> 126.32889ms" pid=20391
+time="2026-10-07T22:37:51.959-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19fb92bbf02cc2ec\") => <nil> 114.963091ms" pid=20391
+time="2026-10-07T22:37:52.005-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19fb9296e3cc31c9\") => <nil> 125.725696ms" pid=20391
+time="2026-10-07T22:37:52.080-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19fab9c5ce66cc73\") => <nil> 120.072892ms" pid=20391
+time="2026-10-07T22:37:52.134-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19fab81b144fad66\") => <nil> 128.398697ms" pid=20391
+time="2026-10-07T22:37:52.210-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19fa931aa066feab\") => <nil> 129.904281ms" pid=20391
+time="2026-10-07T22:37:52.251-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19fa6cd4fd2035b5\") => <nil> 117.593616ms" pid=20391
+time="2026-10-07T22:37:52.308-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19fa6c5a9bbd4f9c\") => <nil> 97.718034ms" pid=20391
+time="2026-10-07T22:37:52.381-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19fa6c3d4524cac9\") => <nil> 129.790842ms" pid=20391
+time="2026-10-07T22:37:52.440-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19f9c2df0b2e2956\") => <nil> 131.912048ms" pid=20391
+time="2026-10-07T22:37:52.513-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19f944da611f0f47\") => <nil> 131.274141ms" pid=20391
+time="2026-10-07T22:37:52.566-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19f8cc78962ef71c\") => <nil> 125.809944ms" pid=20391
+time="2026-10-07T22:37:52.616-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19f84bb190a8154f\") => <nil> 103.569193ms" pid=20391
+time="2026-10-07T22:37:52.684-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19f84bad5e6f8f0f\") => <nil> 118.605138ms" pid=20391
+time="2026-10-07T22:37:52.737-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19f637e533ba05eb\") => <nil> 120.271356ms" pid=20391
+time="2026-10-07T22:37:52.857-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19f496024bf4f31a\") => <nil> 120.247555ms" pid=20391
+time="2026-10-07T22:37:52.875-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19f637cf217ca82e\") => <nil> 190.409942ms" pid=20391
+time="2026-10-07T22:37:52.979-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19f3f63f5d39fa38\") => <nil> 121.596993ms" pid=20391
+time="2026-10-07T22:37:53.005-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19f3a662eb722d2f\") => <nil> 129.630868ms" pid=20391
+time="2026-10-07T22:37:53.102-04:00" level=info msg="Running OpenMessageView" pid=20467
+time="2026-10-07T22:37:53.104-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19f2e0bf9dce48e9\") => <nil> 99.140004ms" pid=20391
+time="2026-10-07T22:37:53.118-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19f3a5646c10bb94\") => <nil> 138.51597ms" pid=20391
+time="2026-10-07T22:37:53.197-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19f25b1ddd87b76f\") => <nil> 93.408021ms" pid=20391
+time="2026-10-07T22:37:53.238-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" msgID=1a011601029a09f3 level=full) => <nil> 136.620489ms" pid=20467
+time="2026-10-07T22:37:53.239-04:00" level=info msg="Message is type \"multipart/alternative\"" pid=20467
+time="2026-10-07T22:37:53.242-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19f1bb9bf01299a0\") => <nil> 124.498495ms" pid=20391
+time="2026-10-07T22:37:53.290-04:00" level=info msg="Rendered HTML in 51.001045ms" pid=20467
+time="2026-10-07T22:37:53.290-04:00" level=info msg="Message is type \"multipart/alternative\"" pid=20467
+time="2026-10-07T22:37:53.308-04:00" level=info msg="Rendered HTML in 17.725877ms" pid=20467
+time="2026-10-07T22:37:53.308-04:00" level=info msg="Got full message in 206.117445ms" pid=20467
+time="2026-10-07T22:37:53.308-04:00" level=info msg="Message arrived" pid=20467
+time="2026-10-07T22:37:53.322-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19f13b3b1330006f\") => <nil> 124.324793ms" pid=20391
+time="2026-10-07T22:37:53.369-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19f0c193a6406532\") => <nil> 126.990793ms" pid=20391
+time="2026-10-07T22:37:53.423-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19f0b5717918619c\") => <nil> 100.828299ms" pid=20391
+time="2026-10-07T22:37:53.481-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19eff7a6efb92b47\") => <nil> 111.886478ms" pid=20391
+time="2026-10-07T22:37:53.556-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19efa18cc97c3977\") => <nil> 132.68861ms" pid=20391
+time="2026-10-07T22:37:53.586-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19ef57c2f2b501cf\") => <nil> 104.299309ms" pid=20391
+time="2026-10-07T22:37:53.651-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19ef22e371f05699\") => <nil> 95.422057ms" pid=20391
+time="2026-10-07T22:37:53.706-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19ee02f2db91ece5\") => <nil> 119.72074ms" pid=20391
+time="2026-10-07T22:37:53.785-04:00" level=info msg="Running OpenMessageView" pid=20467
+time="2026-10-07T22:37:53.785-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19ecea44550ee362\") => <nil> 133.598133ms" pid=20391
+time="2026-10-07T22:37:53.832-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19ec81cb8d630cc4\") => <nil> 126.676224ms" pid=20391
+time="2026-10-07T22:37:53.923-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19e942bc32c79a9c\") => <nil> 137.921254ms" pid=20391
+time="2026-10-07T22:37:53.972-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19e942b38a2e745b\") => <nil> 139.598972ms" pid=20391
+time="2026-10-07T22:37:53.973-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" msgID=1a00240d644e541e level=full) => <nil> 188.094102ms" pid=20467
+time="2026-10-07T22:37:53.973-04:00" level=info msg="Message is type \"multipart/alternative\"" pid=20467
+time="2026-10-07T22:37:54.022-04:00" level=info msg="Rendered HTML in 48.270373ms" pid=20467
+time="2026-10-07T22:37:54.022-04:00" level=info msg="Message is type \"multipart/alternative\"" pid=20467
+time="2026-10-07T22:37:54.040-04:00" level=info msg="Rendered HTML in 18.328041ms" pid=20467
+time="2026-10-07T22:37:54.040-04:00" level=info msg="Got full message in 255.416947ms" pid=20467
+time="2026-10-07T22:37:54.040-04:00" level=info msg="Message arrived" pid=20467
+time="2026-10-07T22:37:54.061-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19e6ba1700056924\") => <nil> 137.723868ms" pid=20391
+time="2026-10-07T22:37:54.102-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19e6b9fc64e8b58e\") => <nil> 130.008924ms" pid=20391
+time="2026-10-07T22:37:54.188-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19e6b9f14f15c54d\") => <nil> 126.751567ms" pid=20391
+time="2026-10-07T22:37:54.310-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19e65de1269441c8\") => <nil> 207.953629ms" pid=20391
+time="2026-10-07T22:37:54.324-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19e61254b9e800d9\") => <nil> 136.288062ms" pid=20391
+time="2026-10-07T22:37:54.424-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19e3c5b0a4272d03\") => <nil> 99.359788ms" pid=20391
+time="2026-10-07T22:37:54.429-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19e4fdc99812c15b\") => <nil> 118.847199ms" pid=20391
+time="2026-10-07T22:37:54.483-04:00" level=info msg="Running OpenMessageView" pid=20467
+time="2026-10-07T22:37:54.529-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19e17d89646e0464\") => <nil> 105.411152ms" pid=20391
+time="2026-10-07T22:37:54.563-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19dff724831934b5\") => <nil> 133.375907ms" pid=20391
+time="2026-10-07T22:37:54.634-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" msgID=1a000d4f1d6bae55 level=full) => <nil> 151.099149ms" pid=20467
+time="2026-10-07T22:37:54.634-04:00" level=info msg="Message is type \"multipart/alternative\"" pid=20467
+time="2026-10-07T22:37:54.635-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19def96b3d9225e9\") => <nil> 105.669546ms" pid=20391
+time="2026-10-07T22:37:54.688-04:00" level=info msg="Rendered HTML in 52.386005ms" pid=20467
+time="2026-10-07T22:37:54.688-04:00" level=info msg="Message is type \"multipart/alternative\"" pid=20467
+time="2026-10-07T22:37:54.703-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19ddecb0cb84ebbf\") => <nil> 139.944976ms" pid=20391
+time="2026-10-07T22:37:54.708-04:00" level=info msg="Rendered HTML in 19.763206ms" pid=20467
+time="2026-10-07T22:37:54.708-04:00" level=info msg="Got full message in 225.698868ms" pid=20467
+time="2026-10-07T22:37:54.708-04:00" level=info msg="Message arrived" pid=20467
+time="2026-10-07T22:37:54.756-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19dd59a79f550fe3\") => <nil> 120.85535ms" pid=20391
+time="2026-10-07T22:37:54.834-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19dc5f1dbbeb14e9\") => <nil> 131.018601ms" pid=20391
+time="2026-10-07T22:37:54.881-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19db7a230ed6cdae\") => <nil> 124.7221ms" pid=20391
+time="2026-10-07T22:37:54.930-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19dad8d4809ed80a\") => <nil> 95.834697ms" pid=20391
+time="2026-10-07T22:37:54.992-04:00" level=info msg="History for 2307342 INBOX" pid=20391
+time="2026-10-07T22:37:55.001-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19da3f5713086f78\") => <nil> 119.611396ms" pid=20391
+time="2026-10-07T22:37:55.030-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19da3f52a71c9972\") => <nil> 99.324548ms" pid=20391
+time="2026-10-07T22:37:55.104-04:00" level=info msg="Running OpenMessageView" pid=20467
+time="2026-10-07T22:37:55.104-04:00" level=info msg="Got full message in 2.421µs" pid=20467
+time="2026-10-07T22:37:55.104-04:00" level=info msg="Message arrived" pid=20467
+time="2026-10-07T22:37:55.106-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19d943453014bd2b\") => <nil> 105.185209ms" pid=20391
+time="2026-10-07T22:37:55.111-04:00" level=info msg="RPC> gmail.Users.History.List(email=\"me\" historyID=2307342 labelID=\"INBOX\") => <nil> 118.899875ms" pid=20391
+time="2026-10-07T22:37:55.111-04:00" level=info msg="No history since last check" pid=20391
+time="2026-10-07T22:37:55.111-04:00" level=info msg="History check took 119.232299ms" pid=20391
+time="2026-10-07T22:37:55.153-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19d9433b44d01ab5\") => <nil> 123.335079ms" pid=20391
+time="2026-10-07T22:37:55.227-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19d921fda1aed718\") => <nil> 120.619412ms" pid=20391
+time="2026-10-07T22:37:55.248-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19d8e65efcdf78c7\") => <nil> 95.260969ms" pid=20391
+time="2026-10-07T22:37:55.366-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19d8433c75583e3d\") => <nil> 139.311547ms" pid=20391
+time="2026-10-07T22:37:55.367-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19d842da901b5d04\") => <nil> 118.23176ms" pid=20391
+time="2026-10-07T22:37:55.503-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19d7885cb3b5a182\") => <nil> 136.313013ms" pid=20391
+time="2026-10-07T22:37:55.504-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19d8428ac8e17c13\") => <nil> 138.143302ms" pid=20391
+time="2026-10-07T22:37:55.590-04:00" level=info msg="Running OpenMessageView" pid=20467
+time="2026-10-07T22:37:55.590-04:00" level=info msg="Got full message in 2.452µs" pid=20467
+time="2026-10-07T22:37:55.591-04:00" level=info msg="Message arrived" pid=20467
+time="2026-10-07T22:37:55.632-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19d2b27ea39d20b6\") => <nil> 127.753816ms" pid=20391
+time="2026-10-07T22:37:55.681-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19d72c4cf50a04eb\") => <nil> 177.442242ms" pid=20391
+time="2026-10-07T22:37:55.752-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19d2227c2ea1ad10\") => <nil> 119.39596ms" pid=20391
+time="2026-10-07T22:37:55.790-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19d22259b1c434af\") => <nil> 109.506083ms" pid=20391
+time="2026-10-07T22:37:55.891-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19d21ec5b8975da4\") => <nil> 138.688968ms" pid=20391
+time="2026-10-07T22:37:55.911-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19d213413536c8c5\") => <nil> 120.441649ms" pid=20391
+time="2026-10-07T22:37:55.952-04:00" level=info msg="Running OpenMessageView" pid=20467
+time="2026-10-07T22:37:55.952-04:00" level=info msg="Got full message in 2.455µs" pid=20467
+time="2026-10-07T22:37:55.953-04:00" level=info msg="Message arrived" pid=20467
+time="2026-10-07T22:37:56.012-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19d083fc49701030\") => <nil> 101.210019ms" pid=20391
+time="2026-10-07T22:37:56.032-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19d17ebd31ca65de\") => <nil> 141.091786ms" pid=20391
+time="2026-10-07T22:37:56.101-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19cf75fa712c9cf9\") => <nil> 88.693678ms" pid=20391
+time="2026-10-07T22:37:56.148-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19cb4676e6ec6bb4\") => <nil> 116.281589ms" pid=20391
+time="2026-10-07T22:37:56.197-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19ca948bb0da6e19\") => <nil> 95.577876ms" pid=20391
+time="2026-10-07T22:37:56.246-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19c92c3a6f20643b\") => <nil> 97.14237ms" pid=20391
+time="2026-10-07T22:37:56.303-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19c92428b716029e\") => <nil> 105.385675ms" pid=20391
+time="2026-10-07T22:37:56.370-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19c923bed6fb86ab\") => <nil> 124.514166ms" pid=20391
+time="2026-10-07T22:37:56.389-04:00" level=info msg="Running OpenMessageView" pid=20467
+time="2026-10-07T22:37:56.389-04:00" level=info msg="Got full message in 2.415µs" pid=20467
+time="2026-10-07T22:37:56.389-04:00" level=info msg="Message arrived" pid=20467
+time="2026-10-07T22:37:56.409-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19c8c9c70c5b063c\") => <nil> 106.369827ms" pid=20391
+time="2026-10-07T22:37:56.498-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19c8329982fd463a\") => <nil> 128.128808ms" pid=20391
+time="2026-10-07T22:37:56.545-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19c6722ee00d2f64\") => <nil> 135.965733ms" pid=20391
+time="2026-10-07T22:37:56.572-04:00" level=info msg="Running OpenMessageView" pid=20467
+time="2026-10-07T22:37:56.572-04:00" level=info msg="Got full message in 2.333µs" pid=20467
+time="2026-10-07T22:37:56.572-04:00" level=info msg="Message arrived" pid=20467
+time="2026-10-07T22:37:56.602-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19c672138e6da7d8\") => <nil> 103.601019ms" pid=20391
+time="2026-10-07T22:37:56.681-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19c61d531b1727d1\") => <nil> 135.350692ms" pid=20391
+time="2026-10-07T22:37:56.739-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19c54d76faad7680\") => <nil> 136.357645ms" pid=20391
+time="2026-10-07T22:37:56.754-04:00" level=info msg="Running OpenMessageView" pid=20467
+time="2026-10-07T22:37:56.754-04:00" level=info msg="Got full message in 2.054µs" pid=20467
+time="2026-10-07T22:37:56.754-04:00" level=info msg="Message arrived" pid=20467
+time="2026-10-07T22:37:56.793-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19c52510723c7e47\") => <nil> 112.085875ms" pid=20391
+time="2026-10-07T22:37:56.868-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19c4ac067ecfbce3\") => <nil> 128.937439ms" pid=20391
+time="2026-10-07T22:37:56.910-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19c40558d37250bd\") => <nil> 117.270023ms" pid=20391
+time="2026-10-07T22:37:56.933-04:00" level=info msg="Running OpenMessageView" pid=20467
+time="2026-10-07T22:37:56.971-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19c39763d53b2d2f\") => <nil> 102.668403ms" pid=20391
+time="2026-10-07T22:37:57.039-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19bffac1a1c416a9\") => <nil> 128.493988ms" pid=20391
+time="2026-10-07T22:37:57.083-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19bf7503c982615c\") => <nil> 112.374048ms" pid=20391
+time="2026-10-07T22:37:57.086-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" msgID=19fa4f228ecc9017 level=full) => <nil> 152.640923ms" pid=20467
+time="2026-10-07T22:37:57.086-04:00" level=info msg="Single part body of type \"text/html\" with input len 59548" pid=20467
+time="2026-10-07T22:37:57.107-04:00" level=info msg="Running OpenMessageView" pid=20467
+time="2026-10-07T22:37:57.133-04:00" level=info msg="Rendered HTML in 41.858251ms" pid=20467
+time="2026-10-07T22:37:57.133-04:00" level=info msg="Single part body of type \"text/html\" with input len 59548" pid=20467
+time="2026-10-07T22:37:57.154-04:00" level=info msg="Rendered HTML in 16.214196ms" pid=20467
+time="2026-10-07T22:37:57.154-04:00" level=info msg="Got full message in 220.794653ms" pid=20467
+time="2026-10-07T22:37:57.165-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19bf5d8ea1aa8690\") => <nil> 126.168332ms" pid=20391
+time="2026-10-07T22:37:57.257-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19be879659360015\") => <nil> 173.993099ms" pid=20391
+time="2026-10-07T22:37:57.264-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" msgID=19eef9cd592ec8cc level=full) => <nil> 156.868692ms" pid=20467
+time="2026-10-07T22:37:57.265-04:00" level=info msg="Message is type \"multipart/alternative\"" pid=20467
+time="2026-10-07T22:37:57.285-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19be30de537dacb7\") => <nil> 119.656316ms" pid=20391
+time="2026-10-07T22:37:57.312-04:00" level=info msg="Rendered HTML in 46.663862ms" pid=20467
+time="2026-10-07T22:37:57.312-04:00" level=info msg="Message is type \"multipart/alternative\"" pid=20467
+time="2026-10-07T22:37:57.331-04:00" level=info msg="Rendered HTML in 18.568285ms" pid=20467
+time="2026-10-07T22:37:57.331-04:00" level=info msg="Got full message in 223.55838ms" pid=20467
+time="2026-10-07T22:37:57.331-04:00" level=info msg="Message arrived" pid=20467
+time="2026-10-07T22:37:57.396-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19bcd29920699afd\") => <nil> 111.225079ms" pid=20391
+time="2026-10-07T22:37:57.396-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19bcd7d6f1e49e9a\") => <nil> 139.15381ms" pid=20391
+time="2026-10-07T22:37:57.509-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19bb8b4aa156e41f\") => <nil> 112.640664ms" pid=20391
+time="2026-10-07T22:37:57.518-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19b895e979650d60\") => <nil> 121.780115ms" pid=20391
+time="2026-10-07T22:37:57.614-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19b7249894f7667c\") => <nil> 95.131432ms" pid=20391
+time="2026-10-07T22:37:57.637-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19b72bfa7f89dce7\") => <nil> 127.158543ms" pid=20391
+time="2026-10-07T22:37:57.712-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19b5831492f33f61\") => <nil> 98.086185ms" pid=20391
+time="2026-10-07T22:37:57.765-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19b0d78df2678e5e\") => <nil> 127.801355ms" pid=20391
+time="2026-10-07T22:37:57.844-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19afc654135971ed\") => <nil> 131.474186ms" pid=20391
+time="2026-10-07T22:37:57.874-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19afc6437457adba\") => <nil> 108.960159ms" pid=20391
+time="2026-10-07T22:37:57.949-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19afc63302016c3f\") => <nil> 104.88243ms" pid=20391
+time="2026-10-07T22:37:57.993-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19ae762a192fa4b5\") => <nil> 119.68585ms" pid=20391
+time="2026-10-07T22:37:58.038-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19ae23acf3525961\") => <nil> 89.208112ms" pid=20391
+time="2026-10-07T22:37:58.114-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19ae02517c19a6bc\") => <nil> 120.594484ms" pid=20391
+time="2026-10-07T22:37:58.172-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19aaeb10ec1fd6a2\") => <nil> 134.158285ms" pid=20391
+time="2026-10-07T22:37:58.248-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19a85d4fa4d385b6\") => <nil> 133.457927ms" pid=20391
+time="2026-10-07T22:37:58.266-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19a85d372016f288\") => <nil> 93.577727ms" pid=20391
+time="2026-10-07T22:37:58.351-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19a794c3a38788a4\") => <nil> 102.73704ms" pid=20391
+time="2026-10-07T22:37:58.417-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19a7946b995d8780\") => <nil> 151.062885ms" pid=20391
+time="2026-10-07T22:37:58.483-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19a4b7fe56edcd18\") => <nil> 132.391213ms" pid=20391
+time="2026-10-07T22:37:58.532-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19a35343e2d3ddeb\") => <nil> 115.056359ms" pid=20391
+time="2026-10-07T22:37:58.584-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19a34fe20e766329\") => <nil> 100.298422ms" pid=20391
+time="2026-10-07T22:37:58.656-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19a3065c80eb219b\") => <nil> 123.218542ms" pid=20391
+time="2026-10-07T22:37:58.709-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19a2c937c29c6b13\") => <nil> 125.317345ms" pid=20391
+time="2026-10-07T22:37:58.745-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19a286e4cbfb6f62\") => <nil> 88.908587ms" pid=20391
+time="2026-10-07T22:37:58.849-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19a28677cf3f12bf\") => <nil> 139.170313ms" pid=20391
+time="2026-10-07T22:37:58.880-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19a0975107a4dfbf\") => <nil> 135.202416ms" pid=20391
+time="2026-10-07T22:37:58.952-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"199f8f8d60a80e86\") => <nil> 103.367264ms" pid=20391
+time="2026-10-07T22:37:58.970-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"199f8f4fad35512d\") => <nil> 89.444756ms" pid=20391
+time="2026-10-07T22:37:59.089-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"199f3b6ec89824f0\") => <nil> 136.864381ms" pid=20391
+time="2026-10-07T22:37:59.100-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"199e89c164e31a30\") => <nil> 130.074346ms" pid=20391
+time="2026-10-07T22:37:59.168-04:00" level=info msg="Running OpenMessageView" pid=20467
+time="2026-10-07T22:37:59.168-04:00" level=info msg="Got full message in 2.602µs" pid=20467
+time="2026-10-07T22:37:59.168-04:00" level=info msg="Message arrived" pid=20467
+time="2026-10-07T22:37:59.193-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"199de9bcac220e5e\") => <nil> 104.179265ms" pid=20391
+time="2026-10-07T22:37:59.196-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"199de55084aaad3d\") => <nil> 95.348048ms" pid=20391
+time="2026-10-07T22:37:59.314-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"199de475f02bfc0c\") => <nil> 118.008093ms" pid=20391
+time="2026-10-07T22:37:59.322-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"199de5320b888eea\") => <nil> 128.098505ms" pid=20391
+time="2026-10-07T22:37:59.409-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19979618b25d32dd\") => <nil> 95.145647ms" pid=20391
+time="2026-10-07T22:37:59.425-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1995d102eee2eda1\") => <nil> 103.206963ms" pid=20391
+time="2026-10-07T22:37:59.532-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19944932d22183b2\") => <nil> 122.858976ms" pid=20391
+time="2026-10-07T22:37:59.534-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1994486bef4b8813\") => <nil> 108.545804ms" pid=20391
+time="2026-10-07T22:37:59.660-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1993dc94a20fafa7\") => <nil> 127.524274ms" pid=20391
+time="2026-10-07T22:37:59.669-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"199341984c19c910\") => <nil> 135.218613ms" pid=20391
+time="2026-10-07T22:37:59.768-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"199176460a4a735d\") => <nil> 108.615366ms" pid=20391
+time="2026-10-07T22:37:59.781-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1990841ee15b6a10\") => <nil> 112.197093ms" pid=20391
+time="2026-10-07T22:37:59.870-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1990098a28b475ca\") => <nil> 101.787576ms" pid=20391
+time="2026-10-07T22:37:59.878-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"198fcf2cd63139aa\") => <nil> 96.487115ms" pid=20391
+time="2026-10-07T22:37:59.961-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"198e2aee80d51d6a\") => <nil> 90.838473ms" pid=20391
+time="2026-10-07T22:37:59.976-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"198be2f32cb8221e\") => <nil> 97.443932ms" pid=20391
+time="2026-10-07T22:38:00.057-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"198bd914a26477d8\") => <nil> 95.397738ms" pid=20391
+time="2026-10-07T22:38:00.100-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"198a437b77494f21\") => <nil> 123.797634ms" pid=20391
+time="2026-10-07T22:38:00.176-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1989f12f0367d72b\") => <nil> 119.562899ms" pid=20391
+time="2026-10-07T22:38:00.203-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1988f0aeb9527030\") => <nil> 103.68325ms" pid=20391
+time="2026-10-07T22:38:00.263-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1987f525f4b7a629\") => <nil> 86.868738ms" pid=20391
+time="2026-10-07T22:38:00.340-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1987a75a6627cdc7\") => <nil> 136.004671ms" pid=20391
+time="2026-10-07T22:38:00.365-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19877cb8be7ac341\") => <nil> 101.039531ms" pid=20391
+time="2026-10-07T22:38:00.435-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1987699be550d8fe\") => <nil> 95.559312ms" pid=20391
+time="2026-10-07T22:38:00.501-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"198768bb59805266\") => <nil> 135.935986ms" pid=20391
+time="2026-10-07T22:38:00.558-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1986ccdf7cb32c6d\") => <nil> 122.704981ms" pid=20391
+time="2026-10-07T22:38:00.600-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1986cc5a31376e1e\") => <nil> 99.475319ms" pid=20391
+time="2026-10-07T22:38:00.699-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1986cc23f1fa1c31\") => <nil> 140.325217ms" pid=20391
+time="2026-10-07T22:38:00.713-04:00" level=info msg="Stopping keyboard input" pid=20467
+time="2026-10-07T22:38:00.763-04:00" level=info msg="Input loop told to stop" pid=20467
+time="2026-10-07T22:38:00.763-04:00" level=info msg="Keyboard input stopped" pid=20467
+time="2026-10-07T22:38:00.769-04:00" level=info msg="Window pid 20455 exited: <nil>, stderr \"\"" pid=20391
+time="2026-10-07T22:38:00.775-04:00" level=info msg="MessageListView got WINCH!" pid=20391
+time="2026-10-07T22:38:00.789-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19853938d44e86d5\") => <nil> 188.165246ms" pid=20391
+time="2026-10-07T22:38:00.840-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19842cea008ffb45\") => <nil> 141.459108ms" pid=20391
+time="2026-10-07T22:38:00.894-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1983589e7ef6eaec\") => <nil> 104.810555ms" pid=20391
+time="2026-10-07T22:38:00.962-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"197fab8900be1d30\") => <nil> 121.140653ms" pid=20391
+time="2026-10-07T22:38:01.016-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"197f63fdee7603db\") => <nil> 122.278243ms" pid=20391
+time="2026-10-07T22:38:01.058-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"197f5bc62e7a513e\") => <nil> 96.130773ms" pid=20391
+time="2026-10-07T22:38:01.121-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"197dce5beeafa615\") => <nil> 104.875689ms" pid=20391
+time="2026-10-07T22:38:01.154-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"197d7bba4a21ad83\") => <nil> 96.535036ms" pid=20391
+time="2026-10-07T22:38:01.249-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"197a004e9c887973\") => <nil> 128.269ms" pid=20391
+time="2026-10-07T22:38:01.271-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1979ad27afbfc70a\") => <nil> 116.334245ms" pid=20391
+time="2026-10-07T22:38:01.368-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1979a7b93debea94\") => <nil> 118.834282ms" pid=20391
+time="2026-10-07T22:38:01.391-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1979996870885497\") => <nil> 120.346777ms" pid=20391
+time="2026-10-07T22:38:01.469-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1979989b0c19e2d4\") => <nil> 100.508139ms" pid=20391
+time="2026-10-07T22:38:01.508-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"197860f71e4a6280\") => <nil> 116.557932ms" pid=20391
+time="2026-10-07T22:38:01.631-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19765894b2be6b3a\") => <nil> 122.372932ms" pid=20391
+time="2026-10-07T22:38:01.641-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19785da7ba4408e7\") => <nil> 172.135357ms" pid=20391
+time="2026-10-07T22:38:01.725-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1975fbfbeceec245\") => <nil> 94.239168ms" pid=20391
+time="2026-10-07T22:38:01.739-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19745e123cf94cf0\") => <nil> 97.645313ms" pid=20391
+time="2026-10-07T22:38:01.746-04:00" level=info msg="Address scan: 250 of 2492 new messages done, 0 of them failed; read 250 messages in all, back to 2025-06-06, dating 80 addresses" pid=20391
+time="2026-10-07T22:38:01.886-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19745e0620cc6ca2\") => <nil> 139.168252ms" pid=20391
+time="2026-10-07T22:38:01.893-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19736e764916b360\") => <nil> 122.350401ms" pid=20391
+time="2026-10-07T22:38:02.016-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1973253cc25bbb91\") => <nil> 122.676955ms" pid=20391
+time="2026-10-07T22:38:02.016-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19732543508317de\") => <nil> 130.39731ms" pid=20391
+time="2026-10-07T22:38:02.124-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19732442086c0c03\") => <nil> 107.374089ms" pid=20391
+time="2026-10-07T22:38:02.124-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1971ecfe696a1e88\") => <nil> 107.942573ms" pid=20391
+time="2026-10-07T22:38:02.164-04:00" level=info msg="Started window, pid 20742: [\"st\" \"-e\" \"/home/caleb/system/cmdg/cmdg\" \"-config=../../.cmdg/personal.conf\" \"-log=logs/window_timing.log\" \"-log_rpc=true\" \"-read=1a00240d644e541e\" \"-window_file=/tmp/cmdg-window-3509613875.json\"]" pid=20391
+time="2026-10-07T22:38:02.196-04:00" level=info msg="MessageListView got WINCH!" pid=20391
+time="2026-10-07T22:38:02.202-04:00" level=info msg="cmdg 1.05 window, built from commit dca68e22652a6080f244d36884177a38f823cf04 of 2026-10-08T02:32:57Z with uncommitted changes" pid=20745
+time="2026-10-07T22:38:02.203-04:00" level=info msg="Using the access token of the process that opened this window, expiring 2026-10-07 23:37:43.257165161 -0400 EDT" pid=20745
+time="2026-10-07T22:38:02.242-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"197135ceff78e369\") => <nil> 117.820004ms" pid=20391
+time="2026-10-07T22:38:02.245-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"197135266564e182\") => <nil> 120.214711ms" pid=20391
+time="2026-10-07T22:38:02.365-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1970dc04643bece2\") => <nil> 122.915312ms" pid=20391
+time="2026-10-07T22:38:02.383-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"196f42d4e5ab19a4\") => <nil> 138.3497ms" pid=20391
+time="2026-10-07T22:38:02.479-04:00" level=info msg="RPC> gmail.Users.Labels.List(email=\"me\") => <nil> 275.793345ms" pid=20745
+time="2026-10-07T22:38:02.479-04:00" level=info msg="Loaded labels in 275.90072ms" pid=20745
+time="2026-10-07T22:38:02.479-04:00" level=info msg="Starting keyboard input" pid=20745
+time="2026-10-07T22:38:02.479-04:00" level=info msg="Running OpenMessageView" pid=20745
+time="2026-10-07T22:38:02.487-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"196f3f913b626994\") => <nil> 122.861241ms" pid=20391
+time="2026-10-07T22:38:02.498-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" msgID=1a00240d644e541e level=full) => <nil> 294.64728ms" pid=20745
+time="2026-10-07T22:38:02.498-04:00" level=info msg="Message is type \"multipart/alternative\"" pid=20745
+time="2026-10-07T22:38:02.522-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"196f33cf740845d6\") => <nil> 139.101614ms" pid=20391
+time="2026-10-07T22:38:02.543-04:00" level=info msg="Rendered HTML in 45.079267ms" pid=20745
+time="2026-10-07T22:38:02.543-04:00" level=info msg="Message is type \"multipart/alternative\"" pid=20745
+time="2026-10-07T22:38:02.561-04:00" level=info msg="Rendered HTML in 17.706708ms" pid=20745
+time="2026-10-07T22:38:02.561-04:00" level=info msg="Got full message in 81.734161ms" pid=20745
+time="2026-10-07T22:38:02.561-04:00" level=info msg="Message arrived" pid=20745
+time="2026-10-07T22:38:02.620-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"196bfdf0c66b95ae\") => <nil> 97.665162ms" pid=20391
+time="2026-10-07T22:38:02.627-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"196da4aa723fcc59\") => <nil> 139.153946ms" pid=20391
+time="2026-10-07T22:38:02.708-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"196876c081eb822a\") => <nil> 87.42703ms" pid=20391
+time="2026-10-07T22:38:02.716-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19686b4e8776fc3e\") => <nil> 89.604122ms" pid=20391
+time="2026-10-07T22:38:02.839-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1967f82e7de58c46\") => <nil> 130.815291ms" pid=20391
+time="2026-10-07T22:38:02.843-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1967ef718139a4fa\") => <nil> 126.237963ms" pid=20391
+time="2026-10-07T22:38:02.926-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19669792533d7e97\") => <nil> 86.808518ms" pid=20391
+time="2026-10-07T22:38:02.965-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1965b2cc96a23dce\") => <nil> 121.60949ms" pid=20391
+time="2026-10-07T22:38:03.027-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1965b048b84fd28c\") => <nil> 100.894086ms" pid=20391
+time="2026-10-07T22:38:03.058-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1965a54ddad1e786\") => <nil> 93.603264ms" pid=20391
+time="2026-10-07T22:38:03.121-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19655a1208ad2f0d\") => <nil> 94.034069ms" pid=20391
+time="2026-10-07T22:38:03.162-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1964fc2c29038335\") => <nil> 103.385039ms" pid=20391
+time="2026-10-07T22:38:03.241-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1964fc0c280514b8\") => <nil> 120.476034ms" pid=20391
+time="2026-10-07T22:38:03.269-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1964f0d9ab296b62\") => <nil> 107.48842ms" pid=20391
+time="2026-10-07T22:38:03.366-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1963e2f772963f6d\") => <nil> 123.985494ms" pid=20391
+time="2026-10-07T22:38:03.368-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19630a8f0b41c858\") => <nil> 98.546887ms" pid=20391
+time="2026-10-07T22:38:03.470-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19624f24cbb939db\") => <nil> 102.082277ms" pid=20391
+time="2026-10-07T22:38:03.473-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19624f3b9b78c1ac\") => <nil> 107.327831ms" pid=20391
+time="2026-10-07T22:38:03.567-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19600ac16f56eb14\") => <nil> 94.275179ms" pid=20391
+time="2026-10-07T22:38:03.594-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19615bf34bea5d78\") => <nil> 123.154207ms" pid=20391
+time="2026-10-07T22:38:03.685-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"195f6774d7e59c6b\") => <nil> 117.64374ms" pid=20391
+time="2026-10-07T22:38:03.711-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"195ed762d70df9b7\") => <nil> 117.438403ms" pid=20391
+time="2026-10-07T22:38:03.797-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"195ec1c8e92f7eaf\") => <nil> 111.672397ms" pid=20391
+time="2026-10-07T22:38:03.829-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"195d274b01334147\") => <nil> 117.399138ms" pid=20391
+time="2026-10-07T22:38:03.894-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"195d26f5dba68c65\") => <nil> 96.643831ms" pid=20391
+time="2026-10-07T22:38:03.946-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"195d26ecad3d4d4d\") => <nil> 117.110208ms" pid=20391
+time="2026-10-07T22:38:04.038-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"195c4419b5f64dad\") => <nil> 144.107926ms" pid=20391
+time="2026-10-07T22:38:04.044-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"195c43e9937c87a9\") => <nil> 98.090945ms" pid=20391
+time="2026-10-07T22:38:04.141-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"195c4250935f9c24\") => <nil> 102.873298ms" pid=20391
+time="2026-10-07T22:38:04.172-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"195be62a609c4333\") => <nil> 127.974338ms" pid=20391
+time="2026-10-07T22:38:04.236-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"195be2264c494968\") => <nil> 95.13113ms" pid=20391
+time="2026-10-07T22:38:04.281-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"195bddaa182f9d28\") => <nil> 108.192382ms" pid=20391
+time="2026-10-07T22:38:04.343-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"195bdd18741e751d\") => <nil> 106.360078ms" pid=20391
+time="2026-10-07T22:38:04.380-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1959193756fada55\") => <nil> 99.025446ms" pid=20391
+time="2026-10-07T22:38:04.436-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"195830bde4bf3d53\") => <nil> 93.184169ms" pid=20391
+time="2026-10-07T22:38:04.525-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19582db51e2a7fc7\") => <nil> 88.459116ms" pid=20391
+time="2026-10-07T22:38:04.537-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19582df577c2aea8\") => <nil> 157.283547ms" pid=20391
+time="2026-10-07T22:38:04.643-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19580e1f6ca6a6f0\") => <nil> 117.516568ms" pid=20391
+time="2026-10-07T22:38:04.665-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1957df57d280f498\") => <nil> 127.829524ms" pid=20391
+time="2026-10-07T22:38:04.768-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1954d8a3f1f9a048\") => <nil> 125.489345ms" pid=20391
+time="2026-10-07T22:38:04.782-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1953f128a9fbeacd\") => <nil> 116.298796ms" pid=20391
+time="2026-10-07T22:38:04.867-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1953d67c7fb196ac\") => <nil> 99.083951ms" pid=20391
+time="2026-10-07T22:38:04.874-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"195361295e815a25\") => <nil> 91.624163ms" pid=20391
+time="2026-10-07T22:38:04.981-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"195218a99b534d55\") => <nil> 107.705252ms" pid=20391
+time="2026-10-07T22:38:04.992-04:00" level=info msg="History for 2307342 INBOX" pid=20391
+time="2026-10-07T22:38:05.008-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19526611c988468d\") => <nil> 140.53954ms" pid=20391
+time="2026-10-07T22:38:05.106-04:00" level=info msg="RPC> gmail.Users.History.List(email=\"me\" historyID=2307342 labelID=\"INBOX\") => <nil> 113.542971ms" pid=20391
+time="2026-10-07T22:38:05.106-04:00" level=info msg="No history since last check" pid=20391
+time="2026-10-07T22:38:05.106-04:00" level=info msg="History check took 113.731566ms" pid=20391
+time="2026-10-07T22:38:05.108-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1950bcaedc216b15\") => <nil> 100.220375ms" pid=20391
+time="2026-10-07T22:38:05.114-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19519ec68d50aa9b\") => <nil> 132.92613ms" pid=20391
+time="2026-10-07T22:38:05.235-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"195055913b87e903\") => <nil> 120.803603ms" pid=20391
+time="2026-10-07T22:38:05.236-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19506406b34f6c76\") => <nil> 127.953133ms" pid=20391
+time="2026-10-07T22:38:05.331-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19504b0f597a173d\") => <nil> 95.748992ms" pid=20391
+time="2026-10-07T22:38:05.344-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"194f03e7305a3a36\") => <nil> 107.681869ms" pid=20391
+time="2026-10-07T22:38:05.459-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"194f03da76d1e174\") => <nil> 127.559529ms" pid=20391
+time="2026-10-07T22:38:05.462-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"194d8121ac9e535e\") => <nil> 117.354857ms" pid=20391
+time="2026-10-07T22:38:05.575-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"194c6d757ae4817f\") => <nil> 115.758712ms" pid=20391
+time="2026-10-07T22:38:05.651-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"194b5987b742b773\") => <nil> 189.373142ms" pid=20391
+time="2026-10-07T22:38:05.706-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"194a928d97d61457\") => <nil> 130.551937ms" pid=20391
+time="2026-10-07T22:38:05.749-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"194a6379e8617d7a\") => <nil> 97.411976ms" pid=20391
+time="2026-10-07T22:38:05.835-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1948aaba4ad683d0\") => <nil> 128.911321ms" pid=20391
+time="2026-10-07T22:38:05.841-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19488ce6e721b05b\") => <nil> 92.434031ms" pid=20391
+time="2026-10-07T22:38:05.937-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1947b012645fcc51\") => <nil> 102.590547ms" pid=20391
+time="2026-10-07T22:38:05.963-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1947a47cd5a0a441\") => <nil> 121.752711ms" pid=20391
+time="2026-10-07T22:38:06.049-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19477f81dc581d2a\") => <nil> 111.348899ms" pid=20391
+time="2026-10-07T22:38:06.056-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1946d478fe79b2eb\") => <nil> 92.849805ms" pid=20391
+time="2026-10-07T22:38:06.149-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1945cbd2ba452708\") => <nil> 100.30112ms" pid=20391
+time="2026-10-07T22:38:06.152-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1945cbb075f3a9d7\") => <nil> 95.367138ms" pid=20391
+time="2026-10-07T22:38:06.277-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1944c68f3d9f66f3\") => <nil> 127.201631ms" pid=20391
+time="2026-10-07T22:38:06.284-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1943c52dec099565\") => <nil> 131.811613ms" pid=20391
+time="2026-10-07T22:38:06.372-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1943bfb26a6fbcf3\") => <nil> 94.891769ms" pid=20391
+time="2026-10-07T22:38:06.385-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19413ff694cba432\") => <nil> 101.485324ms" pid=20391
+time="2026-10-07T22:38:06.464-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"194112661396ace7\") => <nil> 92.4827ms" pid=20391
+time="2026-10-07T22:38:06.506-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"193fb2be3e96ba23\") => <nil> 120.219412ms" pid=20391
+time="2026-10-07T22:38:06.593-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"193d7a55b0540a69\") => <nil> 87.79111ms" pid=20391
+time="2026-10-07T22:38:06.611-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"193f4533c0ab8445\") => <nil> 146.524811ms" pid=20391
+time="2026-10-07T22:38:06.701-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1938f5a7fe78bda9\") => <nil> 89.31874ms" pid=20391
+time="2026-10-07T22:38:06.721-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"193b5e44cdb1bc23\") => <nil> 127.171822ms" pid=20391
+time="2026-10-07T22:38:06.830-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1938ac46bb47e050\") => <nil> 128.851369ms" pid=20391
+time="2026-10-07T22:38:06.846-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1936f45784a4d8fa\") => <nil> 124.627732ms" pid=20391
+time="2026-10-07T22:38:06.951-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1936f1c6587a5518\") => <nil> 121.423654ms" pid=20391
+time="2026-10-07T22:38:06.952-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1936dbcd9a14b70e\") => <nil> 106.606386ms" pid=20391
+time="2026-10-07T22:38:07.057-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"193648120646902f\") => <nil> 105.670126ms" pid=20391
+time="2026-10-07T22:38:07.084-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19364482fe25d5cc\") => <nil> 131.53156ms" pid=20391
+time="2026-10-07T22:38:07.189-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1934757810a71b3e\") => <nil> 104.725317ms" pid=20391
+time="2026-10-07T22:38:07.190-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1934758cd4a1083e\") => <nil> 132.386087ms" pid=20391
+time="2026-10-07T22:38:07.287-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1933d7a9950ae5dc\") => <nil> 97.84827ms" pid=20391
+time="2026-10-07T22:38:07.287-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1932c97b0fe8e4fb\") => <nil> 97.361111ms" pid=20391
+time="2026-10-07T22:38:07.376-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1932610092cb918b\") => <nil> 88.646134ms" pid=20391
+time="2026-10-07T22:38:07.398-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1932ba2742712d3f\") => <nil> 110.437388ms" pid=20391
+time="2026-10-07T22:38:07.502-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19323574dbff8e89\") => <nil> 125.863051ms" pid=20391
+time="2026-10-07T22:38:07.514-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1931dc804a1b19d4\") => <nil> 116.175598ms" pid=20391
+time="2026-10-07T22:38:07.600-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1931dc216bb45df2\") => <nil> 97.698037ms" pid=20391
+time="2026-10-07T22:38:07.654-04:00" level=info msg="Stopping keyboard input" pid=20745
+time="2026-10-07T22:38:07.656-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"192fcbca14de9707\") => <nil> 141.530095ms" pid=20391
+time="2026-10-07T22:38:07.704-04:00" level=info msg="Input loop told to stop" pid=20745
+time="2026-10-07T22:38:07.704-04:00" level=info msg="Keyboard input stopped" pid=20745
+time="2026-10-07T22:38:07.710-04:00" level=info msg="Window pid 20742 exited: <nil>, stderr \"\"" pid=20391
+time="2026-10-07T22:38:07.711-04:00" level=info msg="MessageListView got WINCH!" pid=20391
+time="2026-10-07T22:38:07.724-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"192fa2790919b8f0\") => <nil> 123.937542ms" pid=20391
+time="2026-10-07T22:38:07.750-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"192f26f599fdc3c6\") => <nil> 94.16797ms" pid=20391
+time="2026-10-07T22:38:07.836-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"192f252f296dfbb8\") => <nil> 112.347982ms" pid=20391
+time="2026-10-07T22:38:07.873-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"192ed3e637596d68\") => <nil> 123.325769ms" pid=20391
+time="2026-10-07T22:38:07.940-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"192daa5dc87d3308\") => <nil> 103.458342ms" pid=20391
+time="2026-10-07T22:38:08.003-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"192cffdda72417c7\") => <nil> 129.482135ms" pid=20391
+time="2026-10-07T22:38:08.043-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"192ab5ba9c9e1c35\") => <nil> 102.833017ms" pid=20391
+time="2026-10-07T22:38:08.100-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1928b97ac5bec27c\") => <nil> 97.255389ms" pid=20391
+time="2026-10-07T22:38:08.143-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19271ac6fa5cf0ea\") => <nil> 100.442428ms" pid=20391
+time="2026-10-07T22:38:08.230-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1926ebbc9181191a\") => <nil> 129.555381ms" pid=20391
+time="2026-10-07T22:38:08.238-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"192679a4e07a7740\") => <nil> 94.601202ms" pid=20391
+time="2026-10-07T22:38:08.333-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"192461678ce8c3de\") => <nil> 102.586803ms" pid=20391
+time="2026-10-07T22:38:08.337-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"192460778df94962\") => <nil> 98.436241ms" pid=20391
+time="2026-10-07T22:38:08.438-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19246067ee30ed5d\") => <nil> 104.993046ms" pid=20391
+time="2026-10-07T22:38:08.480-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"192319a8c17ba07b\") => <nil> 143.647964ms" pid=20391
+time="2026-10-07T22:38:08.533-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1922ec993a2d9dfa\") => <nil> 94.922591ms" pid=20391
+time="2026-10-07T22:38:08.585-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1921f48b3de0d56b\") => <nil> 104.006836ms" pid=20391
+time="2026-10-07T22:38:08.633-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1921f43b6b0f507f\") => <nil> 99.597058ms" pid=20391
+time="2026-10-07T22:38:08.676-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1921f41562f55b75\") => <nil> 91.076683ms" pid=20391
+time="2026-10-07T22:38:08.738-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1921f3fd300fd6e4\") => <nil> 105.504453ms" pid=20391
+time="2026-10-07T22:38:08.789-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1920a8860b544db4\") => <nil> 113.06785ms" pid=20391
+time="2026-10-07T22:38:08.845-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1920683fef06d5fd\") => <nil> 106.249159ms" pid=20391
+time="2026-10-07T22:38:08.983-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1920683d7da90c04\") => <nil> 194.27762ms" pid=20391
+time="2026-10-07T22:38:08.989-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1920599fc8efa6ec\") => <nil> 144.035508ms" pid=20391
+time="2026-10-07T22:38:09.094-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19205863a1a63c9e\") => <nil> 104.974093ms" pid=20391
+time="2026-10-07T22:38:09.116-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1920587e0b7f9c23\") => <nil> 132.030013ms" pid=20391
+time="2026-10-07T22:38:09.216-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"191fb463e5660006\") => <nil> 100.641362ms" pid=20391
+time="2026-10-07T22:38:09.221-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"191fb47a63d50321\") => <nil> 126.405658ms" pid=20391
+time="2026-10-07T22:38:09.334-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"191f2eb0ca5df831\") => <nil> 117.536588ms" pid=20391
+time="2026-10-07T22:38:09.334-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"191ece00b934ac80\") => <nil> 109.920484ms" pid=20391
+time="2026-10-07T22:38:09.359-04:00" level=info msg="Started window, pid 20873: [\"st\" \"-e\" \"/home/caleb/system/cmdg/cmdg\" \"-config=../../.cmdg/personal.conf\" \"-log=logs/window_timing.log\" \"-log_rpc=true\" \"-read=19e26ccf969fa71f\" \"-window_file=/tmp/cmdg-window-2223099836.json\"]" pid=20391
+time="2026-10-07T22:38:09.419-04:00" level=info msg="MessageListView got WINCH!" pid=20391
+time="2026-10-07T22:38:09.427-04:00" level=info msg="cmdg 1.05 window, built from commit dca68e22652a6080f244d36884177a38f823cf04 of 2026-10-08T02:32:57Z with uncommitted changes" pid=20876
+time="2026-10-07T22:38:09.427-04:00" level=info msg="Using the access token of the process that opened this window, expiring 2026-10-07 23:37:43.257165161 -0400 EDT" pid=20876
+time="2026-10-07T22:38:09.450-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"191ebb6b91353e4a\") => <nil> 115.449781ms" pid=20391
+time="2026-10-07T22:38:09.463-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"191ec16c87d1e3e9\") => <nil> 128.796104ms" pid=20391
+time="2026-10-07T22:38:09.547-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"191ebb596134b3a3\") => <nil> 96.67758ms" pid=20391
+time="2026-10-07T22:38:09.590-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"191eb8feaa98ef1f\") => <nil> 126.556918ms" pid=20391
+time="2026-10-07T22:38:09.686-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"191dc57afd8921cc\") => <nil> 138.932584ms" pid=20391
+time="2026-10-07T22:38:09.704-04:00" level=info msg="RPC> gmail.Users.Labels.List(email=\"me\") => <nil> 276.620094ms" pid=20876
+time="2026-10-07T22:38:09.704-04:00" level=info msg="Loaded labels in 276.739864ms" pid=20876
+time="2026-10-07T22:38:09.704-04:00" level=info msg="Starting keyboard input" pid=20876
+time="2026-10-07T22:38:09.704-04:00" level=info msg="Running OpenMessageView" pid=20876
+time="2026-10-07T22:38:09.710-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"191dbed0c09a8518\") => <nil> 120.813258ms" pid=20391
+time="2026-10-07T22:38:09.749-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" msgID=19e26ccf969fa71f level=full) => <nil> 321.173608ms" pid=20876
+time="2026-10-07T22:38:09.749-04:00" level=info msg="Message is type \"multipart/alternative\"" pid=20876
+time="2026-10-07T22:38:09.798-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"191cf218226ba3e2\") => <nil> 111.757519ms" pid=20391
+time="2026-10-07T22:38:09.800-04:00" level=info msg="Rendered HTML in 49.734766ms" pid=20876
+time="2026-10-07T22:38:09.800-04:00" level=info msg="Message is type \"multipart/alternative\"" pid=20876
+time="2026-10-07T22:38:09.819-04:00" level=info msg="Rendered HTML in 18.873381ms" pid=20876
+time="2026-10-07T22:38:09.819-04:00" level=info msg="Got full message in 114.784865ms" pid=20876
+time="2026-10-07T22:38:09.819-04:00" level=info msg="Message arrived" pid=20876
+time="2026-10-07T22:38:09.834-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"191cf1e7ff1253e2\") => <nil> 123.055225ms" pid=20391
+time="2026-10-07T22:38:09.929-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"191c283a78887cf2\") => <nil> 95.354636ms" pid=20391
+time="2026-10-07T22:38:09.937-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"191c4f750fa6eeb6\") => <nil> 139.645495ms" pid=20391
+time="2026-10-07T22:38:10.034-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"191bdf7ef1736465\") => <nil> 96.652389ms" pid=20391
+time="2026-10-07T22:38:10.053-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"191c2128acaef80b\") => <nil> 124.24026ms" pid=20391
+time="2026-10-07T22:38:10.128-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"191bdf438fee4659\") => <nil> 93.440876ms" pid=20391
+time="2026-10-07T22:38:10.142-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"191badaad69019f8\") => <nil> 87.906614ms" pid=20391
+time="2026-10-07T22:38:10.265-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"191b8ae9aec0000b\") => <nil> 136.798874ms" pid=20391
+time="2026-10-07T22:38:10.287-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"191b4f4b226e5d12\") => <nil> 144.951303ms" pid=20391
+time="2026-10-07T22:38:10.383-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"191aa2a047bdd10d\") => <nil> 95.917695ms" pid=20391
+time="2026-10-07T22:38:10.418-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"191adaecd82ee206\") => <nil> 152.849687ms" pid=20391
+time="2026-10-07T22:38:10.485-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"191991428bfff8ea\") => <nil> 102.220778ms" pid=20391
+time="2026-10-07T22:38:10.519-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1918eff4d91ad221\") => <nil> 101.048861ms" pid=20391
+time="2026-10-07T22:38:10.573-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1918c7618d0a1637\") => <nil> 87.941212ms" pid=20391
+time="2026-10-07T22:38:10.639-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1917d0d63242dfb0\") => <nil> 120.322154ms" pid=20391
+time="2026-10-07T22:38:10.703-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1916c44c0d66a262\") => <nil> 130.150877ms" pid=20391
+time="2026-10-07T22:38:10.728-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1916c00cdf4c505c\") => <nil> 88.919689ms" pid=20391
+time="2026-10-07T22:38:10.822-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1916a88a85ae5afc\") => <nil> 118.354613ms" pid=20391
+time="2026-10-07T22:38:10.824-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"191655ad23e9ed96\") => <nil> 95.386144ms" pid=20391
+time="2026-10-07T22:38:10.915-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1914cba84c1a940a\") => <nil> 90.579115ms" pid=20391
+time="2026-10-07T22:38:10.951-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"191566151ea6973f\") => <nil> 129.064777ms" pid=20391
+time="2026-10-07T22:38:11.018-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19147bf603a6d488\") => <nil> 103.639719ms" pid=20391
+time="2026-10-07T22:38:11.044-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1914390ea6628be3\") => <nil> 92.271845ms" pid=20391
+time="2026-10-07T22:38:11.126-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1912d500019b2bb4\") => <nil> 107.609479ms" pid=20391
+time="2026-10-07T22:38:11.141-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1912d1b93e2b12e6\") => <nil> 97.836316ms" pid=20391
+time="2026-10-07T22:38:11.217-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1912d19e87653543\") => <nil> 90.626312ms" pid=20391
+time="2026-10-07T22:38:11.243-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19127493bc9bdb39\") => <nil> 101.085649ms" pid=20391
+time="2026-10-07T22:38:11.336-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1911f2d642bfce31\") => <nil> 93.53267ms" pid=20391
+time="2026-10-07T22:38:11.348-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19122eb685d2a9bf\") => <nil> 131.334837ms" pid=20391
+time="2026-10-07T22:38:11.437-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"191091c0d10bf236\") => <nil> 100.910854ms" pid=20391
+time="2026-10-07T22:38:11.471-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1910915a42abb918\") => <nil> 122.243586ms" pid=20391
+time="2026-10-07T22:38:11.538-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1910391ccfff4049\") => <nil> 100.326219ms" pid=20391
+time="2026-10-07T22:38:11.593-04:00" level=info msg="Stopping keyboard input" pid=20876
+time="2026-10-07T22:38:11.613-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"190d80edc56ce612\") => <nil> 141.97584ms" pid=20391
+time="2026-10-07T22:38:11.643-04:00" level=info msg="Input loop told to stop" pid=20876
+time="2026-10-07T22:38:11.644-04:00" level=info msg="Keyboard input stopped" pid=20876
+time="2026-10-07T22:38:11.650-04:00" level=info msg="Window pid 20873 exited: <nil>, stderr \"\"" pid=20391
+time="2026-10-07T22:38:11.655-04:00" level=info msg="MessageListView got WINCH!" pid=20391
+time="2026-10-07T22:38:11.667-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1909abf3a24f05b0\") => <nil> 129.027517ms" pid=20391
+time="2026-10-07T22:38:11.704-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19094000179d7f85\") => <nil> 90.723726ms" pid=20391
+time="2026-10-07T22:38:11.766-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1908babf7b056d2b\") => <nil> 98.939161ms" pid=20391
+time="2026-10-07T22:38:11.804-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1906f16273d49c4d\") => <nil> 100.576735ms" pid=20391
+time="2026-10-07T22:38:11.893-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"190511e7416a60b0\") => <nil> 88.50977ms" pid=20391
+time="2026-10-07T22:38:11.896-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19065a444bda6c61\") => <nil> 129.717254ms" pid=20391
+time="2026-10-07T22:38:11.996-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"190434bf1a18fb04\") => <nil> 100.32065ms" pid=20391
+time="2026-10-07T22:38:12.016-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"190434dafcf27783\") => <nil> 123.146481ms" pid=20391
+time="2026-10-07T22:38:12.126-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19022cff79e8ece0\") => <nil> 129.827035ms" pid=20391
+time="2026-10-07T22:38:12.150-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19014ab682cfee80\") => <nil> 133.807886ms" pid=20391
+time="2026-10-07T22:38:12.220-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1901236073226e4a\") => <nil> 93.661231ms" pid=20391
+time="2026-10-07T22:38:12.272-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"190115c3a65c208f\") => <nil> 122.080739ms" pid=20391
+time="2026-10-07T22:38:12.349-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1900e9d7a985f959\") => <nil> 129.184562ms" pid=20391
+time="2026-10-07T22:38:12.421-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"190045f5654e8a50\") => <nil> 148.708407ms" pid=20391
+time="2026-10-07T22:38:12.459-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"190045659e23df53\") => <nil> 109.045725ms" pid=20391
+time="2026-10-07T22:38:12.523-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"19003a635f6a85d7\") => <nil> 101.646585ms" pid=20391
+time="2026-10-07T22:38:12.572-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"190039dd49ce8588\") => <nil> 113.586858ms" pid=20391
+time="2026-10-07T22:38:12.627-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1900053bd0125cdc\") => <nil> 103.535766ms" pid=20391
+time="2026-10-07T22:38:12.676-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18ff38a27431392b\") => <nil> 103.206885ms" pid=20391
+time="2026-10-07T22:38:12.755-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18feae7b2a08e110\") => <nil> 127.735146ms" pid=20391
+time="2026-10-07T22:38:12.785-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18fe61fe391962c3\") => <nil> 109.076544ms" pid=20391
+time="2026-10-07T22:38:12.891-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18fe402b0cb1960c\") => <nil> 136.357061ms" pid=20391
+time="2026-10-07T22:38:12.916-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18fde8d2aa955bb0\") => <nil> 130.919506ms" pid=20391
+time="2026-10-07T22:38:13.002-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18fdc592faa0fc8f\") => <nil> 111.012591ms" pid=20391
+time="2026-10-07T22:38:13.053-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18fd96c89d929121\") => <nil> 136.618743ms" pid=20391
+time="2026-10-07T22:38:13.102-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18fd56beb3e6f451\") => <nil> 99.577713ms" pid=20391
+time="2026-10-07T22:38:13.167-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18fce818b827db75\") => <nil> 114.056023ms" pid=20391
+time="2026-10-07T22:38:13.236-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18fc68817a0d36c3\") => <nil> 134.23112ms" pid=20391
+time="2026-10-07T22:38:13.294-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18fc22decd58bfae\") => <nil> 126.471588ms" pid=20391
+time="2026-10-07T22:38:13.341-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18fa73547c041392\") => <nil> 104.645466ms" pid=20391
+time="2026-10-07T22:38:13.410-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18fa636cac658145\") => <nil> 116.293414ms" pid=20391
+time="2026-10-07T22:38:13.513-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18fa341a64a84b2d\") => <nil> 103.224439ms" pid=20391
+time="2026-10-07T22:38:13.525-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18fa631ec7d3ebe5\") => <nil> 183.872672ms" pid=20391
+time="2026-10-07T22:38:13.621-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18f98acce6f2c1ad\") => <nil> 95.617597ms" pid=20391
+time="2026-10-07T22:38:13.624-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18f98f07b8706f10\") => <nil> 110.830886ms" pid=20391
+time="2026-10-07T22:38:13.718-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18f8d2e300576443\") => <nil> 97.166356ms" pid=20391
+time="2026-10-07T22:38:13.742-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18f84827d0f3bef8\") => <nil> 117.219444ms" pid=20391
+time="2026-10-07T22:38:13.821-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18f8214e4c993470\") => <nil> 103.018014ms" pid=20391
+time="2026-10-07T22:38:13.834-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18f790f77c29bc93\") => <nil> 92.419323ms" pid=20391
+time="2026-10-07T22:38:13.914-04:00" level=info msg="Started window, pid 20956: [\"st\" \"-e\" \"/home/caleb/system/cmdg/cmdg\" \"-config=../../.cmdg/personal.conf\" \"-log=logs/window_timing.log\" \"-log_rpc=true\" \"-read=1a0eab0d7a62f4ba\" \"-window_file=/tmp/cmdg-window-2624352610.json\"]" pid=20391
+time="2026-10-07T22:38:13.930-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18f76b77498c5c66\") => <nil> 95.604602ms" pid=20391
+time="2026-10-07T22:38:13.954-04:00" level=info msg="MessageListView got WINCH!" pid=20391
+time="2026-10-07T22:38:13.961-04:00" level=info msg="cmdg 1.05 window, built from commit dca68e22652a6080f244d36884177a38f823cf04 of 2026-10-08T02:32:57Z with uncommitted changes" pid=20957
+time="2026-10-07T22:38:13.961-04:00" level=info msg="Using the access token of the process that opened this window, expiring 2026-10-07 23:37:43.257165161 -0400 EDT" pid=20957
+time="2026-10-07T22:38:14.018-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18f76d11449a34b3\") => <nil> 196.268465ms" pid=20391
+time="2026-10-07T22:38:14.053-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18f7300381542b8b\") => <nil> 122.699185ms" pid=20391
+time="2026-10-07T22:38:14.114-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18f6d644cffeedad\") => <nil> 96.222099ms" pid=20391
+time="2026-10-07T22:38:14.150-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18f6d4ded723ce39\") => <nil> 97.300608ms" pid=20391
+time="2026-10-07T22:38:14.215-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" msgID=1a0eab0d7a62f4ba level=full) => <nil> 253.29225ms" pid=20957
+time="2026-10-07T22:38:14.215-04:00" level=info msg="Message is type \"multipart/alternative\"" pid=20957
+time="2026-10-07T22:38:14.219-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18f5e9345bc1d115\") => <nil> 104.632573ms" pid=20391
+time="2026-10-07T22:38:14.260-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18f5da736914e8f9\") => <nil> 109.250701ms" pid=20391
+time="2026-10-07T22:38:14.262-04:00" level=info msg="Rendered HTML in 46.947557ms" pid=20957
+time="2026-10-07T22:38:14.267-04:00" level=info msg="Message is type \"multipart/alternative\"" pid=20957
+time="2026-10-07T22:38:14.283-04:00" level=info msg="Rendered HTML in 15.336085ms" pid=20957
+time="2026-10-07T22:38:14.285-04:00" level=info msg="RPC> gmail.Users.Labels.List(email=\"me\") => <nil> 324.132493ms" pid=20957
+time="2026-10-07T22:38:14.285-04:00" level=info msg="Loaded labels in 324.146229ms" pid=20957
+time="2026-10-07T22:38:14.285-04:00" level=info msg="Starting keyboard input" pid=20957
+time="2026-10-07T22:38:14.285-04:00" level=info msg="Running OpenMessageView" pid=20957
+time="2026-10-07T22:38:14.286-04:00" level=info msg="Got full message in 489ns" pid=20957
+time="2026-10-07T22:38:14.286-04:00" level=info msg="Message arrived" pid=20957
+time="2026-10-07T22:38:14.335-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18f5da452a3135bd\") => <nil> 116.571705ms" pid=20391
+time="2026-10-07T22:38:14.365-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18f50e91f279cb54\") => <nil> 105.378944ms" pid=20391
+time="2026-10-07T22:38:14.469-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18f4fbece04717bd\") => <nil> 133.564591ms" pid=20391
+time="2026-10-07T22:38:14.469-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18f3b2266b849222\") => <nil> 103.904102ms" pid=20391
+time="2026-10-07T22:38:14.572-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18f2f21e105981ba\") => <nil> 102.221352ms" pid=20391
+time="2026-10-07T22:38:14.585-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18f37468bfd98983\") => <nil> 116.025863ms" pid=20391
+time="2026-10-07T22:38:14.706-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18f29e009f279cc0\") => <nil> 133.966293ms" pid=20391
+time="2026-10-07T22:38:14.712-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18f0694ae4667e50\") => <nil> 126.887851ms" pid=20391
+time="2026-10-07T22:38:14.823-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18f05d4498b85355\") => <nil> 117.262213ms" pid=20391
+time="2026-10-07T22:38:14.851-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18f03f583fefcff0\") => <nil> 139.004287ms" pid=20391
+time="2026-10-07T22:38:14.919-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18f03ca8fd792de6\") => <nil> 95.749128ms" pid=20391
+time="2026-10-07T22:38:14.954-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18ef616b4167d41e\") => <nil> 102.817576ms" pid=20391
+time="2026-10-07T22:38:14.992-04:00" level=info msg="History for 2307342 INBOX" pid=20391
+time="2026-10-07T22:38:15.051-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18ef450af5f8d656\") => <nil> 131.41356ms" pid=20391
+time="2026-10-07T22:38:15.071-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18eef3f7cc870ec0\") => <nil> 116.235859ms" pid=20391
+time="2026-10-07T22:38:15.100-04:00" level=info msg="RPC> gmail.Users.History.List(email=\"me\" historyID=2307342 labelID=\"INBOX\") => <nil> 107.677316ms" pid=20391
+time="2026-10-07T22:38:15.100-04:00" level=info msg="No history since last check" pid=20391
+time="2026-10-07T22:38:15.100-04:00" level=info msg="History check took 107.935187ms" pid=20391
+time="2026-10-07T22:38:15.163-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18eee1ab6f8cdbda\") => <nil> 111.76782ms" pid=20391
+time="2026-10-07T22:38:15.171-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18eec0a9bdf0b07a\") => <nil> 99.68841ms" pid=20391
+time="2026-10-07T22:38:15.256-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18ee72ef1b296704\") => <nil> 93.028055ms" pid=20391
+time="2026-10-07T22:38:15.271-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18edae0529d60a79\") => <nil> 100.317527ms" pid=20391
+time="2026-10-07T22:38:15.359-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18eb90f8a50d9bd0\") => <nil> 87.848106ms" pid=20391
+time="2026-10-07T22:38:15.422-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18ebd5c71e43920d\") => <nil> 166.396661ms" pid=20391
+time="2026-10-07T22:38:15.463-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18eb90deb8916914\") => <nil> 103.585153ms" pid=20391
+time="2026-10-07T22:38:15.547-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18eb8f5a41fd9d50\") => <nil> 124.206261ms" pid=20391
+time="2026-10-07T22:38:15.554-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18eb187ac1f1c0ee\") => <nil> 90.539764ms" pid=20391
+time="2026-10-07T22:38:15.645-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18eac463cef84532\") => <nil> 91.245325ms" pid=20391
+time="2026-10-07T22:38:15.647-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18eb16fd75e0c992\") => <nil> 100.048312ms" pid=20391
+time="2026-10-07T22:38:15.778-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18ea0ca1ff02c499\") => <nil> 131.129946ms" pid=20391
+time="2026-10-07T22:38:15.787-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18ea0cdb1f2eea0b\") => <nil> 142.136166ms" pid=20391
+time="2026-10-07T22:38:15.887-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18ea0bd96f5de58e\") => <nil> 108.372095ms" pid=20391
+time="2026-10-07T22:38:15.887-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18e9ebd43a91d804\") => <nil> 99.362036ms" pid=20391
+time="2026-10-07T22:38:15.979-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18e976ea60c0ef12\") => <nil> 91.863467ms" pid=20391
+time="2026-10-07T22:38:16.030-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18e8c6037e529bb3\") => <nil> 142.931422ms" pid=20391
+time="2026-10-07T22:38:16.038-04:00" level=info msg="Address scan: 500 of 2492 new messages done, 0 of them failed; read 500 messages in all, back to 2024-03-29, dating 189 addresses" pid=20391
+time="2026-10-07T22:38:16.139-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18e8c5b2a0a5358c\") => <nil> 101.573106ms" pid=20391
+time="2026-10-07T22:38:16.155-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18e85d42b7129e66\") => <nil> 104.559397ms" pid=20391
+time="2026-10-07T22:38:16.235-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18e85d3d01d39c87\") => <nil> 94.975907ms" pid=20391
+time="2026-10-07T22:38:16.288-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18e85371561f1be8\") => <nil> 133.251327ms" pid=20391
+time="2026-10-07T22:38:16.334-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18e84ab90b6e8b18\") => <nil> 99.543064ms" pid=20391
+time="2026-10-07T22:38:16.381-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18e819edbbb64b39\") => <nil> 92.587853ms" pid=20391
+time="2026-10-07T22:38:16.458-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18e7c8275c911c60\") => <nil> 123.461263ms" pid=20391
+time="2026-10-07T22:38:16.475-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18e737fe6c2676d1\") => <nil> 93.647716ms" pid=20391
+time="2026-10-07T22:38:16.554-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18e73782a6b828da\") => <nil> 95.835853ms" pid=20391
+time="2026-10-07T22:38:16.596-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18e5c9b7584b6024\") => <nil> 121.116892ms" pid=20391
+time="2026-10-07T22:38:16.657-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18e5c95bf1345968\") => <nil> 102.900957ms" pid=20391
+time="2026-10-07T22:38:16.697-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18e5c8410416f45a\") => <nil> 100.561542ms" pid=20391
+time="2026-10-07T22:38:16.787-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18e54c75ec4d4766\") => <nil> 130.275917ms" pid=20391
+time="2026-10-07T22:38:16.802-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18e54c026f95224b\") => <nil> 104.668705ms" pid=20391
+time="2026-10-07T22:38:16.885-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18e519422b97e73a\") => <nil> 97.705716ms" pid=20391
+time="2026-10-07T22:38:16.934-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18e46d3fa217b284\") => <nil> 132.581373ms" pid=20391
+time="2026-10-07T22:38:16.980-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18e43cc5b62e6e3e\") => <nil> 94.617912ms" pid=20391
+time="2026-10-07T22:38:17.049-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18e3bdd51872c1d5\") => <nil> 114.123124ms" pid=20391
+time="2026-10-07T22:38:17.069-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18e3bd9690f0a6f1\") => <nil> 88.501585ms" pid=20391
+time="2026-10-07T22:38:17.166-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18e2789f1064de59\") => <nil> 96.871917ms" pid=20391
+time="2026-10-07T22:38:17.172-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18e390b39bad941f\") => <nil> 123.572198ms" pid=20391
+time="2026-10-07T22:38:17.259-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18e19fd357b5ac6c\") => <nil> 93.437137ms" pid=20391
+time="2026-10-07T22:38:17.273-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18e14e939b4aaa83\") => <nil> 100.01014ms" pid=20391
+time="2026-10-07T22:38:17.371-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18e078aa07803d55\") => <nil> 98.444243ms" pid=20391
+time="2026-10-07T22:38:17.375-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18e09aaa5b9bb5bf\") => <nil> 115.969296ms" pid=20391
+time="2026-10-07T22:38:17.495-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18e0764d79a13720\") => <nil> 123.653557ms" pid=20391
+time="2026-10-07T22:38:17.495-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18e064eb59a49994\") => <nil> 119.56943ms" pid=20391
+time="2026-10-07T22:38:17.595-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18dfd6431d99adcc\") => <nil> 100.258969ms" pid=20391
+time="2026-10-07T22:38:17.627-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18ded9e7db3e2ba0\") => <nil> 131.684607ms" pid=20391
+time="2026-10-07T22:38:17.718-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18ded72c7e5ab51a\") => <nil> 122.443766ms" pid=20391
+time="2026-10-07T22:38:17.743-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18dea9b69d8e6170\") => <nil> 116.038519ms" pid=20391
+time="2026-10-07T22:38:17.805-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18de73220696036e\") => <nil> 87.082857ms" pid=20391
+time="2026-10-07T22:38:17.839-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18de3a945c9f5a3a\") => <nil> 95.874479ms" pid=20391
+time="2026-10-07T22:38:17.906-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18de3a832569cbe1\") => <nil> 100.187155ms" pid=20391
+time="2026-10-07T22:38:17.979-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18dd93e81b88fc7a\") => <nil> 139.829653ms" pid=20391
+time="2026-10-07T22:38:18.002-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18dd60324a420dbe\") => <nil> 96.022322ms" pid=20391
+time="2026-10-07T22:38:18.120-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18dcd872db9a9371\") => <nil> 140.413139ms" pid=20391
+time="2026-10-07T22:38:18.134-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18dc9d7e9ba4b7b3\") => <nil> 132.221801ms" pid=20391
+time="2026-10-07T22:38:18.240-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18dc8a609855eccd\") => <nil> 106.180648ms" pid=20391
+time="2026-10-07T22:38:18.252-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18dc99c657420501\") => <nil> 131.403086ms" pid=20391
+time="2026-10-07T22:38:18.335-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18dc4b01f706391f\") => <nil> 94.157626ms" pid=20391
+time="2026-10-07T22:38:18.347-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18dc48c50dcd6bcf\") => <nil> 95.080122ms" pid=20391
+time="2026-10-07T22:38:18.427-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18dbf6da6554e1b3\") => <nil> 92.006705ms" pid=20391
+time="2026-10-07T22:38:18.478-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18dbd588f4d5792b\") => <nil> 131.412879ms" pid=20391
+time="2026-10-07T22:38:18.532-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18dbc3df36221c33\") => <nil> 104.921781ms" pid=20391
+time="2026-10-07T22:38:18.576-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18db205fa666fd6f\") => <nil> 97.591088ms" pid=20391
+time="2026-10-07T22:38:18.644-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18daf0aa0e9a715c\") => <nil> 111.822202ms" pid=20391
+time="2026-10-07T22:38:18.665-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18daf05a8a414d8d\") => <nil> 88.668595ms" pid=20391
+time="2026-10-07T22:38:18.758-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18da8f2f30978d70\") => <nil> 93.053897ms" pid=20391
+time="2026-10-07T22:38:18.781-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18da9bfc704157db\") => <nil> 136.50724ms" pid=20391
+time="2026-10-07T22:38:18.887-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18da5f4581df1fbb\") => <nil> 129.112329ms" pid=20391
+time="2026-10-07T22:38:18.907-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18da5f186b943a3f\") => <nil> 125.840444ms" pid=20391
+time="2026-10-07T22:38:18.985-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d9e35c376af369\") => <nil> 97.250008ms" pid=20391
+time="2026-10-07T22:38:19.006-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d9e2459ffbdf36\") => <nil> 99.454802ms" pid=20391
+time="2026-10-07T22:38:19.092-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d95728579aa656\") => <nil> 107.039221ms" pid=20391
+time="2026-10-07T22:38:19.104-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d8df41561bfdf4\") => <nil> 97.952501ms" pid=20391
+time="2026-10-07T22:38:19.246-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d7d00130c6724d\") => <nil> 142.018871ms" pid=20391
+time="2026-10-07T22:38:19.252-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d8111b14d64bc4\") => <nil> 159.7966ms" pid=20391
+time="2026-10-07T22:38:19.343-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d722f4a7cff436\") => <nil> 96.763474ms" pid=20391
+time="2026-10-07T22:38:19.359-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d714c045a8e434\") => <nil> 107.328247ms" pid=20391
+time="2026-10-07T22:38:19.463-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d655766cfc7f8c\") => <nil> 119.89905ms" pid=20391
+time="2026-10-07T22:38:19.492-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d5d4ff1dcce1d0\") => <nil> 132.403759ms" pid=20391
+time="2026-10-07T22:38:19.565-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d58330197e3bff\") => <nil> 101.415871ms" pid=20391
+time="2026-10-07T22:38:19.589-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d528ec41419909\") => <nil> 97.358485ms" pid=20391
+time="2026-10-07T22:38:19.664-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d4404f6762c6e2\") => <nil> 99.340755ms" pid=20391
+time="2026-10-07T22:38:19.717-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d39592be5f7049\") => <nil> 127.469272ms" pid=20391
+time="2026-10-07T22:38:19.771-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d39217e48d429b\") => <nil> 106.535816ms" pid=20391
+time="2026-10-07T22:38:19.845-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d347142390fe1a\") => <nil> 128.193959ms" pid=20391
+time="2026-10-07T22:38:19.863-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d345ad0ba269dc\") => <nil> 91.915395ms" pid=20391
+time="2026-10-07T22:38:19.953-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d2f7f1a0107eaf\") => <nil> 107.447348ms" pid=20391
+time="2026-10-07T22:38:20.001-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d2f7d51d5c954d\") => <nil> 137.59004ms" pid=20391
+time="2026-10-07T22:38:20.040-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d2f79bad13c498\") => <nil> 86.397304ms" pid=20391
+time="2026-10-07T22:38:20.098-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d2f74b9605efce\") => <nil> 96.644653ms" pid=20391
+time="2026-10-07T22:38:20.132-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d2a3d73f207a46\") => <nil> 92.596649ms" pid=20391
+time="2026-10-07T22:38:20.196-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d28e87dba4076a\") => <nil> 98.061983ms" pid=20391
+time="2026-10-07T22:38:20.235-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d1fa8df0a9442d\") => <nil> 102.606479ms" pid=20391
+time="2026-10-07T22:38:20.306-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d1fa72619fb702\") => <nil> 110.320789ms" pid=20391
+time="2026-10-07T22:38:20.333-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d15530709b4841\") => <nil> 97.626291ms" pid=20391
+time="2026-10-07T22:38:20.399-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d154fadfd3c6c6\") => <nil> 92.864666ms" pid=20391
+time="2026-10-07T22:38:20.475-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d153f62cfadc6e\") => <nil> 142.093323ms" pid=20391
+time="2026-10-07T22:38:20.494-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d152814942fb8d\") => <nil> 94.834201ms" pid=20391
+time="2026-10-07T22:38:20.573-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d151b7018ce82c\") => <nil> 97.863316ms" pid=20391
+time="2026-10-07T22:38:20.606-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d150d99714be00\") => <nil> 111.85001ms" pid=20391
+time="2026-10-07T22:38:20.666-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d14bfa8cb90306\") => <nil> 92.944637ms" pid=20391
+time="2026-10-07T22:38:20.699-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d0b05c33ffd4f9\") => <nil> 92.464671ms" pid=20391
+time="2026-10-07T22:38:20.791-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d0a44d29ecb68a\") => <nil> 125.045077ms" pid=20391
+time="2026-10-07T22:38:20.824-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d0a2283ac6df7e\") => <nil> 124.965612ms" pid=20391
+time="2026-10-07T22:38:20.900-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d09c2f32c472e1\") => <nil> 109.003698ms" pid=20391
+time="2026-10-07T22:38:20.917-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d06210f0cb063d\") => <nil> 92.964305ms" pid=20391
+time="2026-10-07T22:38:20.995-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18d04a903dfd8791\") => <nil> 94.001315ms" pid=20391
+time="2026-10-07T22:38:21.016-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18ceaa6f9608bd17\") => <nil> 98.23915ms" pid=20391
+time="2026-10-07T22:38:21.038-04:00" level=info msg="Stopping keyboard input" pid=20957
+time="2026-10-07T22:38:21.088-04:00" level=info msg="Input loop told to stop" pid=20957
+time="2026-10-07T22:38:21.088-04:00" level=info msg="Keyboard input stopped" pid=20957
+time="2026-10-07T22:38:21.094-04:00" level=info msg="Window pid 20956 exited: <nil>, stderr \"\"" pid=20391
+time="2026-10-07T22:38:21.096-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18ce70f252195437\") => <nil> 101.237075ms" pid=20391
+time="2026-10-07T22:38:21.100-04:00" level=info msg="MessageListView got WINCH!" pid=20391
+time="2026-10-07T22:38:21.115-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18ce70cc087c8ae8\") => <nil> 98.941489ms" pid=20391
+time="2026-10-07T22:38:21.211-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18ce6f0048f8639c\") => <nil> 96.061925ms" pid=20391
+time="2026-10-07T22:38:21.227-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18ce6f929d27b86e\") => <nil> 131.338922ms" pid=20391
+time="2026-10-07T22:38:21.326-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18ce6ec7ac6c98fe\") => <nil> 98.096578ms" pid=20391
+time="2026-10-07T22:38:21.340-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18ce6edac468cb99\") => <nil> 129.228497ms" pid=20391
+time="2026-10-07T22:38:21.424-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18ce6da56d21ff35\") => <nil> 97.758504ms" pid=20391
+time="2026-10-07T22:38:21.445-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18ce6ce791a91c1b\") => <nil> 104.069668ms" pid=20391
+time="2026-10-07T22:38:21.522-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18ce6c249e596d17\") => <nil> 98.242373ms" pid=20391
+time="2026-10-07T22:38:21.537-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18ce62af27fbc440\") => <nil> 92.773738ms" pid=20391
+time="2026-10-07T22:38:21.613-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18ce42f3e0a31c37\") => <nil> 90.792227ms" pid=20391
+time="2026-10-07T22:38:21.651-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18cd12736274122c\") => <nil> 113.094724ms" pid=20391
+time="2026-10-07T22:38:21.737-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18c8526d01df6ec0\") => <nil> 123.882761ms" pid=20391
+time="2026-10-07T22:38:21.759-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18c7b60ee2720e48\") => <nil> 107.701944ms" pid=20391
+time="2026-10-07T22:38:21.849-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18c73a3786b40d22\") => <nil> 111.807412ms" pid=20391
+time="2026-10-07T22:38:21.883-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18c73764efc045d1\") => <nil> 124.0939ms" pid=20391
+time="2026-10-07T22:38:21.948-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18c5c3832c82d0b5\") => <nil> 98.981794ms" pid=20391
+time="2026-10-07T22:38:21.985-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18c56c2ff765e375\") => <nil> 101.557938ms" pid=20391
+time="2026-10-07T22:38:22.047-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18c56c1c33db93a2\") => <nil> 98.873085ms" pid=20391
+time="2026-10-07T22:38:22.111-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18c56ae2215ea257\") => <nil> 126.520593ms" pid=20391
+time="2026-10-07T22:38:22.153-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18c47bcab30b3d11\") => <nil> 105.803732ms" pid=20391
+time="2026-10-07T22:38:22.244-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18c37545d81f2629\") => <nil> 90.430726ms" pid=20391
+time="2026-10-07T22:38:22.258-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18c3bbe1773ce0e8\") => <nil> 146.951108ms" pid=20391
+time="2026-10-07T22:38:22.355-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18c3742a8a1fe668\") => <nil> 111.117739ms" pid=20391
+time="2026-10-07T22:38:22.362-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18c2d02f63945f78\") => <nil> 104.127566ms" pid=20391
+time="2026-10-07T22:38:22.452-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18c25365eeaca1f0\") => <nil> 89.860702ms" pid=20391
+time="2026-10-07T22:38:22.484-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18c2897176b1e40f\") => <nil> 128.449612ms" pid=20391
+time="2026-10-07T22:38:22.559-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18c1d19b75c78ce7\") => <nil> 106.410296ms" pid=20391
+time="2026-10-07T22:38:22.575-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18c17a4f19dd7224\") => <nil> 91.51969ms" pid=20391
+time="2026-10-07T22:38:22.625-04:00" level=info msg="Started window, pid 21113: [\"st\" \"-e\" \"/home/caleb/system/cmdg/cmdg\" \"-config=../../.cmdg/personal.conf\" \"-log=logs/window_timing.log\" \"-log_rpc=true\" \"-read=1a011601029a09f3\" \"-window_file=/tmp/cmdg-window-3970559594.json\"]" pid=20391
+time="2026-10-07T22:38:22.648-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18c13e8aa1c33b7f\") => <nil> 89.232182ms" pid=20391
+time="2026-10-07T22:38:22.660-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18c13ace1e3cefa0\") => <nil> 84.51396ms" pid=20391
+time="2026-10-07T22:38:22.667-04:00" level=info msg="MessageListView got WINCH!" pid=20391
+time="2026-10-07T22:38:22.674-04:00" level=info msg="cmdg 1.05 window, built from commit dca68e22652a6080f244d36884177a38f823cf04 of 2026-10-08T02:32:57Z with uncommitted changes" pid=21117
+time="2026-10-07T22:38:22.675-04:00" level=info msg="Using the access token of the process that opened this window, expiring 2026-10-07 23:37:43.257165161 -0400 EDT" pid=21117
+time="2026-10-07T22:38:22.751-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18c0843f8e8bc47c\") => <nil> 91.425005ms" pid=20391
+time="2026-10-07T22:38:22.797-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18c0e874e50e08d7\") => <nil> 149.018467ms" pid=20391
+time="2026-10-07T22:38:22.883-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18c01f0222e8d700\") => <nil> 131.648907ms" pid=20391
+time="2026-10-07T22:38:22.933-04:00" level=info msg="RPC> gmail.Users.Labels.List(email=\"me\") => <nil> 258.131405ms" pid=21117
+time="2026-10-07T22:38:22.933-04:00" level=info msg="Loaded labels in 258.230498ms" pid=21117
+time="2026-10-07T22:38:22.934-04:00" level=info msg="Starting keyboard input" pid=21117
+time="2026-10-07T22:38:22.934-04:00" level=info msg="Running OpenMessageView" pid=21117
+time="2026-10-07T22:38:22.937-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18bf782b5af41854\") => <nil> 139.027013ms" pid=20391
+time="2026-10-07T22:38:22.949-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" msgID=1a011601029a09f3 level=full) => <nil> 273.685639ms" pid=21117
+time="2026-10-07T22:38:22.949-04:00" level=info msg="Message is type \"multipart/alternative\"" pid=21117
+time="2026-10-07T22:38:22.989-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18bf44433c5ad162\") => <nil> 105.464588ms" pid=20391
+time="2026-10-07T22:38:22.997-04:00" level=info msg="Rendered HTML in 48.344712ms" pid=21117
+time="2026-10-07T22:38:22.998-04:00" level=info msg="Message is type \"multipart/alternative\"" pid=21117
+time="2026-10-07T22:38:23.015-04:00" level=info msg="Rendered HTML in 17.293965ms" pid=21117
+time="2026-10-07T22:38:23.015-04:00" level=info msg="Got full message in 80.918956ms" pid=21117
+time="2026-10-07T22:38:23.015-04:00" level=info msg="Message arrived" pid=21117
+time="2026-10-07T22:38:23.030-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18bf42f372c89d69\") => <nil> 93.013961ms" pid=20391
+time="2026-10-07T22:38:23.081-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18bed9668161ac7f\") => <nil> 92.004286ms" pid=20391
+time="2026-10-07T22:38:23.132-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18bed072322c234d\") => <nil> 102.346667ms" pid=20391
+time="2026-10-07T22:38:23.217-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18bed0363e03b573\") => <nil> 135.9491ms" pid=20391
+time="2026-10-07T22:38:23.256-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18bba7e4cd1fc539\") => <nil> 123.914839ms" pid=20391
+time="2026-10-07T22:38:23.310-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18bb6ba064862f03\") => <nil> 93.519982ms" pid=20391
+time="2026-10-07T22:38:23.354-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18bb44e4ed0fe7ab\") => <nil> 97.076339ms" pid=20391
+time="2026-10-07T22:38:23.403-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18bad0bd67287ab2\") => <nil> 92.004369ms" pid=20391
+time="2026-10-07T22:38:23.459-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18ba5b494b77c2b7\") => <nil> 105.699963ms" pid=20391
+time="2026-10-07T22:38:23.526-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18b9da530e802097\") => <nil> 123.577018ms" pid=20391
+time="2026-10-07T22:38:23.563-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18b91ec44316162c\") => <nil> 103.946576ms" pid=20391
+time="2026-10-07T22:38:23.619-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18b91bade6e2c3f1\") => <nil> 92.927397ms" pid=20391
+time="2026-10-07T22:38:23.665-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18b8735cb0084d22\") => <nil> 101.459632ms" pid=20391
+time="2026-10-07T22:38:23.727-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18b87334ae07060d\") => <nil> 107.512524ms" pid=20391
+time="2026-10-07T22:38:23.759-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18b872afa21b6557\") => <nil> 94.10917ms" pid=20391
+time="2026-10-07T22:38:23.827-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18b872a6fca9c44d\") => <nil> 100.143132ms" pid=20391
+time="2026-10-07T22:38:23.884-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18b8234bca45e402\") => <nil> 124.693731ms" pid=20391
+time="2026-10-07T22:38:23.927-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18b7bb11e2e3e40d\") => <nil> 99.495779ms" pid=20391
+time="2026-10-07T22:38:23.988-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18b73330e4440a66\") => <nil> 103.418907ms" pid=20391
+time="2026-10-07T22:38:24.023-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18b73213d2ebc984\") => <nil> 95.454332ms" pid=20391
+time="2026-10-07T22:38:24.098-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18b649c291632b12\") => <nil> 109.913809ms" pid=20391
+time="2026-10-07T22:38:24.125-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18b63fa8a7aee7b9\") => <nil> 102.579481ms" pid=20391
+time="2026-10-07T22:38:24.230-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18b63abc5a52532c\") => <nil> 132.274508ms" pid=20391
+time="2026-10-07T22:38:24.231-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18b635a919791a3b\") => <nil> 105.682781ms" pid=20391
+time="2026-10-07T22:38:24.328-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18b63107e7b03b5a\") => <nil> 96.602678ms" pid=20391
+time="2026-10-07T22:38:24.336-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18b6316e2ce2d3f7\") => <nil> 106.129639ms" pid=20391
+time="2026-10-07T22:38:24.424-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18b5a39a00bb0c86\") => <nil> 96.076295ms" pid=20391
+time="2026-10-07T22:38:24.462-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18b58bdcebee43d9\") => <nil> 125.186528ms" pid=20391
+time="2026-10-07T22:38:24.528-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18b48dbb3fd22ebb\") => <nil> 103.692025ms" pid=20391
+time="2026-10-07T22:38:24.548-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18b48d95ca5d3516\") => <nil> 86.614696ms" pid=20391
+time="2026-10-07T22:38:24.649-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18b3634ba54206be\") => <nil> 120.789877ms" pid=20391
+time="2026-10-07T22:38:24.655-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18b24a4f1adf4055\") => <nil> 106.487339ms" pid=20391
+time="2026-10-07T22:38:24.753-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18b14e0115efa380\") => <nil> 97.429364ms" pid=20391
+time="2026-10-07T22:38:24.756-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18b1a5df3f163593\") => <nil> 107.288846ms" pid=20391
+time="2026-10-07T22:38:24.859-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18b0fc193a46c57d\") => <nil> 103.004528ms" pid=20391
+time="2026-10-07T22:38:24.860-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18b0fc282a835dcf\") => <nil> 107.063269ms" pid=20391
+time="2026-10-07T22:38:24.893-04:00" level=info msg="Stopping keyboard input" pid=21117
+time="2026-10-07T22:38:24.943-04:00" level=info msg="Input loop told to stop" pid=21117
+time="2026-10-07T22:38:24.943-04:00" level=info msg="Keyboard input stopped" pid=21117
+time="2026-10-07T22:38:24.949-04:00" level=info msg="Window pid 21113 exited: <nil>, stderr \"\"" pid=20391
+time="2026-10-07T22:38:24.950-04:00" level=info msg="MessageListView got WINCH!" pid=20391
+time="2026-10-07T22:38:24.951-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18b0fbdf32c81e7f\") => <nil> 91.724233ms" pid=20391
+time="2026-10-07T22:38:24.964-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18b00a57dae03cd7\") => <nil> 103.866152ms" pid=20391
+time="2026-10-07T22:38:24.992-04:00" level=info msg="History for 2307342 INBOX" pid=20391
+time="2026-10-07T22:38:25.049-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18afc4160dc021fe\") => <nil> 98.211715ms" pid=20391
+time="2026-10-07T22:38:25.084-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18af0b23c107bb9e\") => <nil> 120.455506ms" pid=20391
+time="2026-10-07T22:38:25.095-04:00" level=info msg="RPC> gmail.Users.History.List(email=\"me\" historyID=2307342 labelID=\"INBOX\") => <nil> 102.22452ms" pid=20391
+time="2026-10-07T22:38:25.095-04:00" level=info msg="No history since last check" pid=20391
+time="2026-10-07T22:38:25.095-04:00" level=info msg="History check took 102.439443ms" pid=20391
+time="2026-10-07T22:38:25.149-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18ae91ada9ea3c52\") => <nil> 99.625793ms" pid=20391
+time="2026-10-07T22:38:25.175-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18ae9096ec7ec622\") => <nil> 90.226291ms" pid=20391
+time="2026-10-07T22:38:25.274-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18ae8f774e479c52\") => <nil> 124.510944ms" pid=20391
+time="2026-10-07T22:38:25.280-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18ae8eb95516d87b\") => <nil> 105.704645ms" pid=20391
+time="2026-10-07T22:38:25.366-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18ae42e5631e3758\") => <nil> 91.914594ms" pid=20391
+time="2026-10-07T22:38:25.384-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18add7503e0ce06c\") => <nil> 103.339936ms" pid=20391
+time="2026-10-07T22:38:25.456-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18ab0af9bfd499ad\") => <nil> 89.544662ms" pid=20391
+time="2026-10-07T22:38:25.486-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18aab7fccb301b3d\") => <nil> 102.057076ms" pid=20391
+time="2026-10-07T22:38:25.549-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18aa48de6b43f032\") => <nil> 93.192049ms" pid=20391
+time="2026-10-07T22:38:25.582-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18a9b8a0cf9fa584\") => <nil> 95.623642ms" pid=20391
+time="2026-10-07T22:38:25.647-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18a9af3c55f816df\") => <nil> 98.235639ms" pid=20391
+time="2026-10-07T22:38:25.710-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18a9ae460c11e27f\") => <nil> 128.42441ms" pid=20391
+time="2026-10-07T22:38:25.782-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18a8e7e44fd8d36e\") => <nil> 134.865663ms" pid=20391
+time="2026-10-07T22:38:25.811-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18a7f0bfe4012dd2\") => <nil> 100.639838ms" pid=20391
+time="2026-10-07T22:38:25.872-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18a7039dc484f877\") => <nil> 89.104828ms" pid=20391
+time="2026-10-07T22:38:25.909-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18a6bcf67529f503\") => <nil> 97.918165ms" pid=20391
+time="2026-10-07T22:38:25.958-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18a6b809fabc0096\") => <nil> 86.244371ms" pid=20391
+time="2026-10-07T22:38:26.001-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18a6086fa8a1cc03\") => <nil> 91.729692ms" pid=20391
+time="2026-10-07T22:38:26.071-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18a5d3668cea5e24\") => <nil> 113.150044ms" pid=20391
+time="2026-10-07T22:38:26.133-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18a5d35917f61325\") => <nil> 132.005091ms" pid=20391
+time="2026-10-07T22:38:26.205-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18a50f469c4b73ca\") => <nil> 133.905362ms" pid=20391
+time="2026-10-07T22:38:26.232-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18a49c0c9b6c9264\") => <nil> 98.507537ms" pid=20391
+time="2026-10-07T22:38:26.331-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18a46e0261130c38\") => <nil> 125.617411ms" pid=20391
+time="2026-10-07T22:38:26.334-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18a46d5ba02804be\") => <nil> 101.317438ms" pid=20391
+time="2026-10-07T22:38:26.438-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18a446f61208232f\") => <nil> 104.306493ms" pid=20391
+time="2026-10-07T22:38:26.454-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18a46d456988cb09\") => <nil> 122.744021ms" pid=20391
+time="2026-10-07T22:38:26.530-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18a3ca112facc3d9\") => <nil> 92.095104ms" pid=20391
+time="2026-10-07T22:38:26.582-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18a3c9ac8952f4c9\") => <nil> 127.954754ms" pid=20391
+time="2026-10-07T22:38:26.693-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18a3c9330d6db299\") => <nil> 163.094732ms" pid=20391
+time="2026-10-07T22:38:26.702-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"18a3a0423f3b9506\") => <nil> 119.799261ms" pid=20391
+time="2026-10-07T22:38:26.791-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a10f36433489e98\") => <nil> 97.722402ms" pid=20391
+time="2026-10-07T22:38:26.795-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a10f2200356d67e\") => <nil> 92.659274ms" pid=20391
+time="2026-10-07T22:38:26.887-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a10eb7812048880\") => <nil> 95.708195ms" pid=20391
+time="2026-10-07T22:38:26.891-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a10eb77e0799738\") => <nil> 96.219528ms" pid=20391
+time="2026-10-07T22:38:26.955-04:00" level=info msg="MessageView returned, stopping keys" pid=20391
+time="2026-10-07T22:38:26.955-04:00" level=info msg="Stopping keyboard input" pid=20391
+time="2026-10-07T22:38:26.981-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a10e9812987e6af\") => <nil> 89.849741ms" pid=20391
+time="2026-10-07T22:38:26.984-04:00" level=info msg="RPC> gmail.Users.Messages.Get(email=\"me\" id=\"1a10e98d2b2fba98\") => <nil> 96.260702ms" pid=20391
+time="2026-10-07T22:38:27.004-04:00" level=info msg="Input loop told to stop" pid=20391
+time="2026-10-07T22:38:27.004-04:00" level=info msg="Keyboard input stopped" pid=20391
+time="2026-10-07T22:38:27.004-04:00" level=info msg="Shutting down" pid=20391
