@@ -136,6 +136,10 @@ type OpenMessageView struct {
 
 	// Local view state. Main goroutine only.
 	preferHTML bool
+
+	// drawLines, if not nil, draws for incrementalSearch instead of
+	// Draw. The conversation view sets it. Added by this fork.
+	drawLines func(lines []string, scroll int) error
 }
 
 func dottime(t time.Time) string {
@@ -411,7 +415,7 @@ func (ov *OpenMessageView) incrementalSearch(ctx context.Context, inlines []stri
 	defer func() { ov.inIncrementalSearch = false }()
 	ov.incrementalQuery = ""
 
-	if err := ov.Draw(lines, 0); err != nil {
+	if err := ov.redraw(lines, 0); err != nil {
 		log.Infof("Failed to draw: %v", err)
 	}
 	ov.screen.Draw()
@@ -486,7 +490,7 @@ func (ov *OpenMessageView) incrementalSearch(ctx context.Context, inlines []stri
 			// Not found even after wrapping.
 			found = 0
 		}
-		if err := ov.Draw(lines, found); err != nil {
+		if err := ov.redraw(lines, found); err != nil {
 			log.Infof("Failed to draw: %v", err)
 		}
 		copy(lines, inlines)

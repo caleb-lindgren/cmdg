@@ -46,6 +46,9 @@ var (
 		"when neither $DISPLAY nor $WAYLAND_DISPLAY is set.")
 	readFlag = flag.String("read", "", "Show the message with this "+
 		"ID, then exit.")
+	readConversationFlag = flag.String("read_conversation", "",
+		"Show the conversation of the message with this ID, then "+
+			"exit.")
 	composeFlag = flag.Bool("compose", false, "Compose one new "+
 		"message, then exit.")
 	replyFlag = flag.String("reply", "", "Reply to the message with "+
@@ -69,18 +72,19 @@ var (
 	// something once and exit or change settings, and those that
 	// startWindow sets itself.
 	notPassedOn = map[string]bool{
-		"configure":        true,
-		"license":          true,
-		"version":          true,
-		"update_signature": true,
-		"update_sender":    true,
-		"read":             true,
-		"compose":          true,
-		"reply":            true,
-		"reply_all":        true,
-		"forward":          true,
-		"continue_draft":   true,
-		"window_file":      true,
+		"configure":         true,
+		"license":           true,
+		"version":           true,
+		"update_signature":  true,
+		"update_sender":     true,
+		"read":              true,
+		"read_conversation": true,
+		"compose":           true,
+		"reply":             true,
+		"reply_all":         true,
+		"forward":           true,
+		"continue_draft":    true,
+		"window_file":       true,
 	}
 )
 
@@ -252,11 +256,12 @@ func tellOpener(path string, ev windowEvent) error {
 	return c.Close()
 }
 
-// windowFlagsSet returns how many of -read, -compose, -reply,
-// -reply_all, -forward and -continue_draft are set.
+// windowFlagsSet returns how many of -read, -read_conversation, -compose,
+// -reply, -reply_all, -forward and -continue_draft are set.
 func windowFlagsSet() int {
 	n := 0
-	for _, set := range []bool{*readFlag != "", *composeFlag,
+	for _, set := range []bool{*readFlag != "",
+		*readConversationFlag != "", *composeFlag,
 		*replyFlag != "", *replyAllFlag != "", *forwardFlag != "",
 		*continueDraftFlag} {
 		if set {
@@ -422,6 +427,9 @@ func windowMain(ctx context.Context) error {
 	if *readFlag != "" {
 		title = "cmdg message"
 	}
+	if *readConversationFlag != "" {
+		title = "cmdg conversation"
+	}
 	fmt.Print(display.TerminalTitle(title))
 	defer fmt.Print(display.TerminalTitle("Terminal"))
 
@@ -448,16 +456,22 @@ func windowMain(ctx context.Context) error {
 	}
 
 	if *readFlag != "" {
-		return readMain(ctx, *readFlag, state.Messages, state.Notify)
+		return readMain(ctx, *readFlag, state.Messages, state.Notify,
+			false)
+	}
+	if *readConversationFlag != "" {
+		return readMain(ctx, *readConversationFlag, state.Messages,
+			state.Notify, true)
 	}
 	return composeMain(ctx, state.Contacts)
 }
 
 // readMain shows the message with the ID id, and, by ^N and ^P, the
 // messages before and after it in ids. It tells the changes it makes to
-// them to the socket at notify, if not empty.
+// them to the socket at notify, if not empty. With conversation set, it
+// shows the conversation of each message rather than the message alone.
 func readMain(ctx context.Context, id string, ids []string,
-	notify string) error {
+	notify string, conversation bool) error {
 	pos := -1
 	for n, i := range ids {
 		if i == id {
@@ -488,19 +502,20 @@ func readMain(ctx context.Context, id string, ids []string,
 	defer display.Exit()
 	defer keys.Stop()
 	for {
-		ov, err := NewOpenMessageView(ctx,
-			cmdg.NewMessage(conn, ids[pos]), keys)
-		if err != nil {
-			return errors.Wrap(err, "opening message")
-		}
+		var changed func(windowEvent)
 		if notify != "" {
-			ov.changed = func(ev windowEvent) {
+			changed = func(ev windowEvent) {
 				if err := tellOpener(notify, ev); err != nil {
 					log.Errorf("Failed to tell the "+
 						"message list of %+v: %v",
 						ev, err)
 				}
 			}
+		}
+		ov, err := openViewer(ctx, cmdg.NewMessage(conn, ids[pos]),
+			keys, conversation, nil, changed)
+		if err != nil {
+			return errors.Wrap(err, "opening message")
 		}
 		op, err := ov.Run(ctx)
 		if err != nil {

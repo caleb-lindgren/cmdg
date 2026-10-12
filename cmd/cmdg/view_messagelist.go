@@ -102,6 +102,9 @@ type MessageView struct {
 	messages  []*cmdg.Message
 	pos       int
 	historyID cmdg.HistoryID
+
+	// conv groups messages into conversations. Added by this fork.
+	conv *conversations
 }
 
 // NewMessageView creates a new message view.
@@ -114,6 +117,7 @@ func NewMessageView(ctx context.Context, label, q string, in *input.Input) *Mess
 		messageCh:       make(chan *cmdg.Message),
 		keys:            in,
 		query:           q,
+		conv:            newConversations(*conversationsFlag),
 	}
 	go v.fetchPage(ctx, "")
 	return v
@@ -129,6 +133,7 @@ func (mv *MessageView) applyMarked(ctx context.Context, name string, op func(con
 		log.Infof("No marked messages to do do operation %q on", name)
 		return false, nil, 0
 	}
+	ids = mv.conv.expand(ids)
 	go func() {
 		st := time.Now()
 		if err := op(ctx, ids); err != nil {
@@ -376,7 +381,7 @@ func (mv *MessageView) openInWindow() {
 	for n, m := range mv.messages {
 		ids[n] = m.ID
 	}
-	if err := startWindow(conn, "-read="+msg.ID, ids,
+	if err := startWindow(conn, mv.conv.readFlag()+"="+msg.ID, ids,
 		windowEventSocket(), mv.errors); err != nil {
 		mv.errors <- errors.Wrap(err, "Opening message window")
 		return
@@ -384,6 +389,9 @@ func (mv *MessageView) openInWindow() {
 	// The window marks it read, which the next history check would
 	// show, but showing it now is less confusing.
 	msg.RemoveLabelIDLocal(cmdg.Unread)
+	for _, m := range mv.conv.members[msg.ID] {
+		m.RemoveLabelIDLocal(cmdg.Unread)
+	}
 }
 
 // applyWindowEvent applies to the list the change a message window made,
@@ -460,6 +468,7 @@ func (mv *MessageView) Run(ctx context.Context) error {
 	}()
 
 	mkMessagePos := func() {
+		mv.regroup(marked, &scroll)
 		messagePos = map[string]int{}
 		for n, m := range mv.messages {
 			messagePos[m.ID] = n
@@ -514,7 +523,7 @@ func (mv *MessageView) Run(ctx context.Context) error {
 				colors = " | " + colors
 				fullColors = " | " + fullColors
 			}
-			from = display.FixedWidth(from, 20)
+			from = mv.conv.fromColumn(curmsg, from, 20)
 			s = fmt.Sprintf("%[1]*.[1]*[2]s | %[3]s | %[4]s",
 				6, tm,
 				from, subj)
@@ -546,7 +555,7 @@ func (mv *MessageView) Run(ctx context.Context) error {
 			prefix += " "
 		}
 
-		if curmsg.IsUnread() {
+		if mv.conv.unread(curmsg) {
 			prefix = display.Bold + prefix + ">"
 		} else {
 			prefix += " "
@@ -600,6 +609,8 @@ func (mv *MessageView) Run(ctx context.Context) error {
 				log.Infof("Got duplicate history update %d", mv.historyID)
 			} else {
 				mv.historyID = histUpdate.historyID
+				mv.conv.noteHistory(histUpdate.history,
+					mv.label)
 				for _, hist := range histUpdate.history {
 					log.Infof("History entry: %d add, %d delete, %d labeladd, %d labeldelete", len(hist.MessagesAdded), len(hist.MessagesDeleted), len(hist.LabelsAdded), len(hist.LabelsRemoved))
 					for _, m := range hist.MessagesDeleted {
@@ -706,6 +717,7 @@ func (mv *MessageView) Run(ctx context.Context) error {
 			}
 
 		case ev := <-windowEvents:
+			mv.conv.applyWindowEvent(ev, mv.label)
 			if ind := mv.applyWindowEvent(ev); ind >= 0 {
 				if ind < scroll {
 					scroll--
@@ -762,6 +774,7 @@ func (mv *MessageView) Run(ctx context.Context) error {
 		case p := <-mv.pageCh:
 			log.Printf("MessageListView: Got page!")
 			pages = append(pages, p)
+			mv.conv.note(p.Response.Messages...)
 			mv.messages = append(mv.messages, p.Messages...)
 			want := contentHeight
 			if p.Response.NextPageToken == "" {
@@ -796,8 +809,9 @@ func (mv *MessageView) Run(ctx context.Context) error {
 			key = customize.MessageListKey(key)
 			switch key {
 			case "?", input.F1:
-				txt := customize.MessageListHelp(
-					messageListViewHelp)
+				txt := customize.MessageListHelp(addHelp(
+					messageListViewHelp,
+					conversationListHelp))
 				if err := help(txt, mv.keys); err != nil {
 					log.Infof("help() failed: %v", err)
 				}
@@ -814,11 +828,12 @@ func (mv *MessageView) Run(ctx context.Context) error {
 					break
 				}
 				for {
-					vo, err := NewOpenMessageView(ctx, mv.messages[mv.pos], mv.keys)
+					vo, err := openViewer(ctx,
+						mv.messages[mv.pos], mv.keys,
+						mv.conv.on, mv.errors, nil)
 					if err != nil {
 						mv.errors <- errors.Wrapf(err, "Opening message")
 					} else {
-						vo.windowErrors = mv.errors
 						op, err := vo.Run(ctx)
 						if err != nil {
 							mv.errors <- errors.Wrapf(err, "Running OpenMessageView")
@@ -864,7 +879,8 @@ func (mv *MessageView) Run(ctx context.Context) error {
 					break
 				}
 				for _, id := range <-idch {
-					mv.messages[messagePos[id]].RemoveLabelIDLocal(cmdg.Inbox)
+					m := listed(id)
+					m.RemoveLabelIDLocal(cmdg.Inbox)
 				}
 				if mv.label == cmdg.Inbox {
 					mv.pos -= ofs
@@ -886,7 +902,8 @@ func (mv *MessageView) Run(ctx context.Context) error {
 					break
 				}
 				for _, id := range <-idch {
-					mv.messages[messagePos[id]].RemoveLabelIDLocal(cmdg.Unread)
+					m := listed(id)
+					m.RemoveLabelIDLocal(cmdg.Unread)
 				}
 			case "U": // Mark unread.
 				idch := make(chan []string)
@@ -898,7 +915,8 @@ func (mv *MessageView) Run(ctx context.Context) error {
 					break
 				}
 				for _, id := range <-idch {
-					mv.messages[messagePos[id]].AddLabelIDLocal(cmdg.Unread)
+					m := listed(id)
+					m.AddLabelIDLocal(cmdg.Unread)
 				}
 			case "d":
 				ok, nm, ofs := mv.applyMarked(ctx, "delete", conn.BatchTrash, marked)
@@ -938,6 +956,7 @@ func (mv *MessageView) Run(ctx context.Context) error {
 			case "l":
 				// TODO: can this be partially merged with 'L' code?
 				ids, _, _ := filterMarked(mv.messages, marked, mv.pos)
+				ids = mv.conv.expand(ids)
 				if len(ids) != 0 {
 					var opts []*dialog.Option
 					for _, l := range conn.Labels() {
@@ -953,7 +972,8 @@ func (mv *MessageView) Run(ctx context.Context) error {
 						mv.errors <- errors.Wrapf(err, "Selecting label")
 					} else {
 						for _, id := range ids {
-							mv.messages[messagePos[id]].AddLabelIDLocal(label.Key)
+							m := listed(id)
+							m.AddLabelIDLocal(label.Key)
 						}
 						log.Infof("Batch labelling %q/%q %d messages in the background…", label.Key, label.Label, len(ids))
 						go func() {
@@ -990,8 +1010,11 @@ func (mv *MessageView) Run(ctx context.Context) error {
 						} else if err != nil {
 							mv.errors <- errors.Wrapf(err, "Selecting label")
 						} else {
+							ids = mv.conv.
+								expand(ids)
 							for _, id := range ids {
-								mv.messages[messagePos[id]].RemoveLabelIDLocal(label.Key)
+								m := listed(id)
+								m.RemoveLabelIDLocal(label.Key)
 							}
 							log.Infof("Batch unlabelling %q/%q from %d messages in the background…", label.Key, label.Label, len(ids))
 							go func() {
@@ -1112,6 +1135,20 @@ func (mv *MessageView) Run(ctx context.Context) error {
 					if !prev() {
 						break
 					}
+				}
+			// Added by this fork; see conversations.go. Grouping
+			// needs nothing fetched, but ungrouping reloads, as
+			// a row's messages belong in date order among the
+			// other rows'.
+			case "T":
+				*conversationsFlag = !*conversationsFlag
+				mv.conv.on = *conversationsFlag
+				if mv.conv.on {
+					mkMessagePos()
+				} else {
+					empty()
+					screen.Clear()
+					go mv.fetchPage(ctx, "")
 				}
 			default:
 				log.Infof("MessageListView got unknown key %q %v", key, []byte(key))
