@@ -232,7 +232,8 @@ with `> `, with the "On ... wrote:" line before it, is folded into one line
 saying how many lines it hides, as is the rest of a message from where the
 message it replies to starts in Outlook's style: an "Original Message" line, or
 a From, Sent (or Date) and To (or Subject) header block, with any line of
-underscores above it. A header block with nothing above it, or under a
+underscores above it, or an "On ... wrote:" line followed by text not quoted
+with `> `, as Apple Mail sends it. A header block with nothing above it, or under a
 "Forwarded message" line, is a message forwarded, and is not folded. **z**
 shows and hides the folded text of the selected message. Replying, forwarding,
 the attachments (**t**) and the raw source (`\`) are those of the selected
