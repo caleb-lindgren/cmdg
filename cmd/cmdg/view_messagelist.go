@@ -372,6 +372,23 @@ func (mv *MessageView) historyCheck(ctx context.Context) error {
 	return nil
 }
 
+// prependRow adds msg to the list as its first row, keeping the cursor on
+// the row it was on, which is one further down now. Scrolled to the top,
+// the new row shows, and the rows move down, the list scrolling only if
+// the cursor would leave the screen, height rows high; scrolled further,
+// the rows stay where they are on screen. Added by this fork: upstream
+// left mv.pos as it was, so that the cursor moved to the row above.
+func (mv *MessageView) prependRow(msg *cmdg.Message, scroll *int,
+	height int) {
+	if len(mv.messages) > 0 {
+		mv.pos++
+		if *scroll > 0 || mv.pos-*scroll >= height {
+			*scroll++
+		}
+	}
+	mv.messages = append([]*cmdg.Message{msg}, mv.messages...)
+}
+
 // Run runs the messagelist view.
 // compose composes a new message, in a new window if there can be one.
 func (mv *MessageView) compose(ctx context.Context) {
@@ -653,7 +670,7 @@ func (mv *MessageView) Run(ctx context.Context) error {
 								log.Infof("History says %q was moved to current label %q", ladd.Message.Id, mv.label)
 								nm := cmdg.NewMessage(conn, ladd.Message.Id)
 								// TODO: add it in the right place, not the top.
-								mv.messages = append([]*cmdg.Message{nm}, mv.messages...)
+								mv.prependRow(nm, &scroll, contentHeight)
 								mkMessagePos()
 							}
 						}
@@ -688,7 +705,7 @@ func (mv *MessageView) Run(ctx context.Context) error {
 									nm = cmdg.NewMessage(conn, ma.Message.Id)
 								}
 								// TODO: add it in the right place, not the top.
-								mv.messages = append([]*cmdg.Message{nm}, mv.messages...)
+								mv.prependRow(nm, &scroll, contentHeight)
 								mkMessagePos()
 							} else {
 								log.Infof("Skipped adding message because history returned false positive")

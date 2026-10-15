@@ -232,3 +232,46 @@ func TestCountFromThread(t *testing.T) {
 			"2 listed until it is fetched again", got)
 	}
 }
+
+// TestPrependRow checks that a message the history check puts on top of the
+// list leaves the cursor on the row it was on, once regrouped, and where
+// the rows go on screen.
+func TestPrependRow(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		on         bool
+		pos        int
+		scroll     int
+		height     int
+		wantRow    string
+		wantScroll int
+	}{
+		{"below the thread joined", true, 3, 0, 10, "x1", 0},
+		{"on the thread joined, which moves up", true, 0, 0, 10,
+			"a2", 0},
+		{"below the thread joined, next to it", true, 1, 0, 10,
+			"b1", 0},
+		{"not grouped", false, 3, 0, 10, "x1", 0},
+		{"at the bottom of the screen", false, 2, 0, 3, "c1", 1},
+		{"scrolled, rows stay on screen", false, 3, 2, 10, "x1", 3},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c, m := convFixture(t, tc.on, "a1", "A", "b1", "B",
+				"c1", "C", "x1", "X", "a2", "A")
+			mv := &MessageView{conv: c, pos: tc.pos,
+				messages: []*cmdg.Message{m["a1"], m["b1"],
+					m["c1"], m["x1"]}}
+			scroll := tc.scroll
+			mv.prependRow(m["a2"], &scroll, tc.height)
+			mv.regroup(map[string]bool{}, &scroll)
+			if got := mv.messages[mv.pos].ID; got != tc.wantRow {
+				t.Errorf("cursor on %q, want %q", got,
+					tc.wantRow)
+			}
+			if scroll != tc.wantScroll {
+				t.Errorf("scroll %d, want %d", scroll,
+					tc.wantScroll)
+			}
+		})
+	}
+}
