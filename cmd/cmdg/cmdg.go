@@ -217,29 +217,31 @@ func startLog() error {
 }
 
 // redirectLog stops logging to the terminal, leaving the -log file
-// opened by startLog, and returns a function closing that file.
-func redirectLog() (func(), error) {
+// opened by startLog.
+//
+// The file is never closed: goroutines still running as cmdg exits, such
+// as the address scan, log until the process is gone, and a line logged
+// to a closed file is lost, with "file already closed" on the terminal.
+// The file is closed with the process, and has no buffer to flush.
+func redirectLog() error {
 	if logOutput == nil {
 		if err := startLog(); err != nil {
-			return nil, err
+			return err
 		}
 	}
 	log.SetOutput(logOutput)
-	return func() { _ = logOutput.Close() }, nil
+	return nil
 }
 
 // runWindow runs a window of its own, for -read, -compose and the other
 // flags that do one thing and exit, and keeps the window open to show an
 // error if there is one.
 func runWindow(ctx context.Context) {
-	closeLog, err := redirectLog()
-	if err != nil {
+	if err := redirectLog(); err != nil {
 		log.Fatal(err)
 	}
 	log.Infof("cmdg %s window, %s", version, buildDescription())
-	err = windowMain(ctx)
-	closeLog()
-	if err != nil {
+	if err := windowMain(ctx); err != nil {
 		fmt.Fprintf(os.Stderr, "\033[H\033[2JFailed: %v\n", err)
 		waitToClose()
 		os.Exit(1)
@@ -406,11 +408,9 @@ func main() {
 		}
 	}()
 
-	closeLog, err := redirectLog()
-	if err != nil {
+	if err := redirectLog(); err != nil {
 		log.Fatal(err)
 	}
-	defer closeLog()
 	log.Infof("cmdg %s, %s", version, buildDescription())
 
 	// Add people the user has emailed or been emailed by. This runs after
