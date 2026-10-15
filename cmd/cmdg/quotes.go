@@ -87,15 +87,21 @@ func quoteBlocks(lines []string) [][2]int {
 
 // quotedRest returns whether the rest of lines, the lines of a message
 // body, from line n, is the message replied to, and the line it starts
-// at: at an Outlook "Original Message" line, or a header block of From,
-// Sent and To, with the rule above it, if any. It is not if nothing comes
-// before it, as then the message is forwarded rather than replied to,
-// nor if the rule says it is forwarded.
+// at: at an Outlook "Original Message" line, a header block of From,
+// Sent and To, with the rule above it, if any, or an "On <date>, <name>
+// wrote:" attribution followed by lines not quoted with "> ", as Apple
+// Mail's HTML quote renders. It is not if nothing comes before it, as
+// then the message is forwarded rather than replied to, nor if the rule
+// says it is forwarded.
 func quotedRest(lines []string, n int) (int, bool) {
-	if !outlookRE.MatchString(lines[n]) && !headerBlockAt(lines, n) {
+	start := n
+	if a, ok := unquotedAttributionAt(lines, n); ok {
+		start = a
+	} else if !outlookRE.MatchString(lines[n]) &&
+		!headerBlockAt(lines, n) {
 		return 0, false
 	}
-	start := n
+	n = start
 	above := n - 1
 	for above >= 0 && isBlank(lines[above]) {
 		above--
@@ -131,6 +137,28 @@ func headerBlockAt(lines []string, n int) bool {
 		}
 	}
 	return false
+}
+
+// unquotedAttributionAt returns whether line n of lines is the end of an
+// attribution starting "On " whose next non-blank line is not quoted with
+// "> ", and the line the attribution starts at, the one before if it was
+// wrapped.
+func unquotedAttributionAt(lines []string, n int) (int, bool) {
+	if !attributionRE.MatchString(lines[n]) {
+		return 0, false
+	}
+	next := n + 1
+	for next < len(lines) && isBlank(lines[next]) {
+		next++
+	}
+	if next == len(lines) || isQuoted(lines[next]) {
+		return 0, false
+	}
+	start := attributionStart(lines, n+1)
+	if !strings.HasPrefix(strings.TrimSpace(lines[start]), "On ") {
+		return 0, false
+	}
+	return start, true
 }
 
 // attributionStart returns where the quote starting at line start of lines

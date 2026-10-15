@@ -57,6 +57,18 @@ func TestQuoteBlocks(t *testing.T) {
 			nil},
 		{"From in a sentence, not a header block",
 			"From: the start, we said\nso.\nTo: be clear", nil},
+		{"Apple Mail, an unquoted message, to the end",
+			"Fair comments!\n\nOn Sep 3, 2026, at 9:50 AM, " +
+				"Gygi, Steven <s@example.edu> wrote:" +
+				"\n\n\nHave you\n\nFrom: Lindgren, Caleb" +
+				"\nSent: Mon\nTo: Gygi\n\nHi",
+			[][2]int{{2, 12}}},
+		{"Apple Mail attribution wrapped",
+			"Yes.\nOn Sep 3, 2026, at 9:50 AM, Bob <\n" +
+				"b@example.com> wrote:\nHello",
+			[][2]int{{1, 4}}},
+		{"wrote: in a sentence, not folded",
+			"Here is what he wrote:\nnothing much", nil},
 		{"a colon that is not an attribution",
 			"Two things:\n> a", [][2]int{{1, 2}}},
 	} {
