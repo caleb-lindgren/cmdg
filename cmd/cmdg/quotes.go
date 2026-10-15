@@ -41,6 +41,14 @@ var (
 	// forwardRE matches the line above the header block of a message
 	// forwarded, which is not folded, as it is not quoted.
 	forwardRE = regexp.MustCompile(`(?i)forwarded message|begin forwarded`)
+
+	// attachmentRE matches the line cmdg appends to a message body for
+	// each attachment, once escape sequences are removed.
+	attachmentRE = regexp.MustCompile(`^<<<Attachment .*>>>$`)
+
+	// escapeRE matches a terminal escape sequence setting colour or
+	// weight, as display.Bold.
+	escapeRE = regexp.MustCompile("\x1b\\[[0-9;]*m")
 )
 
 // isQuoted returns whether line is quoted with "> ".
@@ -58,8 +66,11 @@ func isBlank(line string) bool {
 // quoted with "> ", blank lines within it included, together with the
 // attribution line introducing it, and the line before that if the
 // attribution was wrapped; or everything from the start of the message
-// replied to to the end, as quotedRest finds it.
+// replied to to the end, as quotedRest finds it. The lines cmdg appends
+// for attachments are never part of one, so that a quote running to the
+// end does not hide them.
 func quoteBlocks(lines []string) [][2]int {
+	lines = lines[:attachmentsStart(lines)]
 	var ret [][2]int
 	for n := 0; n < len(lines); n++ {
 		if start, ok := quotedRest(lines, n); ok {
@@ -83,6 +94,27 @@ func quoteBlocks(lines []string) [][2]int {
 		n = end - 1
 	}
 	return ret
+}
+
+// attachmentsStart returns where the lines cmdg appends to the end of
+// lines, the lines of a message body, for its attachments start, with the
+// lines before them that are blank or hold only escape sequences, or
+// len(lines) if there are none.
+func attachmentsStart(lines []string) int {
+	start, found := len(lines), false
+	for n := len(lines) - 1; n >= 0; n-- {
+		l := strings.TrimSpace(escapeRE.ReplaceAllString(lines[n], ""))
+		if attachmentRE.MatchString(l) {
+			found = true
+		} else if l != "" {
+			break
+		}
+		start = n
+	}
+	if !found {
+		return len(lines)
+	}
+	return start
 }
 
 // quotedRest returns whether the rest of lines, the lines of a message

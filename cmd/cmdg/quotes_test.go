@@ -71,6 +71,17 @@ func TestQuoteBlocks(t *testing.T) {
 			"Here is what he wrote:\nnothing much", nil},
 		{"a colon that is not an attribution",
 			"Two things:\n> a", [][2]int{{1, 2}}},
+		{"Apple Mail, attachments after it not folded",
+			"Yes.\n\nOn Sep 3, 2026, at 9:50 AM, Bob wrote:\n" +
+				"Hello\n\n\x1b[1m\n" +
+				"<<<Attachment \"a.pdf\"; press 't' to view>>>\n" +
+				"\x1b[1m\n" +
+				"<<<Attachment \"b.png\"; press 't' to view>>>",
+			[][2]int{{2, 4}}},
+		{"quoted with \"> \", attachments after it not folded",
+			"Yes.\n> a\n\n\x1b[1m\n" +
+				"<<<Attachment \"a.pdf\"; press 't' to view>>>",
+			[][2]int{{1, 2}}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			got := quoteBlocks(strings.Split(tc.body, "\n"))
