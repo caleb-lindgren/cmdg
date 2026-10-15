@@ -559,6 +559,17 @@ func (tv *ThreadView) notice(ctx context.Context) string {
 	return arrivalNotice(froms, pos, len(tv.msgs))
 }
 
+// noticeLine returns notice highlighted, from the left edge of a line
+// width columns wide, the highlight filling the rest of it, or "" if
+// notice is.
+func noticeLine(notice string, width int) string {
+	if notice == "" {
+		return ""
+	}
+	return display.Reverse + display.Bold + runewidth.FillRight(
+		runewidth.Truncate(notice, width, "…"), width) + display.Reset
+}
+
 // current returns the index in tv.msgs of the message at line scroll.
 func (tv *ThreadView) current(scroll int) int {
 	cur := 0
@@ -668,13 +679,8 @@ func (tv *ThreadView) draw(lines []string, scroll int) error {
 	}
 	screen.Printlnf(screen.Height-2, "%s",
 		strings.Repeat("—", screen.Width))
-	notice := tv.notice(ctx)
-	if notice != "" {
-		notice = display.Reverse + display.Bold +
-			display.FixedWidth(notice, screen.Width) +
-			display.Reset
-	}
-	screen.Printlnf(screen.Height-1, "%s", notice)
+	screen.Printlnf(screen.Height-1, "%s",
+		noticeLine(tv.notice(ctx), screen.Width))
 	return nil
 }
 

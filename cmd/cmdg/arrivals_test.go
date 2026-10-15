@@ -204,6 +204,26 @@ func TestArrivalNotice(t *testing.T) {
 	}
 }
 
+// TestNoticeLine checks that the notice starts at the left edge, and is
+// cut to fit.
+func TestNoticeLine(t *testing.T) {
+	hl := display.Reverse + display.Bold
+	for _, tc := range []struct {
+		notice string
+		width  int
+		want   string
+	}{
+		{"", 10, ""},
+		{"New", 6, hl + "New   " + display.Reset},
+		{"New message", 6, hl + "New m…" + display.Reset},
+	} {
+		if got := noticeLine(tc.notice, tc.width); got != tc.want {
+			t.Errorf("noticeLine(%q, %d) = %q, want %q", tc.notice,
+				tc.width, got, tc.want)
+		}
+	}
+}
+
 // TestSpans checks that a message's span leaves out the blank line and
 // rule put before the next one.
 func TestSpans(t *testing.T) {
