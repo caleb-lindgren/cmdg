@@ -24,6 +24,23 @@ var (
 	// from there to the end is the earlier message.
 	outlookRE = regexp.MustCompile(
 		`(?i)^\s*-{2,}\s*original message\s*-{2,}\s*$`)
+
+	// headerFromRE, headerSentRE and headerToRE match the lines of the
+	// header block Outlook, and other mail programs, start the message
+	// replied to with when they do not write "Original Message": From,
+	// then Sent or Date, then To or Subject. HTML rendered to text may
+	// have the names in bold, as "*From:*".
+	headerFromRE = regexp.MustCompile(`(?i)^\s*\*?from:\*?\s+\S`)
+	headerSentRE = regexp.MustCompile(`(?i)^\s*\*?(sent|date):\*?\s+\S`)
+	headerToRE   = regexp.MustCompile(`(?i)^\s*\*?(to|subject):\*?\s`)
+
+	// ruleRE matches a line drawn above such a header block, as
+	// Outlook does with underscores.
+	ruleRE = regexp.MustCompile(`^\s*[_─—-]{10,}\s*$`)
+
+	// forwardRE matches the line above the header block of a message
+	// forwarded, which is not folded, as it is not quoted.
+	forwardRE = regexp.MustCompile(`(?i)forwarded message|begin forwarded`)
 )
 
 // isQuoted returns whether line is quoted with "> ".
@@ -40,13 +57,13 @@ func isBlank(line string) bool {
 // body, as [start, end) line ranges, in order. A part is a run of lines
 // quoted with "> ", blank lines within it included, together with the
 // attribution line introducing it, and the line before that if the
-// attribution was wrapped; or everything from an Outlook "Original
-// Message" line to the end.
+// attribution was wrapped; or everything from the start of the message
+// replied to to the end, as quotedRest finds it.
 func quoteBlocks(lines []string) [][2]int {
 	var ret [][2]int
 	for n := 0; n < len(lines); n++ {
-		if outlookRE.MatchString(lines[n]) {
-			ret = append(ret, [2]int{n, len(lines)})
+		if start, ok := quotedRest(lines, n); ok {
+			ret = append(ret, [2]int{start, len(lines)})
 			break
 		}
 		if !isQuoted(lines[n]) {
@@ -66,6 +83,54 @@ func quoteBlocks(lines []string) [][2]int {
 		n = end - 1
 	}
 	return ret
+}
+
+// quotedRest returns whether the rest of lines, the lines of a message
+// body, from line n, is the message replied to, and the line it starts
+// at: at an Outlook "Original Message" line, or a header block of From,
+// Sent and To, with the rule above it, if any. It is not if nothing comes
+// before it, as then the message is forwarded rather than replied to,
+// nor if the rule says it is forwarded.
+func quotedRest(lines []string, n int) (int, bool) {
+	if !outlookRE.MatchString(lines[n]) && !headerBlockAt(lines, n) {
+		return 0, false
+	}
+	start := n
+	above := n - 1
+	for above >= 0 && isBlank(lines[above]) {
+		above--
+	}
+	if above >= 0 && forwardRE.MatchString(lines[above]) {
+		return 0, false
+	}
+	if above >= 0 && ruleRE.MatchString(lines[above]) {
+		start = above
+		above--
+		for above >= 0 && isBlank(lines[above]) {
+			above--
+		}
+	}
+	return start, above >= 0
+}
+
+// headerBlockAt returns whether line n of lines starts a header block:
+// From, then Sent or Date on one of the next two lines, then To or
+// Subject within the five after that.
+func headerBlockAt(lines []string, n int) bool {
+	if !headerFromRE.MatchString(lines[n]) {
+		return false
+	}
+	for s := n + 1; s <= n+2 && s < len(lines); s++ {
+		if !headerSentRE.MatchString(lines[s]) {
+			continue
+		}
+		for t := s + 1; t <= s+5 && t < len(lines); t++ {
+			if headerToRE.MatchString(lines[t]) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // attributionStart returns where the quote starting at line start of lines

@@ -222,19 +222,23 @@ row and archiving, deleting, labelling or marking it read or unread acts on
 every listed message in it. **T** again goes back to one row per message,
 reloading the list.
 
-Opening a row shows the whole conversation, oldest message first, starting
-at the first unread one, including messages not in the label listed, such as
-your replies, but not those in the trash or spam unless the opened one is.
-One message is selected, marked by its highlighted sender line; **J** and
-**K** select the next and previous message, and scrolling a message off the
-screen selects the one at the edge. Text quoted with `> `, with the "On ...
-wrote:" line before it, and an Outlook reply from its "Original Message" line
-on, is folded into one line saying how many lines it hides; **z** shows and
-hides it in the selected message. Replying, forwarding, the attachments
-(**t**) and the raw source (`\`) are those of the selected message.
-Archiving, deleting and labelling act on the whole conversation, marking
-unread on its newest message, and starring stars the newest message or, if
-any is starred, unstars them all.
+Opening a row shows the whole conversation, oldest message first, starting at
+the first unread one, including messages not in the label listed, such as your
+replies, but not those in the trash or spam unless the opened one is. One
+message is selected, marked by its highlighted sender line; **j** and **k**
+select the next and previous message, **J** and **K** scroll by a line, and
+scrolling a message off the screen selects the one at the edge. Text quoted
+with `> `, with the "On ... wrote:" line before it, is folded into one line
+saying how many lines it hides, as is the rest of a message from where the
+message it replies to starts in Outlook's style: an "Original Message" line, or
+a From, Sent (or Date) and To (or Subject) header block, with any line of
+underscores above it. A header block with nothing above it, or under a
+"Forwarded message" line, is a message forwarded, and is not folded. **z**
+shows and hides the folded text of the selected message. Replying, forwarding,
+the attachments (**t**) and the raw source (`\`) are those of the selected
+message. Archiving, deleting and labelling act on the whole conversation,
+marking unread on its newest message, and starring stars the newest message or,
+if any is starred, unstars them all.
 
 The list is still built from Gmail's message list, grouped as it arrives, so
 a conversation's row holds only the messages loaded so far: older messages of

@@ -33,6 +33,30 @@ func TestQuoteBlocks(t *testing.T) {
 			"Fine.\n\n-----Original Message-----\nFrom: Bob\n" +
 				"Sent: Monday\n\nHello",
 			[][2]int{{2, 7}}},
+		{"Outlook header block, without Original Message",
+			"Caleb,\nFiles are large.\nMark\n\n" +
+				"From: Lindgren, Caleb <c@example.edu>\n" +
+				"Sent: Friday, August 28, 2026 9:54 AM\n" +
+				"To: Gygi, Steven <s@example.edu>; Mark\n" +
+				"Subject: New URL\n\nJust wanted",
+			[][2]int{{4, 10}}},
+		{"header block with the rule above it, bold names",
+			"Yes.\n\n________________________________\n" +
+				"*From:* Bob <b@example.com>\n" +
+				"*Date:* Monday\n" +
+				"*Subject:* Hi\n*To:* Alice\n\nHello",
+			[][2]int{{2, 9}}},
+		{"forwarded, not folded",
+			"FYI\n\n---------- Forwarded message ---------\n" +
+				"From: Bob <b@example.com>\nDate: Mon\n" +
+				"Subject: Hi\nTo: Alice\n\nHello",
+			nil},
+		{"header block with nothing before it, forwarded",
+			"From: Bob <b@example.com>\nSent: Mon\n" +
+				"To: Alice\n\nHi",
+			nil},
+		{"From in a sentence, not a header block",
+			"From: the start, we said\nso.\nTo: be clear", nil},
 		{"a colon that is not an attribution",
 			"Two things:\n> a", [][2]int{{1, 2}}},
 	} {

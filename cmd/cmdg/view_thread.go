@@ -34,17 +34,17 @@ const (
 	threadViewHelp = `?, F1     — Help
 ^R             — Reload
 z              — Show or hide quoted text of the selected message
-J              — Select next message
-K              — Select previous message
+j              — Select next message
+k              — Select previous message
 l              — Add label to the conversation
 L              — Remove label from the conversation
 *              — Toggle "starred"
 u, ←           — Exit conversation
 U              — Mark unread
-n, Down        — Scroll down
+J, Down        — Scroll down
 space          — Page down
 backspace      — Page up
-p, Up          — Scroll up
+K, Up          — Scroll up
 ^P             — Previous conversation
 ^N             — Next conversation
 f              — Forward the selected message, in a new window
@@ -60,6 +60,31 @@ H              — Force HTML view
 Press [enter] to exit
 `
 )
+
+// nextMessageKey and prevMessageKey are what threadKey turns the keys
+// selecting the next and previous message into.
+const (
+	nextMessageKey = "\x00thread-next-message"
+	prevMessageKey = "\x00thread-prev-message"
+)
+
+// threadKey translates a key pressed in the conversation view as the
+// open message view does, but for j and k, which select the next and
+// previous message, and J and K, which scroll by a line as j and k do in
+// the open message view.
+func threadKey(key string) string {
+	switch key {
+	case "j":
+		return nextMessageKey
+	case "k":
+		return prevMessageKey
+	case "J":
+		return "n"
+	case "K":
+		return "p"
+	}
+	return customize.OpenMessageKey(key)
+}
 
 // messageViewer is a view of an opened row of the message list.
 type messageViewer interface {
@@ -702,7 +727,7 @@ func (tv *ThreadView) Run(ctx context.Context) (*MessageViewOp, error) {
 				log.Errorf("ThreadView: Input channel closed!")
 				continue
 			}
-			key = customize.OpenMessageKey(key)
+			key = threadKey(key)
 
 			switch key {
 			case input.CtrlR:
@@ -723,10 +748,10 @@ func (tv *ThreadView) Run(ctx context.Context) (*MessageViewOp, error) {
 			case "H":
 				tv.preferHTML = !tv.preferHTML
 				rebuild()
-			case "J":
+			case nextMessageKey:
 				toMessage(tv.sel + 1)
 				redraw()
-			case "K":
+			case prevMessageKey:
 				// To the start of the selected message if
 				// it is above the screen, or else to the one
 				// before.
