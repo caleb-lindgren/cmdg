@@ -673,7 +673,7 @@ func (tv *ThreadView) draw(lines []string, scroll int) error {
 			l = lines[scroll+n]
 		}
 		if tv.sel < len(tv.starts) && scroll+n == tv.starts[tv.sel] {
-			l = display.Reverse + "▶ " + l
+			l = display.Reverse + "▶" + display.Reset + " " + l
 		}
 		screen.Printlnf(threadHeaderLines+n, "%s", l)
 	}
