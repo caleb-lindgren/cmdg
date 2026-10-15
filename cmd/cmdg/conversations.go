@@ -15,9 +15,14 @@ package main
 // representatives into the row's messages with expand.
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"strings"
+	"sync"
+	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"google.golang.org/api/gmail/v1"
 
@@ -41,6 +46,18 @@ type conversations struct {
 	// members maps the ID of each row's representative to the older
 	// listed messages of its thread, newest first.
 	members map[string][]*cmdg.Message
+
+	// redraw, if not nil, is told of a row whose thread has been
+	// fetched, from another goroutine.
+	redraw func(rep *cmdg.Message)
+
+	// threads holds, for each thread fetched, the labels of each of
+	// its messages, which is what its row's count is made from; it
+	// is filled from other goroutines, under m. fetching holds the
+	// threads being fetched.
+	m        sync.Mutex
+	threads  map[string][][]string
+	fetching map[string]bool
 }
 
 func newConversations(on bool) *conversations {
@@ -48,7 +65,54 @@ func newConversations(on bool) *conversations {
 		on:       on,
 		threadOf: map[string]string{},
 		members:  map[string][]*cmdg.Message{},
+		threads:  map[string][][]string{},
+		fetching: map[string]bool{},
 	}
+}
+
+// threadFetchTimeout is how long fetching a thread for its count may take.
+const threadFetchTimeout = 30 * time.Second
+
+// forget drops what was fetched of the thread t, which has changed.
+func (c *conversations) forget(t string) {
+	c.m.Lock()
+	defer c.m.Unlock()
+	delete(c.threads, t)
+}
+
+// fetched returns the labels of each message of the thread t, and whether
+// they have been fetched. If not, and redraw is set, it starts fetching
+// them, and tells redraw of rep once they are.
+func (c *conversations) fetched(t string, rep *cmdg.Message) ([][]string,
+	bool) {
+	c.m.Lock()
+	defer c.m.Unlock()
+	if ls, ok := c.threads[t]; ok {
+		return ls, true
+	}
+	if c.redraw == nil || c.fetching[t] {
+		return nil, false
+	}
+	c.fetching[t] = true
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(),
+			threadFetchTimeout)
+		defer cancel()
+		ls, err := conn.ThreadLabels(ctx, cmdg.ThreadID(t))
+		c.m.Lock()
+		delete(c.fetching, t)
+		if err == nil {
+			c.threads[t] = ls
+		}
+		c.m.Unlock()
+		if err != nil {
+			log.Warningf("Failed to fetch thread %q for its "+
+				"count: %v", t, err)
+			return
+		}
+		c.redraw(rep)
+	}()
+	return nil, false
 }
 
 // note records the thread of each of msgs, as messages.list and the
@@ -68,11 +132,24 @@ func (c *conversations) note(msgs ...*gmail.Message) {
 // label, the label listed.
 func (c *conversations) noteHistory(hists []*gmail.History, label string) {
 	for _, h := range hists {
+		// Any change to a message of a thread can change the
+		// count of its row.
+		for _, m := range h.Messages {
+			c.forget(m.ThreadId)
+		}
 		for _, m := range h.MessagesAdded {
 			c.note(m.Message)
+			c.forget(m.Message.ThreadId)
 		}
 		for _, m := range h.MessagesDeleted {
 			c.dropMember(m.Message.Id)
+			c.forget(m.Message.ThreadId)
+		}
+		for _, m := range h.LabelsAdded {
+			c.forget(m.Message.ThreadId)
+		}
+		for _, m := range h.LabelsRemoved {
+			c.forget(m.Message.ThreadId)
 		}
 		for _, m := range h.LabelsAdded {
 			c.note(m.Message)
@@ -220,8 +297,15 @@ func (c *conversations) expand(ids []string) []string {
 	return ret
 }
 
-// count returns how many listed messages the row of rep has.
+// count returns how many messages the conversation of the row of rep
+// shows when opened, once its thread has been fetched, and how many
+// listed messages the row has until then.
 func (c *conversations) count(rep *cmdg.Message) int {
+	if t, ok := c.threadOf[rep.ID]; ok {
+		if ls, ok := c.fetched(t, rep); ok && len(ls) > 0 {
+			return visibleCount(ls, rep)
+		}
+	}
 	return 1 + len(c.members[rep.ID])
 }
 
@@ -242,8 +326,11 @@ func (c *conversations) unread(rep *cmdg.Message) bool {
 // messages in the row of rep after it if there is more than one.
 func (c *conversations) fromColumn(rep *cmdg.Message, from string,
 	width int) string {
+	if !c.on {
+		return display.FixedWidth(from, width)
+	}
 	n := c.count(rep)
-	if !c.on || n == 1 {
+	if n == 1 {
 		return display.FixedWidth(from, width)
 	}
 	suffix := fmt.Sprintf(" (%d)", n)

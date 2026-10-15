@@ -71,7 +71,7 @@ func TestThreadBuild(t *testing.T) {
 	conn, err = cmdg.NewFake(&http.Client{Transport: &threadServer{
 		ids: []string{"m1", "m2"},
 		bodies: map[string]string{
-			"m1": "Lunch?",
+			"m1": "Lunch?\n> earlier",
 			"m2": "Yes.\n\nOn Mon, Alice wrote:\n> Lunch?\n",
 		},
 	}})
@@ -83,7 +83,8 @@ func TestThreadBuild(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	tv := &ThreadView{rep: msgs[1], msgs: msgs}
+	tv := &ThreadView{rep: msgs[1], msgs: msgs,
+		showQuotes: map[string]bool{}}
 
 	plain := func() []string {
 		var ret []string
@@ -104,6 +105,7 @@ func TestThreadBuild(t *testing.T) {
 		"Date: " + mustDate(t, ctx, msgs[0]),
 		"",
 		"Lunch?",
+		"[… 1 quoted line, z to show]",
 		"",
 		strings.Repeat("─", 40),
 		"from-m2",
@@ -116,19 +118,59 @@ func TestThreadBuild(t *testing.T) {
 	if got != want {
 		t.Errorf("quotes hidden: got\n%s\nwant\n%s", got, want)
 	}
-	if want := []int{0, 6}; len(tv.starts) != 2 ||
+	if want := []int{0, 7}; len(tv.starts) != 2 ||
 		tv.starts[0] != want[0] || tv.starts[1] != want[1] {
 		t.Errorf("got starts %v, want %v", tv.starts, want)
 	}
-	if got := tv.current(7); got != 1 {
-		t.Errorf("message at line 7 is %d, want 1", got)
+	if got := tv.current(8); got != 1 {
+		t.Errorf("message at line 8 is %d, want 1", got)
 	}
 
-	tv.showQuotes = true
+	// Showing the quotes of m2 leaves those of m1 hidden.
+	tv.showQuotes["m2"] = true
 	tv.build(ctx, 40)
-	got = strings.Join(plain()[9:], "\n")
+	got = strings.Join(plain()[10:], "\n")
 	if want := "Yes.\n\nOn Mon, Alice wrote:\n> Lunch?"; got != want {
-		t.Errorf("quotes shown: got\n%s\nwant\n%s", got, want)
+		t.Errorf("quotes of m2 shown: got\n%s\nwant\n%s", got, want)
+	}
+	got, want = plain()[4], "[… 1 quoted line, z to show]"
+	if got != want {
+		t.Errorf("quotes of m1: got %q, want %q", got, want)
+	}
+}
+
+// TestThreadFollow checks that scrolling the selected message off screen
+// selects the message at the edge it left by, and that otherwise the
+// selection stays, which lets it move to messages near the end that can
+// not be scrolled to the top.
+func TestThreadFollow(t *testing.T) {
+	// 4 lines of messages: 10 less the 4 lines above and 2 below.
+	tv := &ThreadView{
+		ov:     &OpenMessageView{screen: &display.Screen{Height: 10}},
+		lines:  make([]string, 30),
+		starts: []int{0, 10, 27},
+	}
+	for _, tc := range []struct {
+		name        string
+		sel, scroll int
+		want        int
+	}{
+		{"still on screen", 0, 8, 0},
+		{"scrolled off the top", 0, 12, 1},
+		{"scrolled off the bottom", 2, 5, 0},
+		{"off the bottom, next one at the edge", 2, 7, 1},
+		{"last of the ones at the bottom", 2, 26, 2},
+		{"first of the ones at the bottom", 1, 26, 1},
+	} {
+		tv.sel = tc.sel
+		tv.follow(tc.scroll)
+		if tv.sel != tc.want {
+			t.Errorf("%s: selected %d, want %d", tc.name, tv.sel,
+				tc.want)
+		}
+	}
+	if got := tv.clamp(27); got != 26 {
+		t.Errorf("clamp(27) = %d, want 26", got)
 	}
 }
 

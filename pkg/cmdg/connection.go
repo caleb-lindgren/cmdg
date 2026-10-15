@@ -196,7 +196,10 @@ func New(fn string) (*CmdG, error) {
 		tp = newtp
 	}
 
-	// Set up google http.Client.
+	// Set up google http.Client. Requests that take long are logged
+	// while they wait, which the RPC log does not show. Added by this
+	// fork.
+	tp = &slowLogTransport{base: tp}
 	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, &http.Client{
 		Transport: tp,
 	})

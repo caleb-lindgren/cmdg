@@ -29,6 +29,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path"
 	"runtime/debug"
@@ -182,16 +183,21 @@ func (h pidHook) Fire(e *log.Entry) error {
 	return nil
 }
 
-// redirectLog sends logging to the -log file, rather than the terminal,
-// and returns a function closing that file.
-func redirectLog() (func(), error) {
+// logOutput is the -log file, once startLog has opened it.
+var logOutput *os.File
+
+// startLog opens the -log file and logs to it as well as to the terminal,
+// so that startup, which is done before the terminal is taken over, is in
+// the file too.
+func startLog() error {
 	f, err := os.OpenFile(*logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY,
 		0600)
 	if err != nil {
-		return nil, errors.Wrapf(err, "can't create logfile %q",
+		return errors.Wrapf(err, "can't create logfile %q",
 			*logFile)
 	}
-	log.SetOutput(f)
+	logOutput = f
+	log.SetOutput(io.MultiWriter(os.Stderr, f))
 	// Windows log to the same file as the process that opened them,
 	// so each line says which process wrote it, and when to the
 	// millisecond, to time a window's startup.
@@ -207,7 +213,19 @@ func redirectLog() (func(), error) {
 			TimestampFormat: logTimeFormat,
 		})
 	}
-	return func() { _ = f.Close() }, nil
+	return nil
+}
+
+// redirectLog stops logging to the terminal, leaving the -log file
+// opened by startLog, and returns a function closing that file.
+func redirectLog() (func(), error) {
+	if logOutput == nil {
+		if err := startLog(); err != nil {
+			return nil, err
+		}
+	}
+	log.SetOutput(logOutput)
+	return func() { _ = logOutput.Close() }, nil
 }
 
 // runWindow runs a window of its own, for -read, -compose and the other
@@ -253,6 +271,9 @@ func main() {
 
 	cmdg.Lynx = *lynx
 
+	if err := startLog(); err != nil {
+		log.Fatal(err)
+	}
 	log.Infof("cmdg %s", version)
 
 	if flag.NArg() != 0 {
@@ -329,6 +350,7 @@ func main() {
 		if err := loadSignature(ctx); err != nil {
 			log.Fatalf("Failed to load signature from Drive appdata: %v", err)
 		}
+		log.Infof("Signature loaded")
 	}()
 
 	wg.Add(1)

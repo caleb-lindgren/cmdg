@@ -210,3 +210,25 @@ func TestAddHelp(t *testing.T) {
 		t.Errorf("got %q, want %q", got, want)
 	}
 }
+
+// TestCountFromThread checks that a row counts what its conversation
+// shows once the thread is fetched: the messages of the thread not in the
+// trash or spam, listed or not, rather than the listed messages.
+func TestCountFromThread(t *testing.T) {
+	c, m := convFixture(t, true, "a2", "A", "a1", "A")
+	c.regroup([]*cmdg.Message{m["a2"], m["a1"]})
+	if got := c.count(m["a2"]); got != 2 {
+		t.Errorf("before fetching, got %d, want the 2 listed", got)
+	}
+	c.threads["A"] = [][]string{{cmdg.Inbox}, {"SENT"},
+		{cmdg.Trash}, {cmdg.Inbox}}
+	if got := c.count(m["a2"]); got != 3 {
+		t.Errorf("fetched, got %d, want 3 not in the trash", got)
+	}
+	c.noteHistory([]*gmail.History{{Messages: []*gmail.Message{
+		{Id: "a3", ThreadId: "A"}}}}, cmdg.Inbox)
+	if got := c.count(m["a2"]); got != 2 {
+		t.Errorf("after a change to the thread, got %d, want the "+
+			"2 listed until it is fetched again", got)
+	}
+}

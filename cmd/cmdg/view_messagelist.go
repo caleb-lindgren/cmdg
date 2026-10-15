@@ -119,6 +119,13 @@ func NewMessageView(ctx context.Context, label, q string, in *input.Input) *Mess
 		query:           q,
 		conv:            newConversations(*conversationsFlag),
 	}
+	v.conv.redraw = func(m *cmdg.Message) {
+		// Given up on once the view is no longer running.
+		select {
+		case v.messageCh <- m:
+		case <-time.After(time.Minute):
+		}
+	}
 	go v.fetchPage(ctx, "")
 	return v
 }
@@ -765,7 +772,13 @@ func (mv *MessageView) Run(ctx context.Context) error {
 			screen.Draw()
 			continue
 		case m := <-mv.messageCh:
-			cur := messagePos[m.ID]
+			cur, ok := messagePos[m.ID]
+			if !ok || cur < scroll || cur-scroll >= contentHeight {
+				// Gone from the list or the screen since.
+				// Added by this fork, as conversation counts
+				// arrive late.
+				continue
+			}
 			if err := drawMessage(cur); err != nil {
 				mv.errors <- errors.Wrapf(err, "Drawing message")
 			}

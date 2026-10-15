@@ -33,9 +33,9 @@ const (
 
 	threadViewHelp = `?, F1     — Help
 ^R             — Reload
-z              — Show or hide quoted text
-J              — Next message in the conversation
-K              — Previous message in the conversation
+z              — Show or hide quoted text of the selected message
+J              — Select next message
+K              — Select previous message
 l              — Add label to the conversation
 L              — Remove label from the conversation
 *              — Toggle "starred"
@@ -47,15 +47,15 @@ backspace      — Page up
 p, Up          — Scroll up
 ^P             — Previous conversation
 ^N             — Next conversation
-f              — Forward the message at the top, in a new window
-r              — Reply to the message at the top, in a new window
+f              — Forward the selected message, in a new window
+r              — Reply to the selected message, in a new window
 s, ^s          — Search within conversation
-a              — Reply all to the message at the top, in a new window
+a              — Reply all to the selected message, in a new window
 d              — Delete conversation
 e              — Archive conversation
-t, →           — Browse attachments of the message at the top
+t, →           — Browse attachments of the selected message
 H              — Force HTML view
-\              — Show raw source of the message at the top
+\              — Show raw source of the selected message
 
 Press [enter] to exit
 `
@@ -93,19 +93,25 @@ func openViewer(ctx context.Context, msg *cmdg.Message, keys *input.Input,
 // ThreadView is the view of a conversation.
 type ThreadView struct {
 	// ov does what the conversation view does the same way as the
-	// open message view, on ov.msg, the message at the top of the
-	// screen: replying, forwarding, attachments, the raw source and
-	// searching. Its screen is this view's.
+	// open message view, on ov.msg, the selected message: replying,
+	// forwarding, attachments, the raw source and searching. Its
+	// screen is this view's.
 	ov  *OpenMessageView
 	rep *cmdg.Message
 
 	loaded chan []*cmdg.Message
 
 	// Main goroutine only.
-	msgs       []*cmdg.Message
-	lines      []string
-	starts     []int // Index in lines of each message's first line.
-	showQuotes bool
+	msgs   []*cmdg.Message
+	lines  []string
+	starts []int // Index in lines of each message's first line.
+	// sel is the index in msgs of the selected message, the one
+	// replies, z and the like act on, whose sender line is
+	// highlighted.
+	sel int
+	// showQuotes holds the IDs of the messages whose quoted text is
+	// shown.
+	showQuotes map[string]bool
 	preferHTML bool
 }
 
@@ -125,8 +131,9 @@ func NewThreadView(ctx context.Context, rep *cmdg.Message,
 			update: make(chan struct{}),
 			errors: make(chan error, 20),
 		},
-		rep:    rep,
-		loaded: make(chan []*cmdg.Message, 1),
+		rep:        rep,
+		loaded:     make(chan []*cmdg.Message, 1),
+		showQuotes: map[string]bool{},
 	}
 	tv.ov.drawLines = tv.draw
 	go tv.load(ctx, false)
@@ -161,23 +168,46 @@ func (tv *ThreadView) load(ctx context.Context, reload bool) {
 	tv.loaded <- visibleMessages(msgs, tv.rep)
 }
 
-// visibleMessages returns msgs without those in the trash or marked as
-// spam, unless rep is too, as Gmail shows a conversation.
+// hidden returns whether a message with the labels labels is left out of
+// the conversation of rep: whether it is in the trash or marked as spam,
+// and rep is not, as Gmail shows a conversation.
+func hidden(labels []string, rep *cmdg.Message) bool {
+	for _, l := range labels {
+		if (l == cmdg.Trash || l == spamLabel) && !rep.HasLabel(l) {
+			return true
+		}
+	}
+	return false
+}
+
+// visibleMessages returns msgs without those hidden in the conversation
+// of rep, or all of them if all are.
 func visibleMessages(msgs []*cmdg.Message, rep *cmdg.Message) []*cmdg.Message {
 	var ret []*cmdg.Message
-outer:
 	for _, m := range msgs {
-		for _, l := range []string{cmdg.Trash, spamLabel} {
-			if m.HasLabel(l) && !rep.HasLabel(l) {
-				continue outer
-			}
+		if !hidden(m.LocalLabels(), rep) {
+			ret = append(ret, m)
 		}
-		ret = append(ret, m)
 	}
 	if len(ret) == 0 {
 		return msgs
 	}
 	return ret
+}
+
+// visibleCount returns how many messages visibleMessages would return of
+// messages with the labels labels.
+func visibleCount(labels [][]string, rep *cmdg.Message) int {
+	n := 0
+	for _, ls := range labels {
+		if !hidden(ls, rep) {
+			n++
+		}
+	}
+	if n == 0 {
+		return len(labels)
+	}
+	return n
 }
 
 // targets returns the messages an action on the conversation applies to
@@ -374,7 +404,7 @@ func (tv *ThreadView) build(ctx context.Context, width int) {
 		for len(body) > 0 && body[len(body)-1] == "" {
 			body = body[:len(body)-1]
 		}
-		if !tv.showQuotes {
+		if !tv.showQuotes[m.ID] {
 			body = foldQuotes(body)
 		}
 		for _, l := range body {
@@ -394,6 +424,29 @@ func (tv *ThreadView) current(scroll int) int {
 	return cur
 }
 
+// end returns the index in tv.lines just past message n.
+func (tv *ThreadView) end(n int) int {
+	if n+1 < len(tv.starts) {
+		return tv.starts[n+1]
+	}
+	return len(tv.lines)
+}
+
+// follow keeps the selection on screen once it has been scrolled to
+// scroll: if the selected message is no longer on screen at all, the
+// message at the edge it left by is selected.
+func (tv *ThreadView) follow(scroll int) {
+	if tv.sel >= len(tv.starts) {
+		return
+	}
+	switch {
+	case tv.end(tv.sel) <= scroll:
+		tv.sel = tv.current(scroll)
+	case tv.starts[tv.sel] >= scroll+tv.contentHeight():
+		tv.sel = tv.current(scroll + tv.contentHeight() - 1)
+	}
+}
+
 // contentHeight is how many lines of the conversation fit on the screen.
 func (tv *ThreadView) contentHeight() int {
 	return max(1, tv.ov.screen.Height-threadHeaderLines-2)
@@ -405,15 +458,19 @@ func (tv *ThreadView) clamp(scroll int) int {
 }
 
 // draw draws lines, the conversation or a copy of it with search hits
-// marked, scrolled to line scroll, and makes the message at the top the
-// one ov acts on.
+// marked, scrolled to line scroll, and makes the selected message the one
+// ov acts on. While searching, the message at the top is selected.
 func (tv *ThreadView) draw(lines []string, scroll int) error {
 	ctx := cancelledContext()
 	screen := tv.ov.screen
 	height := tv.contentHeight()
 
+	if tv.ov.inIncrementalSearch {
+		tv.sel = tv.current(scroll)
+	}
+	tv.sel = max(0, min(tv.sel, len(tv.msgs)-1))
 	if len(tv.msgs) > 0 {
-		tv.ov.msg = tv.msgs[tv.current(scroll)]
+		tv.ov.msg = tv.msgs[tv.sel]
 	}
 
 	var searching string
@@ -428,7 +485,7 @@ func (tv *ThreadView) draw(lines []string, scroll int) error {
 		pct = min(100, 100*(scroll+height)/len(lines))
 	}
 	quotes := "quotes hidden"
-	if tv.showQuotes {
+	if len(tv.msgs) > 0 && tv.showQuotes[tv.msgs[tv.sel].ID] {
 		quotes = "quotes shown"
 	}
 	if len(tv.msgs) == 0 {
@@ -436,7 +493,7 @@ func (tv *ThreadView) draw(lines []string, scroll int) error {
 	} else {
 		screen.Printlnf(0,
 			"Message %d of %d, %s. Scroll %d-%d/%d (%d%%)%s",
-			tv.current(scroll)+1, len(tv.msgs), quotes, scroll,
+			tv.sel+1, len(tv.msgs), quotes, scroll,
 			min(scroll+height, len(lines)), len(lines), pct,
 			searching)
 	}
@@ -457,6 +514,9 @@ func (tv *ThreadView) draw(lines []string, scroll int) error {
 		l := ""
 		if scroll+n < len(lines) {
 			l = lines[scroll+n]
+		}
+		if tv.sel < len(tv.starts) && scroll+n == tv.starts[tv.sel] {
+			l = display.Reverse + "▶ " + l
 		}
 		screen.Printlnf(threadHeaderLines+n, "%s", l)
 	}
@@ -539,7 +599,7 @@ func (tv *ThreadView) toggleStar(ctx context.Context) {
 	tv.tell(m, []string{cmdg.Starred}, nil, false)
 }
 
-// attachments browses the attachments of the message at the top.
+// attachments browses the attachments of the selected message.
 func (tv *ThreadView) attachments(ctx context.Context) {
 	ov := tv.ov
 	as, err := ov.msg.Attachments(ctx)
@@ -580,23 +640,31 @@ func (tv *ThreadView) Run(ctx context.Context) (*MessageViewOp, error) {
 			log.Infof("Failed to draw: %v", err)
 		}
 	}
-	// toMessage scrolls to the start of message n, if there is one.
+	// toMessage selects message n, if there is one, and scrolls to
+	// its start, or as near as the end of the conversation allows.
 	toMessage := func(n int) {
 		if n >= 0 && n < len(tv.starts) {
+			tv.sel = n
 			scroll = tv.clamp(tv.starts[n])
 		}
 	}
-	// rebuild lays the conversation out again, keeping the message
-	// at the top there.
+	// rebuild lays the conversation out again, keeping the selected
+	// message where it is on screen.
 	rebuild := func() {
-		cur := tv.current(scroll)
+		ofs := 0
+		if tv.sel < len(tv.starts) {
+			ofs = tv.starts[tv.sel] - scroll
+		}
 		tv.build(ctx, ov.screen.Width)
-		toMessage(cur)
+		if tv.sel < len(tv.starts) {
+			scroll = tv.clamp(tv.starts[tv.sel] - ofs)
+		}
 		ov.screen.Clear()
 		redraw()
 	}
 	scrollBy := func(n int) {
 		scroll = tv.clamp(scroll + n)
+		tv.follow(scroll)
 		redraw()
 	}
 
@@ -647,23 +715,27 @@ func (tv *ThreadView) Run(ctx context.Context) (*MessageViewOp, error) {
 				}
 				redraw()
 			case "z":
-				tv.showQuotes = !tv.showQuotes
+				if tv.sel < len(tv.msgs) {
+					id := tv.msgs[tv.sel].ID
+					tv.showQuotes[id] = !tv.showQuotes[id]
+				}
 				rebuild()
 			case "H":
 				tv.preferHTML = !tv.preferHTML
 				rebuild()
 			case "J":
-				toMessage(tv.current(scroll) + 1)
+				toMessage(tv.sel + 1)
 				redraw()
 			case "K":
-				// To the start of the message at the top,
-				// or of the one before if already there.
-				cur := tv.current(scroll)
-				if cur < len(tv.starts) &&
-					scroll <= tv.starts[cur] {
-					cur--
+				// To the start of the selected message if
+				// it is above the screen, or else to the one
+				// before.
+				if tv.sel < len(tv.starts) &&
+					scroll > tv.starts[tv.sel] {
+					toMessage(tv.sel)
+				} else {
+					toMessage(tv.sel - 1)
 				}
-				toMessage(cur)
 				redraw()
 			case "u", input.Left:
 				return nil, nil
@@ -686,9 +758,12 @@ func (tv *ThreadView) Run(ctx context.Context) (*MessageViewOp, error) {
 				scrollBy(-tv.contentHeight())
 			case input.Home, input.XHome:
 				scroll = 0
+				tv.sel = 0
 				redraw()
 			case customize.GoBottom:
-				scrollBy(len(tv.lines))
+				scroll = tv.clamp(len(tv.lines))
+				tv.sel = len(tv.msgs) - 1
+				redraw()
 			case customize.HalfPageDown:
 				scrollBy(halfPage(tv.contentHeight()))
 			case customize.HalfPageUp:
@@ -700,6 +775,7 @@ func (tv *ThreadView) Run(ctx context.Context) (*MessageViewOp, error) {
 				}
 				if ns > 0 {
 					scroll = tv.clamp(ns)
+					tv.sel = tv.current(ns)
 				}
 				redraw()
 			case "f":

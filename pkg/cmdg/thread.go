@@ -65,3 +65,43 @@ func (c *CmdG) ModifyThread(ctx context.Context, id ThreadID,
 		return err
 	}, "email=%q threadID=%q add=%v remove=%v", email, id, add, remove)
 }
+
+// maxConcurrentThreadGets is how many ThreadLabels requests may be in
+// flight at once. They have a limit of their own rather than taking
+// getSlots, so that the message list's counts are not held up behind the
+// thousands of gets of the address scan at startup; a small one, as
+// together with getSlots they count towards Gmail's undocumented limit
+// on concurrent requests.
+const maxConcurrentThreadGets = 4
+
+var threadGetSlots = make(chan struct{}, maxConcurrentThreadGets)
+
+// ThreadLabels returns the label IDs of each message in the thread id,
+// oldest first, with one request for message IDs and labels only.
+func (c *CmdG) ThreadLabels(ctx context.Context,
+	id ThreadID) ([][]string, error) {
+	select {
+	case threadGetSlots <- struct{}{}:
+		defer func() { <-threadGetSlots }()
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+	const fields = "messages(id,labelIds)"
+	var th *gmail.Thread
+	err := wrapLogRPC("gmail.Users.Threads.Get", func() (err error) {
+		th, err = c.gmail.Users.Threads.Get(email, string(id)).
+			Format(string(LevelMinimal)).
+			Fields(fields).
+			Context(ctx).
+			Do()
+		return
+	}, "email=%q threadID=%q fields=%q", email, id, fields)
+	if err != nil {
+		return nil, errors.Wrapf(err, "getting thread %q", id)
+	}
+	ret := make([][]string, len(th.Messages))
+	for n, m := range th.Messages {
+		ret[n] = m.LabelIds
+	}
+	return ret, nil
+}
