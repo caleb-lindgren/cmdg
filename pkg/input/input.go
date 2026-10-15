@@ -69,6 +69,13 @@ const (
 	// text, without PasteEnd.
 	PasteStart = "\x1B[200~"
 	PasteEnd   = "\x1B[201~"
+
+	// FocusIn and FocusOut are what a terminal in focus reporting mode
+	// (display.FocusReportOn) sends when its window gains and loses
+	// the focus. The input loop does not send them as keys, but
+	// records them for Focused, and tells Focus.
+	FocusIn  = "\x1B[I"
+	FocusOut = "\x1B[O"
 )
 
 var (
@@ -91,9 +98,11 @@ type Input struct {
 	stop    chan struct{} // Close to stop.
 	winch   chan os.Signal
 	keys    chan string // Open if running.
+	focus   chan struct{}
 
 	m           sync.RWMutex
 	pasteStatus []bool
+	unfocused   bool
 }
 
 // PastePush triggers/untriggers paste protection in the stack.
@@ -122,6 +131,33 @@ func (i *Input) pasteProtection() bool {
 // Chan returns the input stream channel.
 func (i *Input) Chan() <-chan string {
 	return i.keys
+}
+
+// Focus returns a channel told when the terminal reports that its window
+// gained or lost the focus. Focused says which.
+func (i *Input) Focus() <-chan struct{} {
+	return i.focus
+}
+
+// Focused returns whether the terminal's window has the focus, as far as
+// the terminal has reported: true until it reports otherwise, including
+// when it does not report at all.
+func (i *Input) Focused() bool {
+	i.m.RLock()
+	defer i.m.RUnlock()
+	return !i.unfocused
+}
+
+// setFocused records whether the terminal's window has the focus, and
+// tells Focus, unless a change not yet read is already waiting there.
+func (i *Input) setFocused(focused bool) {
+	i.m.Lock()
+	i.unfocused = !focused
+	i.m.Unlock()
+	select {
+	case i.focus <- struct{}{}:
+	default:
+	}
 }
 
 // Winch returns a SIGWINCH channel.
@@ -414,6 +450,10 @@ func (i *Input) Start() error {
 			if key == PasteStart {
 				key = readPaste(fd)
 			}
+			if key == FocusIn || key == FocusOut {
+				i.setFocused(key == FocusIn)
+				continue
+			}
 
 			// log.Infof("read done")
 			keyTime := time.Now()
@@ -443,6 +483,7 @@ func (i *Input) Start() error {
 func New() *Input {
 	i := &Input{
 		winch: make(chan os.Signal, 1),
+		focus: make(chan struct{}, 1),
 	}
 	signal.Notify(i.winch, syscall.SIGWINCH)
 	return i

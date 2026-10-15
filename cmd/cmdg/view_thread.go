@@ -125,6 +125,9 @@ type ThreadView struct {
 	rep *cmdg.Message
 
 	loaded chan []*cmdg.Message
+	// polled is sent what each check of the thread for new messages
+	// found.
+	polled chan polledThread
 
 	// Main goroutine only.
 	msgs   []*cmdg.Message
@@ -138,6 +141,16 @@ type ThreadView struct {
 	// shown.
 	showQuotes map[string]bool
 	preferHTML bool
+	// arrived holds the messages that arrived while the conversation
+	// was open, and have not been read yet.
+	arrived arrivals
+}
+
+// polledThread is what a check of the thread found: the ID and labels of
+// each of its messages.
+type polledThread struct {
+	ids    []string
+	labels [][]string
 }
 
 // NewThreadView creates the view of the conversation of rep, and starts
@@ -158,6 +171,7 @@ func NewThreadView(ctx context.Context, rep *cmdg.Message,
 		},
 		rep:        rep,
 		loaded:     make(chan []*cmdg.Message, 1),
+		polled:     make(chan polledThread),
 		showQuotes: map[string]bool{},
 	}
 	tv.ov.drawLines = tv.draw
@@ -191,6 +205,40 @@ func (tv *ThreadView) load(ctx context.Context, reload bool) {
 	log.Infof("Got %d messages of thread %q in %v", len(msgs), tid,
 		time.Since(st))
 	tv.loaded <- visibleMessages(msgs, tv.rep)
+}
+
+// watch checks the thread every threadPollTime until ctx is done, and
+// sends what it found to tv.polled. A check that fails is logged only, as
+// the next may well succeed, and the conversation shown is still right.
+func (tv *ThreadView) watch(ctx context.Context) {
+	t := time.NewTicker(threadPollTime)
+	defer t.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+		}
+		tid, err := tv.rep.ThreadID(ctx)
+		if err != nil {
+			log.Warningf("Checking thread: getting thread ID: %v",
+				err)
+			continue
+		}
+		pctx, cancel := context.WithTimeout(ctx, threadFetchTimeout)
+		ids, labels, err := conn.ThreadMessageLabels(pctx, tid)
+		cancel()
+		if err != nil {
+			log.Warningf("Checking thread %q for new messages: %v",
+				tid, err)
+			continue
+		}
+		select {
+		case tv.polled <- polledThread{ids, labels}:
+		case <-ctx.Done():
+			return
+		}
+	}
 }
 
 // hidden returns whether a message with the labels labels is left out of
@@ -282,11 +330,41 @@ func (tv *ThreadView) modify(ctx context.Context, add, remove []string,
 	return nil
 }
 
-// markRead marks the unread messages of the conversation read.
+// markRead marks the unread messages of the conversation read, but for
+// those that have arrived while it was open, which are marked read once
+// they have been read, by markArrivalsRead.
 func (tv *ThreadView) markRead(ctx context.Context) {
+	var msgs []*cmdg.Message
+	for _, m := range tv.msgs {
+		if !tv.arrived.has(m.ID) {
+			msgs = append(msgs, m)
+		}
+	}
+	tv.markMessagesRead(ctx, msgs)
+}
+
+// markArrivalsRead marks read the messages with the IDs ids, which have
+// arrived while the conversation was open, and been read.
+func (tv *ThreadView) markArrivalsRead(ctx context.Context, ids []string) {
+	read := map[string]bool{}
+	for _, id := range ids {
+		read[id] = true
+	}
+	var msgs []*cmdg.Message
+	for _, m := range tv.msgs {
+		if read[m.ID] {
+			msgs = append(msgs, m)
+		}
+	}
+	tv.markMessagesRead(ctx, msgs)
+}
+
+// markMessagesRead marks the unread messages of msgs read.
+func (tv *ThreadView) markMessagesRead(ctx context.Context,
+	msgs []*cmdg.Message) {
 	var unread []*cmdg.Message
 	var ids []string
-	for _, m := range tv.msgs {
+	for _, m := range msgs {
 		if m.IsUnread() {
 			unread = append(unread, m)
 			ids = append(ids, m.ID)
@@ -438,6 +516,49 @@ func (tv *ThreadView) build(ctx context.Context, width int) {
 	}
 }
 
+// spans returns the [start, end) lines of each message of the
+// conversation, by ID, without the blank line and rule separating it from
+// the next.
+func (tv *ThreadView) spans() map[string][2]int {
+	ret := map[string][2]int{}
+	for n, m := range tv.msgs {
+		if n >= len(tv.starts) {
+			break
+		}
+		end := tv.end(n)
+		if n+1 < len(tv.starts) {
+			end -= 2
+		}
+		ret[m.ID] = [2]int{tv.starts[n], end}
+	}
+	return ret
+}
+
+// notice returns the line telling of the messages that have arrived and
+// not been read, or "" if there are none.
+func (tv *ThreadView) notice(ctx context.Context) string {
+	ids := tv.arrived.ids()
+	if len(ids) == 0 {
+		return ""
+	}
+	pos := 0
+	for n, m := range tv.msgs {
+		if m.ID == ids[0] {
+			pos = n + 1
+			break
+		}
+	}
+	var froms []string
+	for _, id := range ids {
+		from, err := cmdg.NewMessage(conn, id).GetHeader(ctx, "From")
+		if err != nil {
+			from = "unknown sender"
+		}
+		froms = append(froms, from)
+	}
+	return arrivalNotice(froms, pos, len(tv.msgs))
+}
+
 // current returns the index in tv.msgs of the message at line scroll.
 func (tv *ThreadView) current(scroll int) int {
 	cur := 0
@@ -547,6 +668,13 @@ func (tv *ThreadView) draw(lines []string, scroll int) error {
 	}
 	screen.Printlnf(screen.Height-2, "%s",
 		strings.Repeat("—", screen.Width))
+	notice := tv.notice(ctx)
+	if notice != "" {
+		notice = display.Reverse + display.Bold +
+			display.FixedWidth(notice, screen.Width) +
+			display.Reset
+	}
+	screen.Printlnf(screen.Height-1, "%s", notice)
 	return nil
 }
 
@@ -655,12 +783,72 @@ func (tv *ThreadView) startAt() int {
 	return len(tv.msgs) - 1
 }
 
+// receive shows msgs, the conversation as loaded, scrolled to scroll
+// before, and returns where it is scrolled to now, and the IDs of the
+// messages that have arrived since it was last loaded, if it was.
+// Opened, it starts at startAt; loaded again, the selected message stays
+// selected, where it is on screen, even if messages before it come or go.
+func (tv *ThreadView) receive(ctx context.Context, msgs []*cmdg.Message,
+	scroll int) (int, []string) {
+	first := len(tv.msgs) == 0
+	selID, ofs := "", 0
+	if !first && tv.sel < len(tv.starts) && tv.sel < len(tv.msgs) {
+		selID = tv.msgs[tv.sel].ID
+		ofs = tv.starts[tv.sel] - scroll
+	}
+	arrived := newArrivals(tv.msgs, msgs)
+	tv.arrived.add(arrived...)
+	tv.msgs = msgs
+	tv.build(ctx, tv.ov.screen.Width)
+	if first {
+		tv.sel = tv.startAt()
+		if tv.sel >= 0 && tv.sel < len(tv.starts) {
+			scroll = tv.starts[tv.sel]
+		}
+	}
+	for n, m := range tv.msgs {
+		if m.ID == selID && n < len(tv.starts) {
+			tv.sel = n
+			scroll = tv.starts[n] - ofs
+		}
+	}
+	return tv.clamp(scroll), arrived
+}
+
 // Run runs the conversation view event loop.
 func (tv *ThreadView) Run(ctx context.Context) (*MessageViewOp, error) {
 	log.Infof("Running ThreadView")
 	ov := tv.ov
 	scroll := 0
+
+	// Report focus, which says whether a message that has arrived is
+	// being read, and whether to ring the bell for it.
+	fmt.Print(display.FocusReportOn)
+	defer fmt.Print(display.FocusReportOff)
+	wctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	go tv.watch(wctx)
+	tick := time.NewTicker(time.Second)
+	defer tick.Stop()
+
+	// viewed records what is on screen for the messages that have
+	// arrived, marks those read that have been, and returns whether
+	// any were.
+	viewed := func() bool {
+		if len(tv.arrived.list) == 0 {
+			return false
+		}
+		read := tv.arrived.update(time.Now(), tv.spans(), scroll,
+			scroll+tv.contentHeight(), ov.keys.Focused())
+		if len(read) == 0 {
+			return false
+		}
+		log.Infof("Arrived messages read: %q", read)
+		tv.markArrivalsRead(ctx, read)
+		return true
+	}
 	redraw := func() {
+		viewed()
 		if err := tv.draw(tv.lines, scroll); err != nil {
 			log.Infof("Failed to draw: %v", err)
 		}
@@ -712,15 +900,33 @@ func (tv *ThreadView) Run(ctx context.Context) (*MessageViewOp, error) {
 			}
 			continue
 		case msgs := <-tv.loaded:
-			first := len(tv.msgs) == 0
-			tv.msgs = msgs
-			tv.build(ctx, ov.screen.Width)
-			if first {
-				toMessage(tv.startAt())
-			}
-			scroll = tv.clamp(scroll)
+			var arrived []string
+			scroll, arrived = tv.receive(ctx, msgs, scroll)
 			tv.markRead(ctx)
+			if len(arrived) > 0 {
+				log.Infof("Messages arrived: %q", arrived)
+				if !ov.keys.Focused() {
+					// st sets the window's urgency hint,
+					// which dwm shows on its tag.
+					fmt.Print("\a")
+				}
+			}
 			ov.screen.Clear()
+			redraw()
+		case p := <-tv.polled:
+			if len(tv.msgs) > 0 &&
+				polledNew(p.ids, p.labels, tv.msgs, tv.rep) {
+				go tv.load(ctx, false)
+			}
+			continue
+		case <-ov.keys.Focus():
+			if viewed() {
+				redraw()
+			}
+		case <-tick.C:
+			if !viewed() {
+				continue
+			}
 			redraw()
 		case key, ok := <-ov.keys.Chan():
 			if !ok {

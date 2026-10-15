@@ -241,6 +241,22 @@ message. Archiving, deleting and labelling act on the whole conversation,
 marking unread on its newest message, and starring stars the newest message or,
 if any is starred, unstars them all.
 
+An open conversation checks its thread for new messages every ten seconds, as
+the message list checks its label, and shows any that arrive at the end. A
+message received that way, rather than one you sent or a draft, is told of on
+the bottom line, highlighted, until it has been read: every line of it on
+screen at some point, and the whole of it on screen (or, if it is taller than
+the screen, the screen full of it) for ten seconds in all, with the window
+having the focus. Only then is it marked read. If the window does not have the
+focus when the message arrives, the terminal's bell is rung, which st turns
+into an urgency hint and dwm into a highlighted tag until the window is
+focused. Whether the window has the focus is known from the terminal's focus
+reports, which st and xterm send; a terminal that sends none is taken to be
+focused throughout, so it is never rung. The message list rings no bell.
+
+In the message list, a message arriving moves its conversation's row to the
+top, and the cursor stays on the row it was on.
+
 The list is still built from Gmail's message list, grouped as it arrives, so
 a conversation's row holds only the messages loaded so far: older messages of
 a long-running thread on a page not yet loaded are not archived along with

@@ -33,7 +33,9 @@ func (f *fakeThreads) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(&gmail.Thread{Id: "T"})
 	case strings.HasSuffix(p, "/threads/T"):
 		_ = json.NewEncoder(w).Encode(&gmail.Thread{Id: "T",
-			Messages: []*gmail.Message{{Id: "m1"}, {Id: "m2"}}})
+			Messages: []*gmail.Message{
+				{Id: "m1", LabelIds: []string{Inbox}},
+				{Id: "m2", LabelIds: []string{Trash}}}})
 	case strings.Contains(p, "/messages/"):
 		id := p[strings.LastIndex(p, "/")+1:]
 		body := base64.URLEncoding.EncodeToString(
@@ -90,5 +92,26 @@ func TestThreadMessages(t *testing.T) {
 	want := `{"addLabelIds":["TRASH"],"removeLabelIds":["INBOX"]}`
 	if !reflect.DeepEqual(f.modifies, []string{want}) {
 		t.Errorf("got modifications %q, want %q", f.modifies, want)
+	}
+}
+
+func TestThreadMessageLabels(t *testing.T) {
+	ts := httptest.NewServer(&fakeThreads{})
+	defer ts.Close()
+	conn, err := NewFake(&http.Client{Transport: &redirector{ts.URL}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ids, labels, err := conn.ThreadMessageLabels(context.Background(),
+		"T")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"m1", "m2"}; !reflect.DeepEqual(ids, want) {
+		t.Errorf("got IDs %q, want %q", ids, want)
+	}
+	want := [][]string{{Inbox}, {Trash}}
+	if !reflect.DeepEqual(labels, want) {
+		t.Errorf("got labels %q, want %q", labels, want)
 	}
 }

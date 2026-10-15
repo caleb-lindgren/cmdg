@@ -80,11 +80,19 @@ var threadGetSlots = make(chan struct{}, maxConcurrentThreadGets)
 // oldest first, with one request for message IDs and labels only.
 func (c *CmdG) ThreadLabels(ctx context.Context,
 	id ThreadID) ([][]string, error) {
+	_, ls, err := c.ThreadMessageLabels(ctx, id)
+	return ls, err
+}
+
+// ThreadMessageLabels returns the ID and the label IDs of each message in
+// the thread id, oldest first, with one request for those only.
+func (c *CmdG) ThreadMessageLabels(ctx context.Context,
+	id ThreadID) ([]string, [][]string, error) {
 	select {
 	case threadGetSlots <- struct{}{}:
 		defer func() { <-threadGetSlots }()
 	case <-ctx.Done():
-		return nil, ctx.Err()
+		return nil, nil, ctx.Err()
 	}
 	const fields = "messages(id,labelIds)"
 	var th *gmail.Thread
@@ -97,11 +105,13 @@ func (c *CmdG) ThreadLabels(ctx context.Context,
 		return
 	}, "email=%q threadID=%q fields=%q", email, id, fields)
 	if err != nil {
-		return nil, errors.Wrapf(err, "getting thread %q", id)
+		return nil, nil, errors.Wrapf(err, "getting thread %q", id)
 	}
-	ret := make([][]string, len(th.Messages))
+	ids := make([]string, len(th.Messages))
+	ls := make([][]string, len(th.Messages))
 	for n, m := range th.Messages {
-		ret[n] = m.LabelIds
+		ids[n] = m.Id
+		ls[n] = m.LabelIds
 	}
-	return ret, nil
+	return ids, ls, nil
 }

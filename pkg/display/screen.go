@@ -76,6 +76,12 @@ const (
 	BracketedPasteOn  = "\033[?2004h"
 	BracketedPasteOff = "\033[?2004l"
 
+	// FocusReportOn makes the terminal report when its window gains
+	// and loses the focus, as input.FocusIn and input.FocusOut.
+	// FocusReportOff stops it.
+	FocusReportOn  = "\033[?1004h"
+	FocusReportOff = "\033[?1004l"
+
 	// Normal is not the same as Reset, because Reset resets Bold/Underline/Reverse.
 	Normal = White + BgBlack
 )
