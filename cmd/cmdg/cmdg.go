@@ -34,6 +34,7 @@ import (
 	"path"
 	"runtime/debug"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -81,6 +82,16 @@ var (
 	labelReloadTime = time.Minute
 
 	signature string
+
+	// startupReady waits for the signature, the settings and the
+	// contacts, which the message list loads while it starts, and
+	// returns the error loading the signature, if any: a message is
+	// not to be written without it. Added by this fork.
+	startupReady = func() error { return nil }
+
+	// contactsLoaded is whether conn has loaded the contacts, or been
+	// given them by the process opening this window.
+	contactsLoaded atomic.Bool
 
 	// The way to build API keys in at build time is to build with
 	//
@@ -345,12 +356,19 @@ func main() {
 
 	log.Infof("Loading settings…")
 	log.Infof("For \"Token has been expired or revoked\": re-run cmdg with -configure")
-	var wg sync.WaitGroup
-	wg.Add(1)
+	// Only the labels are waited for, as the message list shows them.
+	// The signature, the settings and the contacts are needed only to
+	// write a message, which waits for them with startupReady, so that
+	// the list is not held up by them. Added by this fork.
+	var wg, background sync.WaitGroup
+	var sigErr error
+	background.Add(1)
 	go func() {
-		defer wg.Done()
-		if err := loadSignature(ctx); err != nil {
-			log.Fatalf("Failed to load signature from Drive appdata: %v", err)
+		defer background.Done()
+		if sigErr = loadSignature(ctx); sigErr != nil {
+			log.Errorf("Failed to load signature from Drive "+
+				"appdata: %v", sigErr)
+			return
 		}
 		log.Infof("Signature loaded")
 	}()
@@ -371,9 +389,9 @@ func main() {
 		}
 	}
 
-	wg.Add(1)
+	background.Add(1)
 	go func() {
-		defer wg.Done()
+		defer background.Done()
 		if err := conn.LoadSettings(ctx); err != nil {
 			log.Errorf("Failed to load settings: %v", err)
 		} else {
@@ -381,14 +399,22 @@ func main() {
 		}
 	}()
 
-	wg.Add(1)
+	background.Add(1)
 	go func() {
-		defer wg.Done()
+		defer background.Done()
 		if err := conn.LoadContacts(ctx); err != nil {
-			log.Fatalf("Loading contacts: %v", err)
+			// Suggestions are then the addresses of the mail
+			// scanned, until the reload every labelReloadTime.
+			log.Errorf("Loading contacts: %v", err)
+			return
 		}
+		contactsLoaded.Store(true)
 		log.Infof("Contacts loaded")
 	}()
+	startupReady = func() error {
+		background.Wait()
+		return errors.Wrap(sigErr, "loading signature")
+	}
 	wg.Wait()
 
 	go func() {
@@ -403,6 +429,7 @@ func main() {
 			if err := conn.LoadContacts(ctx); err != nil {
 				log.Errorf("Loading contacts: %v", err)
 			} else {
+				contactsLoaded.Store(true)
 				log.Infof("Reloaded contacts")
 			}
 		}

@@ -395,16 +395,37 @@ func (c *CmdG) LoadLabels(ctx context.Context) error {
 		return err
 	}
 	log.Infof("Loaded labels in %v", time.Since(st))
+	c.SetLabels(res.Labels)
+	return nil
+}
+
+// SetLabels puts labels, as LoadLabels gets them, into the cache. It is
+// for a window to use the labels of the process that opened it, rather
+// than fetching them. Added by this fork.
+func (c *CmdG) SetLabels(labels []*gmail.Label) {
 	c.m.Lock()
 	defer c.m.Unlock()
-	for _, l := range res.Labels {
+	for _, l := range labels {
 		c.labelCache[l.Id] = &Label{
 			ID:       l.Id,
 			Label:    l.Name,
 			Response: l,
 		}
 	}
-	return nil
+}
+
+// RawLabels returns the labels in the cache as LoadLabels got them, for
+// SetLabels. Added by this fork.
+func (c *CmdG) RawLabels() []*gmail.Label {
+	c.m.RLock()
+	defer c.m.RUnlock()
+	var ret []*gmail.Label
+	for _, l := range c.labelCache {
+		if l.Response != nil {
+			ret = append(ret, l.Response)
+		}
+	}
+	return ret
 }
 
 // Labels returns a list of all labels.

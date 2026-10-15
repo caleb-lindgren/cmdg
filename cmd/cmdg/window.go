@@ -32,6 +32,7 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	gmail "google.golang.org/api/gmail/v1"
 
 	"github.com/ThomasHabets/cmdg/pkg/cmdg"
 	"github.com/ThomasHabets/cmdg/pkg/display"
@@ -92,6 +93,15 @@ var (
 type windowState struct {
 	// Contacts are the address suggestions, as Contacts returns them.
 	Contacts []string `json:"contacts"`
+
+	// ContactsMissing says that the contacts had not been loaded yet
+	// by the process opening the window, so that Contacts lacks them,
+	// and the window has to load them itself.
+	ContactsMissing bool `json:"contacts_missing,omitempty"`
+
+	// Labels are the labels of the process opening the window, so that
+	// a message window need not fetch them before showing a message.
+	Labels []*gmail.Label `json:"labels,omitempty"`
 
 	// Messages are the IDs of the messages in the message list, in
 	// order, for -read.
@@ -332,7 +342,8 @@ func startWindow(conn *cmdg.CmdG, what string, messages []string,
 		return errors.Wrap(err, "creating window file")
 	}
 	state := windowState{Contacts: conn.Contacts(), Messages: messages,
-		Notify: notify}
+		Notify: notify, ContactsMissing: !contactsLoaded.Load(),
+		Labels: conn.RawLabels()}
 	state.AccessToken, state.TokenExpiry = conn.AccessToken()
 	if err := json.NewEncoder(f).Encode(&state); err != nil {
 		_ = f.Close()
@@ -415,6 +426,12 @@ func composeSomewhere(what, doing string, here func() error,
 		}
 		return
 	}
+	// The message list loads the signature, settings and contacts
+	// while it starts.
+	if err := startupReady(); err != nil {
+		errs <- errors.Wrapf(err, "Failed %s", doing)
+		return
+	}
 	if err := here(); err != nil {
 		errs <- errors.Wrapf(err, "Failed %s", doing)
 	}
@@ -441,6 +458,15 @@ func windowMain(ctx context.Context) error {
 		}
 		// For windows started from this one.
 		conn.SetContacts(state.Contacts)
+		conn.SetLabels(state.Labels)
+		if state.ContactsMissing {
+			// Opened before the message list had them.
+			if err := conn.LoadContacts(ctx); err != nil {
+				return errors.Wrap(err, "loading contacts")
+			}
+			state.Contacts = conn.Contacts()
+		}
+		contactsLoaded.Store(true)
 		if state.AccessToken != "" {
 			conn.SetAccessToken(state.AccessToken,
 				state.TokenExpiry)
@@ -452,6 +478,7 @@ func windowMain(ctx context.Context) error {
 		if err := conn.LoadContacts(ctx); err != nil {
 			return errors.Wrap(err, "loading contacts")
 		}
+		contactsLoaded.Store(true)
 		state = &windowState{Contacts: conn.Contacts()}
 	}
 
@@ -483,16 +510,19 @@ func readMain(ctx context.Context, id string, ids []string,
 		ids, pos = []string{id}, 0
 	}
 
-	// The labels are needed to show the message's, and the message is
-	// fetched in the meantime.
+	// The labels are needed to show the message's. They are given by
+	// the process opening the window, or else fetched while the message
+	// is.
 	msg := cmdg.NewMessage(conn, id)
 	go func() {
 		if err := msg.Preload(ctx, cmdg.LevelFull); err != nil {
 			log.Errorf("Failed to load message %q: %v", id, err)
 		}
 	}()
-	if err := conn.LoadLabels(ctx); err != nil {
-		return errors.Wrap(err, "loading labels")
+	if len(conn.Labels()) == 0 {
+		if err := conn.LoadLabels(ctx); err != nil {
+			return errors.Wrap(err, "loading labels")
+		}
 	}
 
 	keys := input.New()

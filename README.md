@@ -146,6 +146,14 @@ $ cmdg
 ```
 For keyboard shortcuts press '?' or F1 in most screens.
 
+The message list appears once the labels are loaded; your signature, settings
+and contacts load meanwhile, and writing a message waits for them. A request
+that only reads, or fetches an OAuth token, and gets no response within 10
+seconds is made again on a new connection, after 20 and then 40 seconds more,
+before it fails. Requests that change anything, such as sending, are never
+made again, as one that got no response may still have been done. Requests
+still waiting after 5 seconds are logged to the `-log` file.
+
 ### Windows of their own
 Opening a message (**Enter** in the message list), composing a new one
 (**c**), replying (**r**), replying to all (**a**), forwarding (**f**) and

@@ -130,6 +130,8 @@ done
 	setTerminal(t, term+" -e")
 	conn := fakeConn(t)
 	conn.SetContacts([]string{"me", "a@example.com"})
+	labels := []*gmail.Label{{Id: "Label_1", Name: "work"}}
+	conn.SetLabels(labels)
 	errs := make(chan error, 1)
 	err := startWindow(conn, "-read=m2", []string{"m1", "m2"},
 		"/tmp/events", errs)
@@ -150,10 +152,14 @@ done
 	if err != nil {
 		t.Fatal(err)
 	}
+	// This process never loaded the contacts, as the message list
+	// does while it starts, so the window is told to.
 	want := &windowState{
-		Contacts: []string{"me", "a@example.com"},
-		Messages: []string{"m1", "m2"},
-		Notify:   "/tmp/events",
+		Contacts:        []string{"me", "a@example.com"},
+		ContactsMissing: true,
+		Labels:          labels,
+		Messages:        []string{"m1", "m2"},
+		Notify:          "/tmp/events",
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("got %+v, want %+v", got, want)
