@@ -225,11 +225,11 @@ reloading the list.
 Opening a row shows the whole conversation, oldest message first, starting at
 the first unread one, including messages not in the label listed, such as your
 replies, but not those in the trash or spam unless the opened one is. One
-message is selected, marked by a highlighted ▶ before its sender line; **j**
-and **k** select the next and previous message, **J** and **K** scroll by a
-line, and scrolling a message off the screen selects the one at the edge. Text
-quoted with `> `, with the "On ... wrote:" line before it, is folded into one
-line saying how many lines it hides, as is the rest of a message from where the
+message is selected, marked by a ▶ before its sender line; **j** and **k**
+select the next and previous message, **J** and **K** scroll by a line, and
+scrolling a message off the screen selects the one at the edge. Text quoted
+with `> `, with the "On ... wrote:" line before it, is folded into one line
+saying how many lines it hides, as is the rest of a message from where the
 message it replies to starts in Outlook's style: an "Original Message" line, or
 a From, Sent (or Date) and To (or Subject) header block, with any line of
 underscores above it, or an "On ... wrote:" line followed by text not quoted
