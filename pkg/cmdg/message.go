@@ -141,6 +141,17 @@ func (msg *Message) GetSubject(ctx context.Context) (string, error) {
 	return subjectStripRE.ReplaceAllString(subj, ""), nil
 }
 
+// GetSnippet returns the short plain text preview of the body that
+// Gmail sends along with the headers.
+func (msg *Message) GetSnippet(ctx context.Context) (string, error) {
+	if err := msg.Preload(ctx, LevelMetadata); err != nil {
+		return "", err
+	}
+	msg.m.RLock()
+	defer msg.m.RUnlock()
+	return msg.Response.Snippet, nil
+}
+
 // Attachments returns a list of attachments.
 func (msg *Message) Attachments(ctx context.Context) ([]*Attachment, error) {
 	if err := msg.Preload(ctx, LevelFull); err != nil {

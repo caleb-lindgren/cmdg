@@ -154,6 +154,23 @@ before it fails. Requests that change anything, such as sending, are never
 made again, as one that got no response may still have been done. Requests
 still waiting after 5 seconds are logged to the `-log` file.
 
+### Searching
+**/** in the message list asks for a query and sends it to Gmail, so
+Gmail's search syntax applies: `in:trash`, `from:someone@example.com`,
+`has:attachment`, and so on. In the results, **/** asks instead for a regular
+expression ([Go syntax](https://pkg.go.dev/regexp/syntax), case insensitive)
+and lists only the results whose From header, subject or snippet matches it.
+Something that is not a valid expression, such as `a(`, is matched as it is
+written. **/** again narrows the list further, and **/** with nothing
+entered takes off the last filter. To search Gmail anew, go to the inbox
+with **1** and press **/** there.
+
+A filter applies to the results the list loads, not to every message the
+query matches: a regular expression cannot be sent to Gmail, so only what has
+been loaded can be matched against it. The list loads the first page Gmail
+returns, of 100 messages, and further pages only while the terminal has rows
+left to fill.
+
 ### Windows of their own
 Opening a message (**Enter** in the message list), composing a new one
 (**c**), replying (**r**), replying to all (**a**), forwarding (**f**) and

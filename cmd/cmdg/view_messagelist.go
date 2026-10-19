@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -89,11 +90,15 @@ type MessageView struct {
 	// Static state.
 	label string
 	query string
+	// filters are the regexps that a message's From, Subject or
+	// snippet must match, each of them, to be listed. Added by this
+	// fork; see filterListHelp.
+	filters []*regexp.Regexp
 
 	// Communicate with main thread.
 	keys            *input.Input
 	errors          chan error
-	pageCh          chan *cmdg.Page
+	pageCh          chan listedPage
 	messageCh       chan *cmdg.Message
 	historyUpdateCh chan historyUpdate
 	removeMessage   chan string
@@ -109,10 +114,18 @@ type MessageView struct {
 
 // NewMessageView creates a new message view.
 func NewMessageView(ctx context.Context, label, q string, in *input.Input) *MessageView {
+	return newFilteredView(ctx, label, q, nil, in)
+}
+
+// newFilteredView is NewMessageView listing only the messages that match
+// every one of filters.
+func newFilteredView(ctx context.Context, label, q string,
+	filters []*regexp.Regexp, in *input.Input) *MessageView {
 	v := &MessageView{
 		label:           label,
+		filters:         filters,
 		errors:          make(chan error, 20),
-		pageCh:          make(chan *cmdg.Page),
+		pageCh:          make(chan listedPage),
 		historyUpdateCh: make(chan historyUpdate, 20),
 		messageCh:       make(chan *cmdg.Message),
 		keys:            in,
@@ -176,15 +189,141 @@ func (mv *MessageView) fetchPage(ctx context.Context, token string) {
 		return
 	}
 	log.Infof("Listing messages took %v", time.Since(st))
-	go func() {
+	n := len(page.Messages)
+	if len(mv.filters) > 0 {
+		// Filtering needs the headers, so they are loaded
+		// before the page is shown rather than after.
 		defer cancel()
 		if err := page.PreloadSubjects(ctx); err != nil {
 			mv.errors <- err
 			return
 		}
-	}()
-	mv.pageCh <- page
+		mv.filterPage(ctx, page)
+	} else {
+		go func() {
+			defer cancel()
+			if err := page.PreloadSubjects(ctx); err != nil {
+				mv.errors <- err
+				return
+			}
+		}()
+	}
+	mv.pageCh <- listedPage{page, n}
 }
+
+// listedPage is a page of the list, and how many messages Gmail listed in
+// it, which is more than the page holds once filtered.
+type listedPage struct {
+	*cmdg.Page
+	listed int
+}
+
+// filterPage drops from page the messages not matching mv.filters.
+func (mv *MessageView) filterPage(ctx context.Context, page *cmdg.Page) {
+	var msgs []*cmdg.Message
+	var resp []*gmail.Message
+	for n, m := range page.Messages {
+		if mv.matches(ctx, m) {
+			msgs = append(msgs, m)
+			if n < len(page.Response.Messages) {
+				resp = append(resp, page.Response.Messages[n])
+			}
+		}
+	}
+	page.Messages = msgs
+	page.Response.Messages = resp
+}
+
+// matches reports whether every one of mv.filters matches the From
+// header, the subject or the snippet of m. A message whose headers failed
+// to load is kept, rather than hidden for a reason the list cannot show.
+func (mv *MessageView) matches(ctx context.Context, m *cmdg.Message) bool {
+	var fields []string
+	for _, get := range []func(context.Context) (string, error){
+		func(ctx context.Context) (string, error) {
+			return m.GetHeader(ctx, "From")
+		},
+		m.GetSubject,
+		m.GetSnippet,
+	} {
+		f, err := get(ctx)
+		if errors.Cause(err) == cmdg.ErrMissing {
+			continue
+		}
+		if err != nil {
+			log.Warningf("Filtering message %s: %v", m.ID, err)
+			return true
+		}
+		fields = append(fields, f)
+	}
+	for _, re := range mv.filters {
+		found := false
+		for _, f := range fields {
+			if re.MatchString(f) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
+}
+
+// filtered asks for a regexp, and returns a view of the messages in this
+// one that match it too. Given none, it returns the view without the last
+// filter, as the views are not a stack that q could return along. It
+// returns nil if there is no view to change to.
+func (mv *MessageView) filtered(ctx context.Context) *MessageView {
+	f, err := dialog.Entry("Filter> ", mv.keys)
+	if err == dialog.ErrAborted {
+		return nil
+	} else if err != nil {
+		mv.errors <- errors.Wrapf(err, "Getting filter")
+		return nil
+	}
+	// Copied, so that the views do not share an array to append to.
+	fs := append([]*regexp.Regexp{}, mv.filters...)
+	if f != "" {
+		fs = append(fs, compileFilter(f))
+	} else if len(fs) > 0 {
+		fs = fs[:len(fs)-1]
+	} else {
+		return nil
+	}
+	return newFilteredView(ctx, mv.label, mv.query, fs, mv.keys)
+}
+
+// filterStatus returns the filters for the status line, if any.
+func (mv *MessageView) filterStatus() string {
+	if len(mv.filters) == 0 {
+		return ""
+	}
+	var fs []string
+	for _, re := range mv.filters {
+		fs = append(fs, strings.TrimPrefix(re.String(), filterPrefix))
+	}
+	return fmt.Sprintf("Filter: %s  ", strings.Join(fs, " & "))
+}
+
+// filterPrefix makes a filter case insensitive, like the search in a
+// message.
+const filterPrefix = "(?i)"
+
+// compileFilter compiles the regexp s, after filterPrefix. Something not
+// a regexp, such as "a(", is searched for as it is written.
+func compileFilter(s string) *regexp.Regexp {
+	if re, err := regexp.Compile(filterPrefix + s); err == nil {
+		return re
+	}
+	return regexp.MustCompile(filterPrefix + regexp.QuoteMeta(s))
+}
+
+// filterListHelp is the help for filtering search results, which this
+// fork adds.
+const filterListHelp = `s, ^s              — Filter search results by regexp
+`
 
 // MessageViewOp is an operation to perform as the message closes.
 type MessageViewOp struct {
@@ -468,6 +607,8 @@ func (mv *MessageView) Run(ctx context.Context) error {
 	theresMore := true
 	var contentHeight int
 	var pages []*cmdg.Page
+	// gmailListed is how many messages Gmail has listed in pages.
+	gmailListed := 0
 	messagePos := map[string]int{}
 	marked := map[string]bool{}
 	var scroll int
@@ -502,6 +643,7 @@ func (mv *MessageView) Run(ctx context.Context) error {
 		screen.Printf(0, 0, "Loading…")
 		screen.Draw()
 		pages = nil
+		gmailListed = 0
 		mv.messages = nil
 		mkMessagePos()
 		mv.pos = 0
@@ -803,7 +945,8 @@ func (mv *MessageView) Run(ctx context.Context) error {
 			continue
 		case p := <-mv.pageCh:
 			log.Printf("MessageListView: Got page!")
-			pages = append(pages, p)
+			pages = append(pages, p.Page)
+			gmailListed += p.listed
 			mv.conv.note(p.Response.Messages...)
 			mv.messages = append(mv.messages, p.Messages...)
 			want := contentHeight
@@ -814,11 +957,21 @@ func (mv *MessageView) Run(ctx context.Context) error {
 				}
 				theresMore = false
 			} else {
-				if want > len(mv.messages) {
+				// A filtered list counts what Gmail listed
+				// rather than what matched, so that it filters
+				// the pages its unfiltered list would show
+				// instead of paging through every result.
+				more := want > len(mv.messages)
+				if more && want > gmailListed {
 					go mv.fetchPage(ctx, p.Response.NextPageToken)
 				} else {
 					log.Infof("Enough pages. Have %d messages, want %d", len(mv.messages), want)
 					theresMore = false
+					// Only a filtered list stops
+					// with none, which is not drawn.
+					if len(mv.messages) == 0 {
+						screen.Printlnf(0, "<empty>")
+					}
 				}
 			}
 			mkMessagePos()
@@ -841,7 +994,7 @@ func (mv *MessageView) Run(ctx context.Context) error {
 			case "?", input.F1:
 				txt := customize.MessageListHelp(addHelp(
 					messageListViewHelp,
-					conversationListHelp))
+					conversationListHelp+filterListHelp))
 				if err := help(txt, mv.keys); err != nil {
 					log.Infof("help() failed: %v", err)
 				}
@@ -1127,6 +1280,14 @@ func (mv *MessageView) Run(ctx context.Context) error {
 				// stack frame on every navigation.
 				return NewMessageView(ctx, cmdg.Inbox, "", mv.keys).Run(ctx)
 			case "s", input.CtrlS:
+				// Added by this fork: in search results,
+				// search them instead of Gmail.
+				if mv.query != "" {
+					if nv := mv.filtered(ctx); nv != nil {
+						return nv.Run(ctx)
+					}
+					break
+				}
 				q, err := dialog.Entry("Query> ", mv.keys)
 				if err == dialog.ErrAborted {
 					// That's fine.
@@ -1208,6 +1369,7 @@ func (mv *MessageView) Run(ctx context.Context) error {
 			log.Debugf("Print took %v", time.Since(st))
 		}
 		// Print status.
+		status += mv.filterStatus()
 		if theresMore {
 			status += display.Color(50) + "Loading…"
 		}
