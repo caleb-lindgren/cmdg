@@ -157,6 +157,8 @@ gl                 — Go to label
 /, ^s              — Search
 ^D                 — Half page down
 ^U                 — Half page up
+f                  — Page down
+b                  — Page up
 gg                 — Go to top
 G                  — Go to bottom (of what is loaded)
 
