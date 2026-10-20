@@ -388,9 +388,7 @@ func (c *CmdG) getAddressHeadersBackoff(ctx context.Context, id string) (
 	var waited time.Duration
 	for wait := scanBackoff; ; wait *= 2 {
 		m, err := c.getAddressHeaders(ctx, id)
-		e, ok := errors.Cause(err).(*googleapi.Error)
-		if !ok || e.Code != http.StatusTooManyRequests ||
-			waited >= maxScanBackoff {
+		if !IsRateLimited(err) || waited >= maxScanBackoff {
 			return m, err
 		}
 		select {
@@ -400,6 +398,30 @@ func (c *CmdG) getAddressHeadersBackoff(ctx context.Context, id string) (
 		}
 		waited += wait
 	}
+}
+
+// IsRateLimited returns whether err is Gmail refusing a request for
+// exceeding a rate limit, which waiting gets past: 429 for too many
+// requests in flight, or 403 with the reason rateLimitExceeded or
+// userRateLimitExceeded for spending the per minute quota.
+func IsRateLimited(err error) bool {
+	e, ok := errors.Cause(err).(*googleapi.Error)
+	if !ok {
+		return false
+	}
+	if e.Code == http.StatusTooManyRequests {
+		return true
+	}
+	if e.Code != http.StatusForbidden {
+		return false
+	}
+	for _, item := range e.Errors {
+		switch item.Reason {
+		case "rateLimitExceeded", "userRateLimitExceeded":
+			return true
+		}
+	}
+	return false
 }
 
 // getAddressHeaders gets only a message's date, labels and address headers.

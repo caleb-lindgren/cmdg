@@ -309,6 +309,31 @@ func (c *conversations) count(rep *cmdg.Message) int {
 	return 1 + len(c.members[rep.ID])
 }
 
+// loadMembers starts loading the messages in the row of rep other than
+// rep, which are not drawn, so that unread can tell whether they are, and
+// redraws the row once each is loaded. The list loads a message only as
+// its row is drawn, rather than every one listed, to spare Gmail's quota.
+func (c *conversations) loadMembers(ctx context.Context,
+	rep *cmdg.Message) {
+	if c.redraw == nil {
+		return
+	}
+	for _, m := range c.members[rep.ID] {
+		if m.HasData(cmdg.LevelMetadata) {
+			continue
+		}
+		go func(m *cmdg.Message) {
+			err := m.Preload(ctx, cmdg.LevelMetadata)
+			if err != nil {
+				log.Warningf("Loading %s, of row %s: %v",
+					m.ID, rep.ID, err)
+				return
+			}
+			c.redraw(rep)
+		}(m)
+	}
+}
+
 // unread returns whether any listed message in the row of rep is unread.
 func (c *conversations) unread(rep *cmdg.Message) bool {
 	if rep.IsUnread() {

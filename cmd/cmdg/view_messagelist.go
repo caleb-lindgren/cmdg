@@ -177,10 +177,12 @@ func (mv *MessageView) applyMarked(ctx context.Context, name string, op func(con
 // could not be listed.
 func (mv *MessageView) fetchPage(ctx context.Context, token string,
 	gen int) {
-	ctx, cancel := context.WithTimeout(ctx, messageListReloadTimeout)
 	if token == "" {
 		// Only update history on first page.
-		hid, err := conn.HistoryID(ctx)
+		hctx, cancel := context.WithTimeout(ctx,
+			messageListReloadTimeout)
+		hid, err := conn.HistoryID(hctx)
+		cancel()
 		if err != nil {
 			log.Errorf("Failed to get history ID: %v", err)
 		} else {
@@ -193,33 +195,62 @@ func (mv *MessageView) fetchPage(ctx context.Context, token string,
 
 	log.Infof("Listing messages on label %q query %q with token %q…", mv.label, mv.query, token)
 	st := time.Now()
-	page, err := conn.ListMessages(ctx, mv.label, mv.query, token)
+	page, err := mv.listPage(ctx, token)
 	if err != nil {
 		mv.errors <- err
-		cancel()
 		mv.pageCh <- listedPage{gen: gen}
 		return
 	}
 	log.Infof("Listing messages took %v", time.Since(st))
 	n := len(page.Messages)
+	// Filtering needs the headers of every message listed, so they
+	// are loaded before the page is shown. Otherwise each is loaded as
+	// its row is drawn, as upstream loaded every one listed, which
+	// paging through results soon spends Gmail's quota on. Added by
+	// this fork.
 	if len(mv.filters) > 0 {
-		// Filtering needs the headers, so they are loaded
-		// before the page is shown rather than after.
+		ctx, cancel := context.WithTimeout(ctx,
+			messageListReloadTimeout)
 		defer cancel()
 		if err := page.PreloadSubjects(ctx); err != nil {
 			mv.errors <- err
 		}
 		mv.filterPage(ctx, page)
-	} else {
-		go func() {
-			defer cancel()
-			if err := page.PreloadSubjects(ctx); err != nil {
-				mv.errors <- err
-				return
-			}
-		}()
 	}
 	mv.pageCh <- listedPage{page, n, gen}
+}
+
+// maxListBackoff is how long listing a page, refused by Gmail for its
+// rate limits, waits for them in all before giving up. Gmail's quota is
+// per minute, so a minute gets past it unless something else keeps
+// spending it.
+const maxListBackoff = time.Minute
+
+// listPage lists the page token names, waiting and trying again if Gmail
+// refuses for its rate limits, as paging through results can spend the
+// quota while the address book scan is spending it as well. Each try has
+// its own messageListReloadTimeout. Added by this fork.
+func (mv *MessageView) listPage(ctx context.Context,
+	token string) (*cmdg.Page, error) {
+	var waited time.Duration
+	for wait := time.Second; ; wait *= 2 {
+		tctx, cancel := context.WithTimeout(ctx,
+			messageListReloadTimeout)
+		page, err := conn.ListMessages(tctx, mv.label, mv.query,
+			token)
+		cancel()
+		if !cmdg.IsRateLimited(err) || waited >= maxListBackoff {
+			return page, err
+		}
+		log.Warningf("Listing rate limited, trying again in %v",
+			wait)
+		select {
+		case <-time.After(wait):
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+		waited += wait
+	}
 }
 
 // listedPage is a page of the list, and how many messages Gmail listed in
@@ -755,6 +786,8 @@ func (mv *MessageView) Run(ctx context.Context) error {
 				}
 			}(cur)
 		}
+
+		mv.conv.loadMembers(ctx, curmsg)
 
 		if marked[curmsg.ID] {
 			prefix += "X"
@@ -1369,6 +1402,18 @@ func (mv *MessageView) Run(ctx context.Context) error {
 				}
 			case customize.HalfPageUp:
 				for n := halfPage(contentHeight); n > 0; n-- {
+					if !prev() {
+						break
+					}
+				}
+			case customize.PageDown:
+				for n := fullPage(contentHeight); n > 0; n-- {
+					if !next() {
+						break
+					}
+				}
+			case customize.PageUp:
+				for n := fullPage(contentHeight); n > 0; n-- {
 					if !prev() {
 						break
 					}
