@@ -55,14 +55,18 @@ type Binding struct {
 	Alias bool
 }
 
-// GoBottom, HalfPageDown and HalfPageUp are delivered to a view's
-// switch for keys that upstream has no binding to translate into, so
-// unlike every other binding here they reach cases the fork adds
-// itself. Each view carries one case per constant.
+// GoBottom, HalfPageDown, HalfPageUp, PageDown and PageUp are delivered
+// to a view's switch for keys that upstream has no binding to translate
+// into, so unlike every other binding here they reach cases the fork adds
+// itself. Each view carries one case per constant it is sent, and only
+// the message list is sent PageDown and PageUp, as upstream pages the
+// other views already.
 const (
 	GoBottom     = "\x00go-bottom"
 	HalfPageDown = "\x00half-page-down"
 	HalfPageUp   = "\x00half-page-up"
+	PageDown     = "\x00page-down"
+	PageUp       = "\x00page-up"
 )
 
 // ctrlD is ^D. pkg/input names most control keys but not this one, and
@@ -156,6 +160,14 @@ var messageListBindings = []Binding{
 	{
 		Keys: []string{input.CtrlU}, Name: "^U",
 		Upstream: HalfPageUp, Help: "Half page up", Alias: true,
+	},
+	{
+		Keys: []string{"f"}, Name: "f",
+		Upstream: PageDown, Help: "Page down", Alias: true,
+	},
+	{
+		Keys: []string{"b"}, Name: "b",
+		Upstream: PageUp, Help: "Page up", Alias: true,
 	},
 	{
 		Keys: []string{"g", "g"}, Name: "gg",

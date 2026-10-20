@@ -98,6 +98,19 @@ func TestExportedKeyFuncs(t *testing.T) {
 	}
 }
 
+func TestMessageListPaging(t *testing.T) {
+	tr := newTranslator(messageListBindings)
+	for _, tc := range []struct{ press, want string }{
+		{"f", PageDown},
+		{"b", PageUp},
+	} {
+		if got := tr.translate(tc.press); got != tc.want {
+			t.Errorf("translate(%q) = %q, want %q",
+				tc.press, got, tc.want)
+		}
+	}
+}
+
 func TestOpenMessageHelp(t *testing.T) {
 	const upstream = `?, F1     — Help
 u, ←           — Exit message
