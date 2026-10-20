@@ -165,11 +165,13 @@ written. **/** again narrows the list further, and **/** with nothing
 entered takes off the last filter. To search Gmail anew, go to the inbox
 with **1** and press **/** there.
 
-A filter applies to the results the list loads, not to every message the
-query matches: a regular expression cannot be sent to Gmail, so only what has
-been loaded can be matched against it. The list loads the first page Gmail
-returns, of 100 messages, and further pages only while the terminal has rows
-left to fill.
+The list loads Gmail's results 100 at a time: enough to fill the screen at
+first, and the next 100 once the cursor comes within a screen of the end. A
+filter applies to the results loaded, not to every message the query
+matches, as a regular expression cannot be sent to Gmail. It applies to as
+many as the list filtered had loaded, so to everything scrolled past, and
+to each further 100 as the cursor nears the end. When few of them match, the
+status line says there are more, and moving down past the end loads them.
 
 ### Windows of their own
 Opening a message (**Enter** in the message list), composing a new one

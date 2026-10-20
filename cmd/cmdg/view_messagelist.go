@@ -94,6 +94,10 @@ type MessageView struct {
 	// snippet must match, each of them, to be listed. Added by this
 	// fork; see filterListHelp.
 	filters []*regexp.Regexp
+	// minListed is how many messages to list from Gmail before
+	// waiting for the cursor to near the end: as many as the view
+	// filtered had, so that a filter applies to all of them.
+	minListed int
 
 	// Communicate with main thread.
 	keys            *input.Input
@@ -114,16 +118,19 @@ type MessageView struct {
 
 // NewMessageView creates a new message view.
 func NewMessageView(ctx context.Context, label, q string, in *input.Input) *MessageView {
-	return newFilteredView(ctx, label, q, nil, in)
+	return newFilteredView(ctx, label, q, nil, 0, in)
 }
 
 // newFilteredView is NewMessageView listing only the messages that match
-// every one of filters.
+// every one of filters, and at least minListed of Gmail's results to
+// match them against, if there are as many.
 func newFilteredView(ctx context.Context, label, q string,
-	filters []*regexp.Regexp, in *input.Input) *MessageView {
+	filters []*regexp.Regexp, minListed int,
+	in *input.Input) *MessageView {
 	v := &MessageView{
 		label:           label,
 		filters:         filters,
+		minListed:       minListed,
 		errors:          make(chan error, 20),
 		pageCh:          make(chan listedPage),
 		historyUpdateCh: make(chan historyUpdate, 20),
@@ -139,7 +146,7 @@ func newFilteredView(ctx context.Context, label, q string,
 		case <-time.After(time.Minute):
 		}
 	}
-	go v.fetchPage(ctx, "")
+	go v.fetchPage(ctx, "", 0)
 	return v
 }
 
@@ -165,7 +172,11 @@ func (mv *MessageView) applyMarked(ctx context.Context, name string, op func(con
 	return true, nm, ofs
 }
 
-func (mv *MessageView) fetchPage(ctx context.Context, token string) {
+// fetchPage lists the page token names, for the list loaded the gen'th
+// time, and sends it on mv.pageCh, or a listedPage without a page if it
+// could not be listed.
+func (mv *MessageView) fetchPage(ctx context.Context, token string,
+	gen int) {
 	ctx, cancel := context.WithTimeout(ctx, messageListReloadTimeout)
 	if token == "" {
 		// Only update history on first page.
@@ -186,6 +197,7 @@ func (mv *MessageView) fetchPage(ctx context.Context, token string) {
 	if err != nil {
 		mv.errors <- err
 		cancel()
+		mv.pageCh <- listedPage{gen: gen}
 		return
 	}
 	log.Infof("Listing messages took %v", time.Since(st))
@@ -196,7 +208,6 @@ func (mv *MessageView) fetchPage(ctx context.Context, token string) {
 		defer cancel()
 		if err := page.PreloadSubjects(ctx); err != nil {
 			mv.errors <- err
-			return
 		}
 		mv.filterPage(ctx, page)
 	} else {
@@ -208,14 +219,16 @@ func (mv *MessageView) fetchPage(ctx context.Context, token string) {
 			}
 		}()
 	}
-	mv.pageCh <- listedPage{page, n}
+	mv.pageCh <- listedPage{page, n, gen}
 }
 
 // listedPage is a page of the list, and how many messages Gmail listed in
-// it, which is more than the page holds once filtered.
+// it, which is more than the page holds once filtered. gen tells it from
+// a page of the list as it was before being loaded again.
 type listedPage struct {
 	*cmdg.Page
 	listed int
+	gen    int
 }
 
 // filterPage drops from page the messages not matching mv.filters.
@@ -272,10 +285,12 @@ func (mv *MessageView) matches(ctx context.Context, m *cmdg.Message) bool {
 }
 
 // filtered asks for a regexp, and returns a view of the messages in this
-// one that match it too. Given none, it returns the view without the last
-// filter, as the views are not a stack that q could return along. It
-// returns nil if there is no view to change to.
-func (mv *MessageView) filtered(ctx context.Context) *MessageView {
+// one that match it too, of which this one has listed listed. Given none,
+// it returns the view without the last filter, as the views are not a
+// stack that q could return along. It returns nil if there is no view to
+// change to.
+func (mv *MessageView) filtered(ctx context.Context,
+	listed int) *MessageView {
 	f, err := dialog.Entry("Filter> ", mv.keys)
 	if err == dialog.ErrAborted {
 		return nil
@@ -292,7 +307,7 @@ func (mv *MessageView) filtered(ctx context.Context) *MessageView {
 	} else {
 		return nil
 	}
-	return newFilteredView(ctx, mv.label, mv.query, fs, mv.keys)
+	return newFilteredView(ctx, mv.label, mv.query, fs, listed, mv.keys)
 }
 
 // filterStatus returns the filters for the status line, if any.
@@ -604,7 +619,14 @@ func (mv *MessageView) continueDraft(ctx context.Context) {
 func (mv *MessageView) Run(ctx context.Context) error {
 	log.Infof("Running MessageView")
 	// TODO: defer a sync.WaitGroup.Wait() waiting on all goroutines spawned.
-	theresMore := true
+	// fetching is whether a page is being listed, and nextToken
+	// names the page after the last one listed, if any. Added by this
+	// fork: upstream lists pages only until the screen is full.
+	fetching := true
+	nextToken := ""
+	// gen counts the times the list has been loaded again, so that
+	// a page listed before is not added to it.
+	gen := 0
 	var contentHeight int
 	var pages []*cmdg.Page
 	// gmailListed is how many messages Gmail has listed in pages.
@@ -644,12 +666,31 @@ func (mv *MessageView) Run(ctx context.Context) error {
 		screen.Draw()
 		pages = nil
 		gmailListed = 0
+		nextToken = ""
 		mv.messages = nil
 		mkMessagePos()
 		mv.pos = 0
 		scroll = 0
 	}
 	empty()
+	// reload loads the list again from the first page.
+	reload := func() {
+		empty()
+		screen.Clear()
+		gen++
+		fetching = true
+		go mv.fetchPage(ctx, "", gen)
+	}
+	// loadMore lists the next page once the cursor is within a
+	// screen of the end of the list.
+	loadMore := func() {
+		if nextToken == "" || fetching ||
+			len(mv.messages)-mv.pos > contentHeight {
+			return
+		}
+		fetching = true
+		go mv.fetchPage(ctx, nextToken, gen)
+	}
 
 	drawMessage := func(cur int) error {
 		s := "Loading…"
@@ -752,6 +793,7 @@ func (mv *MessageView) Run(ctx context.Context) error {
 		return true
 	}
 	next := func() bool {
+		loadMore()
 		if mv.messages == nil {
 			return false
 		}
@@ -915,9 +957,7 @@ func (mv *MessageView) Run(ctx context.Context) error {
 			if false {
 				// TODO: don't reset pos and scroll
 				log.Infof("Timed reload")
-				empty()
-				screen.Clear()
-				go mv.fetchPage(ctx, "")
+				reload()
 			}
 
 		case <-mv.keys.Winch():
@@ -945,36 +985,41 @@ func (mv *MessageView) Run(ctx context.Context) error {
 			continue
 		case p := <-mv.pageCh:
 			log.Printf("MessageListView: Got page!")
+			if p.gen != gen {
+				log.Infof("Dropping a page from before")
+				continue
+			}
+			fetching = false
+			if p.Page == nil {
+				// Failed, and shown as an error. nextToken
+				// is kept, so that moving down tries again.
+				break
+			}
 			pages = append(pages, p.Page)
 			gmailListed += p.listed
 			mv.conv.note(p.Response.Messages...)
 			mv.messages = append(mv.messages, p.Messages...)
-			want := contentHeight
-			if p.Response.NextPageToken == "" {
-				log.Infof("All pages loaded")
-				if len(mv.messages) == 0 {
-					screen.Printlnf(0, "<empty>")
-				}
-				theresMore = false
-			} else {
-				// A filtered list counts what Gmail listed
-				// rather than what matched, so that it filters
-				// the pages its unfiltered list would show
-				// instead of paging through every result.
-				more := want > len(mv.messages)
-				if more && want > gmailListed {
-					go mv.fetchPage(ctx, p.Response.NextPageToken)
-				} else {
-					log.Infof("Enough pages. Have %d messages, want %d", len(mv.messages), want)
-					theresMore = false
-					// Only a filtered list stops
-					// with none, which is not drawn.
-					if len(mv.messages) == 0 {
-						screen.Printlnf(0, "<empty>")
-					}
-				}
-			}
 			mkMessagePos()
+			nextToken = p.Response.NextPageToken
+			// A filtered list fills the screen only from what
+			// Gmail lists to fill it unfiltered, rather than
+			// paging through every result to find matches.
+			fill := len(mv.messages) < contentHeight &&
+				(len(mv.filters) == 0 ||
+					gmailListed < contentHeight)
+			if nextToken == "" {
+				log.Infof("All pages loaded")
+			} else if fill || gmailListed < mv.minListed {
+				fetching = true
+				go mv.fetchPage(ctx, nextToken, gen)
+			} else {
+				log.Infof("Enough pages: %d rows of %d",
+					len(mv.messages), gmailListed)
+			}
+			if len(mv.messages) == 0 && !fetching {
+				// Not drawn below, as mv.messages is nil.
+				screen.Printlnf(0, "<empty>")
+			}
 
 		case id := <-mv.removeMessage:
 			mv.messages, mv.pos = filterMessage(mv.messages, id, mv.pos)
@@ -1247,9 +1292,7 @@ func (mv *MessageView) Run(ctx context.Context) error {
 				}
 				screen.UseCache()
 			case "r", input.CtrlR:
-				empty()
-				screen.Clear()
-				go mv.fetchPage(ctx, "")
+				reload()
 			case "g":
 				var opts []*dialog.Option
 				for _, l := range conn.Labels() {
@@ -1283,7 +1326,8 @@ func (mv *MessageView) Run(ctx context.Context) error {
 				// Added by this fork: in search results,
 				// search them instead of Gmail.
 				if mv.query != "" {
-					if nv := mv.filtered(ctx); nv != nil {
+					nv := mv.filtered(ctx, gmailListed)
+					if nv != nil {
 						return nv.Run(ctx)
 					}
 					break
@@ -1303,10 +1347,12 @@ func (mv *MessageView) Run(ctx context.Context) error {
 				return nil
 			// Added by this fork; see the matching case in
 			// view_openmessage.go. Only the messages loaded so
-			// far can be jumped to: the list pages in lazily.
+			// far can be jumped to: the list pages in lazily,
+			// and going there loads the next page.
 			case customize.GoBottom:
 				if n := len(mv.messages); n > 0 {
 					mv.pos = n - 1
+					loadMore()
 					scroll = mv.pos - contentHeight + 1
 					if scroll < 0 {
 						scroll = 0
@@ -1337,9 +1383,7 @@ func (mv *MessageView) Run(ctx context.Context) error {
 				if mv.conv.on {
 					mkMessagePos()
 				} else {
-					empty()
-					screen.Clear()
-					go mv.fetchPage(ctx, "")
+					reload()
 				}
 			default:
 				log.Infof("MessageListView got unknown key %q %v", key, []byte(key))
@@ -1370,8 +1414,11 @@ func (mv *MessageView) Run(ctx context.Context) error {
 		}
 		// Print status.
 		status += mv.filterStatus()
-		if theresMore {
+		if fetching {
 			status += display.Color(50) + "Loading…"
+		} else if nextToken != "" {
+			status += display.Color(50) +
+				"More: move down past the end to load"
 		}
 		screen.Printlnf(screen.Height-2, "%s", strings.Repeat("—", screen.Width))
 		screen.Printlnf(screen.Height-1, "%s", status)
