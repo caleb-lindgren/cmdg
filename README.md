@@ -254,12 +254,14 @@ a From, Sent (or Date) and To (or Subject) header block, with any line of
 underscores above it, or an "On ... wrote:" line followed by text not quoted
 with `> `, as Apple Mail sends it. The lines listing the attachments at the end
 of a message are never folded. A header block with nothing above it, or under a
-"Forwarded message" line, is a message forwarded, and is not folded. **z**
-shows and hides the folded text of the selected message. Replying, forwarding,
-the attachments (**t**) and the raw source (`\`) are those of the selected
-message. Archiving, deleting and labelling act on the whole conversation,
-marking unread on its newest message, and starring stars the newest message or,
-if any is starred, unstars them all.
+"Forwarded message" line, is a message forwarded, and is not folded, nor is
+text quoted with `> ` under a "Begin forwarded message:" line, as Apple Mail
+forwards; quoted again in a reply, a forward is folded with the rest of the
+quote. **z** shows and hides the folded text of the selected message. Replying,
+forwarding, the attachments (**t**) and the raw source (`\`) are those of the
+selected message. Archiving, deleting and labelling act on the whole
+conversation, marking unread on its newest message, and starring stars the
+newest message or, if any is starred, unstars them all.
 
 An open conversation checks its thread for new messages every ten seconds, as
 the message list checks its label, and shows any that arrive at the end. A

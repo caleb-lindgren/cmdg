@@ -38,8 +38,9 @@ var (
 	// Outlook does with underscores.
 	ruleRE = regexp.MustCompile(`^\s*[_─—-]{10,}\s*$`)
 
-	// forwardRE matches the line above the header block of a message
-	// forwarded, which is not folded, as it is not quoted.
+	// forwardRE matches the line above a message forwarded, which is
+	// not folded: Gmail's above a header block not quoted, and Apple
+	// Mail's, "Begin forwarded message:", above one quoted with "> ".
 	forwardRE = regexp.MustCompile(`(?i)forwarded message|begin forwarded`)
 
 	// attachmentRE matches the line cmdg appends to a message body for
@@ -66,9 +67,11 @@ func isBlank(line string) bool {
 // quoted with "> ", blank lines within it included, together with the
 // attribution line introducing it, and the line before that if the
 // attribution was wrapped; or everything from the start of the message
-// replied to to the end, as quotedRest finds it. The lines cmdg appends
-// for attachments are never part of one, so that a quote running to the
-// end does not hide them.
+// replied to to the end, as quotedRest finds it. Lines quoted under a
+// line saying they were forwarded are not a part, as what was forwarded
+// is not shown elsewhere; quoted again in a reply, they are within the
+// reply's quote. The lines cmdg appends for attachments are never part of
+// one, so that a quote running to the end does not hide them.
 func quoteBlocks(lines []string) [][2]int {
 	lines = lines[:attachmentsStart(lines)]
 	var ret [][2]int
@@ -89,11 +92,24 @@ func quoteBlocks(lines []string) [][2]int {
 				break
 			}
 		}
+		n = end - 1
+		if forwardedAt(lines, start) {
+			continue
+		}
 		start = attributionStart(lines, start)
 		ret = append(ret, [2]int{start, end})
-		n = end - 1
 	}
 	return ret
+}
+
+// forwardedAt returns whether the line before line n of lines, blank
+// lines aside, says that what follows was forwarded.
+func forwardedAt(lines []string, n int) bool {
+	a := n - 1
+	for a >= 0 && isBlank(lines[a]) {
+		a--
+	}
+	return a >= 0 && forwardRE.MatchString(lines[a])
 }
 
 // attachmentsStart returns where the lines cmdg appends to the end of

@@ -51,6 +51,21 @@ func TestQuoteBlocks(t *testing.T) {
 				"From: Bob <b@example.com>\nDate: Mon\n" +
 				"Subject: Hi\nTo: Alice\n\nHello",
 			nil},
+		{"Apple Mail, forwarded quoted, not folded",
+			"FYI\n\nBegin forwarded message:\n\n" +
+				"> From: Bob <b@example.com>\n" +
+				"> Date: Mon\n>\n> Hello\n>> earlier\n\n" +
+				"Thanks",
+			nil},
+		{"Apple Mail forward, quoted again in a reply",
+			"Nice.\n\nOn Mon, Alice wrote:\n> FYI\n>\n" +
+				"> Begin forwarded message:\n>\n" +
+				"> > From: Bob\n> > Hello",
+			[][2]int{{2, 9}}},
+		{"a quote after a forward still folded",
+			"Begin forwarded message:\n> From: Bob\n> Hi\n" +
+				"Ok\n\nOn Mon, Alice wrote:\n> Lunch?",
+			[][2]int{{5, 7}}},
 		{"header block with nothing before it, forwarded",
 			"From: Bob <b@example.com>\nSent: Mon\n" +
 				"To: Alice\n\nHi",
