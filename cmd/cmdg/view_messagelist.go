@@ -23,8 +23,6 @@ import (
 )
 
 const (
-	scrollLimit = 5
-
 	messageListViewHelp = `?, F1              — Help
 enter, →           — Open message, in a new window
 space, x           — Mark message and advance
@@ -815,14 +813,24 @@ func (mv *MessageView) Run(ctx context.Context) error {
 	defer timer.Stop()
 	historyConcurrency := newConcurrency(1)
 
+	// keepVisible scrolls just far enough to keep the cursor on
+	// screen. Changed by this fork: upstream scrolled once the cursor
+	// was five rows from the edge, so it never reached the top or the
+	// bottom row.
+	keepVisible := func() {
+		if mv.pos < scroll {
+			scroll = mv.pos
+		}
+		if mv.pos >= scroll+contentHeight {
+			scroll = mv.pos - contentHeight + 1
+		}
+	}
 	prev := func() bool {
 		if mv.pos <= 0 {
 			return false
 		}
 		mv.pos--
-		if scroll > 0 && mv.pos < scroll+scrollLimit {
-			scroll--
-		}
+		keepVisible()
 		return true
 	}
 	next := func() bool {
@@ -833,10 +841,8 @@ func (mv *MessageView) Run(ctx context.Context) error {
 		if mv.pos >= len(mv.messages)-1 {
 			return false
 		}
-		if mv.pos-scroll > contentHeight-scrollLimit {
-			scroll++
-		}
 		mv.pos++
+		keepVisible()
 		return true
 	}
 	for {
@@ -1106,18 +1112,14 @@ func (mv *MessageView) Run(ctx context.Context) error {
 						if op.IsPrev(mv) {
 							if mv.pos > 0 {
 								mv.pos--
-								if scroll > 0 {
-									scroll--
-								}
+								keepVisible()
 							}
 							continue
 						}
 						if op.IsNext(mv) {
 							if mv.pos < len(mv.messages)-1 {
 								mv.pos++
-								if mv.pos-scroll > contentHeight-scrollLimit {
-									scroll++
-								}
+								keepVisible()
 							}
 							continue
 						}
