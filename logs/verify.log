@@ -1,5 +1,5 @@
-date:   2026-10-20T22:30:44Z
-commit: 9661570c004316d562ade27bdee1d446880c529f
+date:   2026-10-21T03:28:37Z
+commit: 1bb58f7c599f1bfa2de55dff3fad8e3bce83df40
 go:     go version go1.27.1-X:nodwarf5 linux/amd64
 
 === gofmt -l ===
@@ -12,49 +12,21 @@ clean
 --- exit 0 ---
 
 === ./cmdg built from ===
-	build	vcs.revision=9661570c004316d562ade27bdee1d446880c529f
+	build	vcs.revision=1bb58f7c599f1bfa2de55dff3fad8e3bce83df40
 	build	vcs.modified=true
 
 === go vet ./... ===
 --- exit 0 ---
 
 === go test ./... ===
-ok  	github.com/ThomasHabets/cmdg/cmd/cmdg	0.247s
+ok  	github.com/ThomasHabets/cmdg/cmd/cmdg	(cached)
 ?   	github.com/ThomasHabets/cmdg/cmd/med	[no test files]
---- FAIL: TestMessageListHelpKeepsUpstreamLayout (0.00s)
-    customize_test.go:166: MessageListHelp() =
-        ?, F1              — Help
-        u                  — Unmark all messages
-        gl                 — Go to label
-        /, ^s              — Search
-        ^D                 — Half page down
-        ^U                 — Half page up
-        f                  — Page down
-        b                  — Page up
-        gg                 — Go to top
-        G                  — Go to bottom (of what is loaded)
-        
-        Press [ESC] to exit
-        
-        want
-        ?, F1              — Help
-        u                  — Unmark all messages
-        gl                 — Go to label
-        /, ^s              — Search
-        ^D                 — Half page down
-        ^U                 — Half page up
-        gg                 — Go to top
-        G                  — Go to bottom (of what is loaded)
-        
-        Press [ESC] to exit
-FAIL
-FAIL	github.com/ThomasHabets/cmdg/internal/customize	0.003s
-ok  	github.com/ThomasHabets/cmdg/pkg/cmdg	0.644s
+ok  	github.com/ThomasHabets/cmdg/internal/customize	0.005s
+ok  	github.com/ThomasHabets/cmdg/pkg/cmdg	(cached)
 ok  	github.com/ThomasHabets/cmdg/pkg/dialog	(cached)
 ok  	github.com/ThomasHabets/cmdg/pkg/display	(cached)
 ok  	github.com/ThomasHabets/cmdg/pkg/gpg	(cached)
 ok  	github.com/ThomasHabets/cmdg/pkg/input	(cached)
-FAIL
---- exit 1 ---
+--- exit 0 ---
 
-overall exit: 1
+overall exit: 0
