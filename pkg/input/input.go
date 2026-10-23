@@ -165,6 +165,15 @@ func (i *Input) Winch() <-chan os.Signal {
 	return i.winch
 }
 
+// ResendWinch makes Winch deliver a SIGWINCH again, for a dialog that took
+// one to pass it on to the view below it once the dialog is done.
+func (i *Input) ResendWinch() {
+	select {
+	case i.winch <- syscall.SIGWINCH:
+	default:
+	}
+}
+
 // Stop input loop, turn off raw mode.
 func (i *Input) Stop() {
 	log.Infof("Stopping keyboard input")

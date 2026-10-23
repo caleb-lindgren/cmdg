@@ -99,3 +99,23 @@ func TestFocused(t *testing.T) {
 	default:
 	}
 }
+
+func TestResendWinch(t *testing.T) {
+	i := &Input{winch: make(chan os.Signal, 1)}
+	// A second resend while one is pending neither blocks nor queues
+	// another.
+	i.ResendWinch()
+	i.ResendWinch()
+	select {
+	case <-i.Winch():
+	default:
+		t.Fatal("no SIGWINCH after ResendWinch")
+	}
+	select {
+	case <-i.Winch():
+		t.Error("two SIGWINCHes after two resends; want one")
+	default:
+	}
+	// An Input without a winch channel does not block.
+	(&Input{}).ResendWinch()
+}

@@ -33,6 +33,41 @@ func (o *Option) String() string {
 	return o.Label
 }
 
+// resizer reads keys for a dialog, and remakes its screen at the new size
+// when the terminal is resized, which happens as a window opens: the
+// terminal can still have 0 rows when the dialog first reads its size.
+// done passes the resize on to the view below the dialog.
+type resizer struct {
+	keys    *input.Input
+	resized bool
+}
+
+// key returns the next key, with ok true. If the terminal is resized
+// first, it instead remakes *screen at the new size and returns ok false,
+// for the caller to draw again.
+func (r *resizer) key(screen **display.Screen) (string, bool, error) {
+	select {
+	case key := <-r.keys.Chan():
+		return key, true, nil
+	case <-r.keys.Winch():
+		r.resized = true
+		s, err := display.NewScreen()
+		if err != nil {
+			return "", false, err
+		}
+		*screen = s
+		return "", false, nil
+	}
+}
+
+// done passes on a resize the dialog took, so the view below it redraws
+// at the new size too.
+func (r *resizer) done() {
+	if r.resized {
+		r.keys.ResendWinch()
+	}
+}
+
 // Message shows a message that's dismissed by pressing enter.
 // Should not fail, but if it's important checking error value is optional.
 // Any errors are logged.
@@ -80,14 +115,21 @@ func messageErr(title, message string, keys *input.Input) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to create screen")
 	}
-
-	startLine, lines := printBox(screen, title, message)
-	for n, l := range lines {
-		screen.Printlnf(startLine+n, "%s", l)
-	}
-	screen.Draw()
+	r := resizer{keys: keys}
+	defer r.done()
 	for {
-		key := <-keys.Chan()
+		startLine, lines := printBox(screen, title, message)
+		for n, l := range lines {
+			screen.Printlnf(startLine+n, "%s", l)
+		}
+		screen.Draw()
+		key, ok, err := r.key(&screen)
+		if err != nil {
+			return errors.Wrap(err, "failed to create screen")
+		}
+		if !ok {
+			continue
+		}
 		switch key {
 		case input.Enter:
 			return nil
@@ -110,28 +152,38 @@ func Question(title string, opts []Option, keys *input.Input) (string, error) {
 		}
 	}
 
-	// TODO: break line if too long.
-	pad := (screen.Width-widest)/2 - 4
-	if pad < 0 {
-		pad = 0
-	}
-	prefix := strings.Repeat(" ", pad)
-
-	titlePad := (screen.Width - len(title)) / 2
-	if titlePad < 0 {
-		titlePad = 0
-	}
-
-	start := (screen.Height-len(opts))/2 - 2
-	screen.Printlnf(start, "%s", strings.Repeat("—", screen.Width))
-	screen.Printlnf(start+1, "%s%s", strings.Repeat(" ", titlePad), title)
-	for n, l := range opts {
-		screen.Printlnf(start+n+2, "%s%s", prefix, l.String())
-	}
-	screen.Printlnf(start+len(opts)+2, "%s", strings.Repeat("—", screen.Width))
-	screen.Draw()
+	r := resizer{keys: keys}
+	defer r.done()
 	for {
-		key := <-keys.Chan()
+		// TODO: break line if too long.
+		pad := (screen.Width-widest)/2 - 4
+		if pad < 0 {
+			pad = 0
+		}
+		prefix := strings.Repeat(" ", pad)
+
+		titlePad := (screen.Width - len(title)) / 2
+		if titlePad < 0 {
+			titlePad = 0
+		}
+
+		start := (screen.Height-len(opts))/2 - 2
+		rule := strings.Repeat("—", screen.Width)
+		screen.Printlnf(start, "%s", rule)
+		screen.Printlnf(start+1, "%s%s",
+			strings.Repeat(" ", titlePad), title)
+		for n, l := range opts {
+			screen.Printlnf(start+n+2, "%s%s", prefix, l.String())
+		}
+		screen.Printlnf(start+len(opts)+2, "%s", rule)
+		screen.Draw()
+		key, ok, err := r.key(&screen)
+		if err != nil {
+			return "", err
+		}
+		if !ok {
+			continue
+		}
 		for _, o := range opts {
 			if o.Key == string(key) {
 				return o.Key, nil
@@ -201,13 +253,21 @@ func Entry(prompt string, keys *input.Input) (string, error) {
 	prefix := "    "
 	keys.PastePush(false)
 	defer keys.PastePop()
+	r := resizer{keys: keys}
+	defer r.done()
 	for {
 		start := 3
 		content := fmt.Sprintf("%s%s%s%s%s", prefix, display.Bold, prompt, display.Reset, cur)
 		screen.Printlnf(start+2, "%s", content)
 		screen.SetCursor(start+2, display.StringWidth(content)+1)
 		screen.Draw()
-		key := <-keys.Chan()
+		key, ok, err := r.key(&screen)
+		if err != nil {
+			return "", err
+		}
+		if !ok {
+			continue
+		}
 		switch key {
 		case input.Enter:
 			return cur, nil
@@ -260,6 +320,8 @@ func Selection(opts []*Option, prompt string, free bool, keys *input.Input) (*Op
 	visible := opts
 	keys.PastePush(false)
 	defer keys.PastePop()
+	r := resizer{keys: keys}
+	defer r.done()
 	for {
 		start := 3
 		prefix := "    "
@@ -270,7 +332,13 @@ func Selection(opts []*Option, prompt string, free bool, keys *input.Input) (*Op
 			selected)
 		screen.Draw()
 
-		key := <-keys.Chan()
+		key, ok, err := r.key(&screen)
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			continue
+		}
 		switch key {
 		case input.Enter, input.Right:
 			if selected < 0 {

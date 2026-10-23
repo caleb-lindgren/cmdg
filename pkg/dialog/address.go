@@ -734,10 +734,18 @@ func Addresses(opts []*Option, keys *input.Input) (to, cc, bcc string,
 	defer fmt.Print(display.BracketedPasteOff)
 
 	p := newAddrPane(opts)
+	r := resizer{keys: keys}
+	defer r.done()
 	for {
 		p.draw(screen)
 		screen.Draw()
-		key := <-keys.Chan()
+		key, ok, err := r.key(&screen)
+		if err != nil {
+			return "", "", "", err
+		}
+		if !ok {
+			continue
+		}
 		if key == input.CtrlC {
 			return "", "", "", ErrAborted
 		}
