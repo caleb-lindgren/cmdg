@@ -110,7 +110,7 @@ type windowState struct {
 	// AccessToken is the OAuth access token of the process opening
 	// the window, and TokenExpiry when it expires, so that the window
 	// need not fetch one before its first RPC, which took 210-290ms in
-	// logs/window_timing.log.
+	// logs/window_timing.log as of commit e60be4f.
 	// The refresh token is not passed: the window reads it from the
 	// config, as the opening process did.
 	AccessToken string    `json:"access_token,omitempty"`
