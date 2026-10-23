@@ -55,6 +55,7 @@ func (r *resizer) key(screen **display.Screen) (string, bool, error) {
 		if err != nil {
 			return "", false, err
 		}
+		log.Infof("Dialog got WINCH, now %dx%d", s.Width, s.Height)
 		*screen = s
 		return "", false, nil
 	}
