@@ -589,30 +589,18 @@ func (tv *ThreadView) end(n int) int {
 	return len(tv.lines)
 }
 
-// follow keeps the selection's header line, where its arrow is drawn, on
-// screen once it has been scrolled to scroll: if that line is no longer on
-// screen, the message nearest the edge it left by whose header line is on
-// screen is selected. If no header line is on screen, the message filling
-// the screen is.
+// follow keeps the selection on screen once it has been scrolled to
+// scroll: if the selected message is no longer on screen at all, the
+// message at the edge it left by is selected.
 func (tv *ThreadView) follow(scroll int) {
 	if tv.sel >= len(tv.starts) {
 		return
 	}
-	bottom := scroll + tv.contentHeight()
-	var shown []int
-	for n, s := range tv.starts {
-		if s >= scroll && s < bottom {
-			shown = append(shown, n)
-		}
-	}
 	switch {
-	case tv.starts[tv.sel] >= scroll && tv.starts[tv.sel] < bottom:
-	case len(shown) == 0:
+	case tv.end(tv.sel) <= scroll:
 		tv.sel = tv.current(scroll)
-	case tv.starts[tv.sel] < scroll:
-		tv.sel = shown[0]
-	default:
-		tv.sel = shown[len(shown)-1]
+	case tv.starts[tv.sel] >= scroll+tv.contentHeight():
+		tv.sel = tv.current(scroll + tv.contentHeight() - 1)
 	}
 }
 

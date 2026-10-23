@@ -139,32 +139,28 @@ func TestThreadBuild(t *testing.T) {
 	}
 }
 
-// TestThreadFollow checks that scrolling the selected message's header
-// line off screen selects the message nearest the edge it left by whose
-// header line is on screen, or the message filling the screen if none is,
-// and that otherwise the selection stays, which lets it move to messages
-// near the end that can not be scrolled to the top.
+// TestThreadFollow checks that scrolling the selected message off screen
+// selects the message at the edge it left by, and that otherwise the
+// selection stays, which lets it move to messages near the end that can
+// not be scrolled to the top.
 func TestThreadFollow(t *testing.T) {
 	// 4 lines of messages: 10 less the 4 lines above and 2 below.
 	tv := &ThreadView{
 		ov:     &OpenMessageView{screen: &display.Screen{Height: 10}},
 		lines:  make([]string, 30),
-		starts: []int{0, 10, 12, 27},
+		starts: []int{0, 10, 27},
 	}
 	for _, tc := range []struct {
 		name        string
 		sel, scroll int
 		want        int
 	}{
-		{"header still on screen", 0, 0, 0},
-		{"header off the top, body on screen", 0, 8, 1},
-		{"off the top, two headers on screen", 0, 9, 1},
-		{"off the top, no header on screen", 0, 13, 2},
-		{"off the bottom, no header on screen", 3, 5, 0},
-		{"off the bottom, two headers on screen", 3, 9, 2},
-		{"off the bottom, one header on screen", 3, 7, 1},
-		{"last of the ones at the bottom", 3, 26, 3},
-		{"off the top, the last one at the bottom", 2, 26, 3},
+		{"still on screen", 0, 8, 0},
+		{"scrolled off the top", 0, 12, 1},
+		{"scrolled off the bottom", 2, 5, 0},
+		{"off the bottom, next one at the edge", 2, 7, 1},
+		{"last of the ones at the bottom", 2, 26, 2},
+		{"first of the ones at the bottom", 1, 26, 1},
 	} {
 		tv.sel = tc.sel
 		tv.follow(tc.scroll)
@@ -173,8 +169,8 @@ func TestThreadFollow(t *testing.T) {
 				tc.want)
 		}
 	}
-	if got := tv.clamp(30); got != 26 {
-		t.Errorf("clamp(30) = %d, want 26", got)
+	if got := tv.clamp(27); got != 26 {
+		t.Errorf("clamp(27) = %d, want 26", got)
 	}
 }
 
