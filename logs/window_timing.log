@@ -1,0 +1,69 @@
+time="2026-10-23T13:15:04.081-04:00" level=info msg="cmdg 1.05" pid=32062
+time="2026-10-23T13:15:04.081-04:00" level=info msg=Connected pid=32062
+time="2026-10-23T13:15:04.081-04:00" level=info msg="Loading settings…" pid=32062
+time="2026-10-23T13:15:04.081-04:00" level=info msg="For \"Token has been expired or revoked\": re-run cmdg with -configure" pid=32062
+time="2026-10-23T13:15:04.476-04:00" level=info msg="Loaded labels in 394.893685ms" pid=32062
+time="2026-10-23T13:15:04.477-04:00" level=info msg="Labels loaded" pid=32062
+time="2026-10-23T13:15:04.477-04:00" level=info msg="cmdg 1.05, built from commit 6296d68c6af81814dd022228c3bfc153b074183a of 2026-10-23T17:08:12Z with uncommitted changes" pid=32062
+time="2026-10-23T13:15:04.477-04:00" level=info msg="Starting keyboard input" pid=32062
+time="2026-10-23T13:15:04.477-04:00" level=info msg="Running MessageView" pid=32062
+time="2026-10-23T13:15:04.482-04:00" level=info msg="Got batch of 0 contacts, total 0" pid=32062
+time="2026-10-23T13:15:04.482-04:00" level=info msg="Contacts loaded" pid=32062
+time="2026-10-23T13:15:04.575-04:00" level=info msg="Initing history ID to 1984150" pid=32062
+time="2026-10-23T13:15:04.575-04:00" level=info msg="Listing messages on label \"INBOX\" query \"\" with token \"\"…" pid=32062
+time="2026-10-23T13:15:04.576-04:00" level=info msg="Got history update: {historyID:1984150 history:[]}" pid=32062
+time="2026-10-23T13:15:04.642-04:00" level=error msg="Failed to load settings: file does not exist" pid=32062
+time="2026-10-23T13:15:04.677-04:00" level=info msg="Signature loaded" pid=32062
+time="2026-10-23T13:15:04.696-04:00" level=info msg="Next page token: \"\"" pid=32062
+time="2026-10-23T13:15:04.696-04:00" level=info msg="Listing messages took 120.892626ms" pid=32062
+time="2026-10-23T13:15:04.696-04:00" level=info msg="MessageListView: Got page!" pid=32062
+time="2026-10-23T13:15:04.697-04:00" level=info msg="All pages loaded" pid=32062
+time="2026-10-23T13:15:06.021-04:00" level=info msg="Address scan: 3042 new messages to read, of 3042 listed (2000 newest, 1335 newest sent)" pid=32062
+time="2026-10-23T13:15:06.671-04:00" level=info msg="Started window, pid 32109: [\"st\" \"-e\" \"/home/caleb/system/cmdg/cmdg\" \"-config=../../.cmdg/harvard.conf\" \"-conversations=true\" \"-log=logs/window_timing.log\" \"-compose\" \"-window_file=/tmp/cmdg-window-1303660313.json\"]" pid=32062
+time="2026-10-23T13:15:06.815-04:00" level=info msg="cmdg 1.05" pid=32116
+time="2026-10-23T13:15:06.815-04:00" level=info msg=Connected pid=32116
+time="2026-10-23T13:15:06.815-04:00" level=info msg="cmdg 1.05 window, built from commit 6296d68c6af81814dd022228c3bfc153b074183a of 2026-10-23T17:08:12Z with uncommitted changes" pid=32116
+time="2026-10-23T13:15:06.817-04:00" level=info msg="Using the access token of the process that opened this window, expiring 2026-10-23 14:15:03.314623394 -0400 EDT" pid=32116
+time="2026-10-23T13:15:06.818-04:00" level=info msg="Starting keyboard input" pid=32116
+time="2026-10-23T13:15:07.287-04:00" level=error msg="Failed to load settings: file does not exist" pid=32116
+time="2026-10-23T13:15:09.591-04:00" level=info msg="Stopping keyboard input" pid=32116
+time="2026-10-23T13:15:09.641-04:00" level=info msg="Input loop told to stop" pid=32116
+time="2026-10-23T13:15:09.641-04:00" level=info msg="Keyboard input stopped" pid=32116
+time="2026-10-23T13:15:09.649-04:00" level=info msg="Window pid 32109 exited: <nil>, stderr \"\"" pid=32062
+time="2026-10-23T13:15:10.651-04:00" level=info msg="MessageListView got unknown key \"h\" [104]" pid=32062
+time="2026-10-23T13:15:10.873-04:00" level=info msg="MessageListView got unknown key \"h\" [104]" pid=32062
+time="2026-10-23T13:15:11.873-04:00" level=info msg="Started window, pid 32209: [\"st\" \"-e\" \"/home/caleb/system/cmdg/cmdg\" \"-config=../../.cmdg/harvard.conf\" \"-conversations=true\" \"-log=logs/window_timing.log\" \"-read_conversation=1a15b12926a7e274\" \"-window_file=/tmp/cmdg-window-4198556614.json\"]" pid=32062
+time="2026-10-23T13:15:12.023-04:00" level=info msg="cmdg 1.05" pid=32222
+time="2026-10-23T13:15:12.024-04:00" level=info msg=Connected pid=32222
+time="2026-10-23T13:15:12.024-04:00" level=info msg="cmdg 1.05 window, built from commit 6296d68c6af81814dd022228c3bfc153b074183a of 2026-10-23T17:08:12Z with uncommitted changes" pid=32222
+time="2026-10-23T13:15:12.025-04:00" level=info msg="Using the access token of the process that opened this window, expiring 2026-10-23 14:15:03.314623394 -0400 EDT" pid=32222
+time="2026-10-23T13:15:12.025-04:00" level=info msg="Starting keyboard input" pid=32222
+time="2026-10-23T13:15:12.025-04:00" level=info msg="Running ThreadView" pid=32222
+time="2026-10-23T13:15:12.281-04:00" level=info msg="Message is type \"multipart/alternative\"" pid=32222
+time="2026-10-23T13:15:12.350-04:00" level=info msg="Rendered HTML in 68.897849ms" pid=32222
+time="2026-10-23T13:15:12.350-04:00" level=info msg="Message is type \"multipart/alternative\"" pid=32222
+time="2026-10-23T13:15:12.413-04:00" level=info msg="Rendered HTML in 63.243137ms" pid=32222
+time="2026-10-23T13:15:12.507-04:00" level=info msg="Got 1 messages of thread \"1a15b12926a7e274\" in 481.415353ms" pid=32222
+time="2026-10-23T13:15:14.488-04:00" level=info msg="History for 1984150 INBOX" pid=32062
+time="2026-10-23T13:15:14.590-04:00" level=info msg="No history since last check" pid=32062
+time="2026-10-23T13:15:14.590-04:00" level=info msg="History check took 102.603989ms" pid=32062
+time="2026-10-23T13:15:15.054-04:00" level=info msg="ThreadView got WINCH" pid=32222
+time="2026-10-23T13:15:15.100-04:00" level=info msg="MessageListView got WINCH!" pid=32062
+time="2026-10-23T13:15:17.748-04:00" level=info msg="Address scan: 250 of 3042 new messages done, 0 of them failed; read 250 messages in all, back to 2026-04-10, dating 81 addresses" pid=32062
+time="2026-10-23T13:15:18.231-04:00" level=info msg="Unknown key: \"\\n\"" pid=32222
+time="2026-10-23T13:15:19.901-04:00" level=info msg="Unknown key: \"\\r\"" pid=32222
+time="2026-10-23T13:15:21.621-04:00" level=info msg="ThreadView got WINCH" pid=32222
+time="2026-10-23T13:15:21.649-04:00" level=info msg="MessageListView got WINCH!" pid=32062
+time="2026-10-23T13:15:24.487-04:00" level=info msg="History for 1984150 INBOX" pid=32062
+time="2026-10-23T13:15:24.565-04:00" level=info msg="No history since last check" pid=32062
+time="2026-10-23T13:15:24.565-04:00" level=info msg="History check took 78.009259ms" pid=32062
+time="2026-10-23T13:15:25.917-04:00" level=info msg="Stopping keyboard input" pid=32222
+time="2026-10-23T13:15:25.967-04:00" level=info msg="Input loop told to stop" pid=32222
+time="2026-10-23T13:15:25.967-04:00" level=info msg="Keyboard input stopped" pid=32222
+time="2026-10-23T13:15:25.976-04:00" level=info msg="Window pid 32209 exited: <nil>, stderr \"\"" pid=32062
+time="2026-10-23T13:15:28.435-04:00" level=info msg="MessageView returned, stopping keys" pid=32062
+time="2026-10-23T13:15:28.435-04:00" level=info msg="Stopping keyboard input" pid=32062
+time="2026-10-23T13:15:28.482-04:00" level=info msg="Input loop told to stop" pid=32062
+time="2026-10-23T13:15:28.482-04:00" level=info msg="Keyboard input stopped" pid=32062
+time="2026-10-23T13:15:28.482-04:00" level=info msg="Shutting down" pid=32062
+time="2026-10-23T13:15:28.483-04:00" level=info msg="No longer listening for window events: accept unix /tmp/cmdg-events-2285718973/socket: use of closed network connection" pid=32062
