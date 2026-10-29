@@ -753,13 +753,18 @@ func (mv *MessageView) Run(ctx context.Context) error {
 			}
 			// Under Sent, From is always the user. A row
 			// grouping a conversation shows its newest
-			// message, so this is who that was sent to.
+			// message, so this is who that was sent to. A
+			// list of recipients needs more room than one
+			// sender: a third of the screen, from 20 to 40
+			// columns.
+			fromWidth := 20
 			if mv.label == cmdg.Sent {
 				to, err := curmsg.GetRecipients(ctx)
 				if err != nil {
 					return err
 				}
 				from = "To: " + to
+				fromWidth = max(20, min(40, screen.Width/3))
 			}
 			colors, fullColors, err := curmsg.GetLabelColors(ctx, mv.label)
 			if err != nil {
@@ -769,7 +774,7 @@ func (mv *MessageView) Run(ctx context.Context) error {
 				colors = " | " + colors
 				fullColors = " | " + fullColors
 			}
-			from = mv.conv.fromColumn(curmsg, from, 20)
+			from = mv.conv.fromColumn(curmsg, from, fromWidth)
 			s = fmt.Sprintf("%[1]*.[1]*[2]s | %[3]s | %[4]s",
 				6, tm,
 				from, subj)
