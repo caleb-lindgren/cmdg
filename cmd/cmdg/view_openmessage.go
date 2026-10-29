@@ -137,6 +137,11 @@ type OpenMessageView struct {
 	// Local view state. Main goroutine only.
 	preferHTML bool
 
+	// headerHeight is how many lines Draw last drew above the body,
+	// which wrapping the headers to the screen width makes vary. Zero
+	// before the first Draw.
+	headerHeight int
+
 	// drawLines, if not nil, draws for incrementalSearch instead of
 	// Draw. The conversation view sets it. Added by this fork.
 	drawLines func(lines []string, scroll int) error
@@ -177,30 +182,27 @@ func cancelledContext() context.Context {
 	return ctx
 }
 
+// contentSpace returns how many lines of the body fit on the screen,
+// below the headers as Draw last drew them and above the two lines at
+// the bottom.
+func (ov *OpenMessageView) contentSpace() int {
+	if ov.headerHeight == 0 {
+		// The headers when none wraps.
+		return ov.screen.Height - 10
+	}
+	return max(1, ov.screen.Height-ov.headerHeight-2)
+}
+
 // Draw draws the open message.
 func (ov *OpenMessageView) Draw(lines []string, scroll int) error {
 	// Some functions below need a context, but they should never make RPCs so let's give them
 	ctx := cancelledContext()
 
-	line := 0
-	contentSpace := ov.screen.Height - 10
-
-	var searching string
-	if ov.inIncrementalSearch {
-		searching = fmt.Sprintf(" Incremental search: %s (at %d of %d)", ov.incrementalQuery, ov.incrementalCurrent, ov.incrementalCount)
-	}
-
-	// TODO: msg index.
-	ov.screen.Printlnf(
-		line,
-		"Scroll %d-%d/%d (%d%%)%s",
-		scroll,
-		min(scroll+contentSpace, len(lines)),
-		len(lines),
-		min(100, int(100*float64(scroll+contentSpace)/float64(len(lines)))),
-		searching,
-	)
-	line++
+	// The headers, each wrapped to the screen width, are put together
+	// first, so that the scroll line above them knows how many lines
+	// of the body fit below them.
+	width := ov.screen.Width
+	var hdr []string
 
 	// From.
 	from, err := ov.msg.GetHeader(ctx, "From")
@@ -227,8 +229,7 @@ func (ov *OpenMessageView) Draw(lines []string, scroll int) error {
 			encrypted = fmt.Sprintf("%s — Encrypted to %s", display.Green+display.Bold, strings.Join(st.Encrypted, ";"))
 		}
 	}
-	ov.screen.Printlnf(line, "From: %s%s", from, signed)
-	line++
+	hdr = append(hdr, wrapLine("From: "+from+signed, width)...)
 
 	// To, which a message sent only to CC or BCC addresses does not have.
 	to, err := ov.msg.GetHeader(ctx, "To")
@@ -238,21 +239,20 @@ func (ov *OpenMessageView) Draw(lines []string, scroll int) error {
 		ov.errors <- err
 		to = fmt.Sprintf("Unknown: %q", err)
 	}
-	ov.screen.Printlnf(line, "To: %s%s", to, encrypted)
-	line++
+	toLines := wrapHeader("To", to, width)
+	toLines[len(toLines)-1] += encrypted
+	hdr = append(hdr, toLines...)
 
 	// CC.
 	cc, err := ov.msg.GetHeader(ctx, "CC")
 	if err != nil {
 		cc = ""
 	}
-	ov.screen.Printlnf(line, "CC: %s", cc)
-	line++
+	hdr = append(hdr, wrapHeader("CC", cc, width)...)
 
 	// BCC, which only the sender's copy has.
 	if bcc, err := ov.msg.GetHeader(ctx, "BCC"); err == nil && bcc != "" {
-		ov.screen.Printlnf(line, "BCC: %s", bcc)
-		line++
+		hdr = append(hdr, wrapHeader("BCC", bcc, width)...)
 	}
 
 	// Date.
@@ -260,7 +260,8 @@ func (ov *OpenMessageView) Draw(lines []string, scroll int) error {
 	if date, err := ov.msg.GetOriginalTime(ctx); err != nil {
 		log.Warningf("Could not parse date for message: %v", err)
 		s, _ := ov.msg.GetDateHeader(ctx)
-		ov.screen.Printlnf(line, "Date: %s (parse error: %v)", s, err)
+		hdr = append(hdr, fmt.Sprintf("Date: %s (parse error: %v)",
+			s, err))
 		//ov.errors <- err
 	} else {
 		dateLocal := date.Local()
@@ -268,9 +269,9 @@ func (ov *OpenMessageView) Draw(lines []string, scroll int) error {
 		if *enableDottime {
 			dt = fmt.Sprintf(" (dottime: %s)", dottime(date))
 		}
-		ov.screen.Printlnf(line, "Date: %s%s", dateLocal.Format(tsLayout), dt)
+		hdr = append(hdr, fmt.Sprintf("Date: %s%s",
+			dateLocal.Format(tsLayout), dt))
 	}
-	line++
 
 	// Subject
 	subject, err := ov.msg.GetSubject(ctx)
@@ -278,8 +279,7 @@ func (ov *OpenMessageView) Draw(lines []string, scroll int) error {
 		ov.errors <- err
 		subject = fmt.Sprintf("Unknown: %q", err)
 	}
-	ov.screen.Printlnf(line, "Subject: %s", subject)
-	line++
+	hdr = append(hdr, fmt.Sprintf("Subject: %s", subject))
 
 	// Labels
 	labels, err := ov.msg.GetLabelsString(ctx)
@@ -287,17 +287,46 @@ func (ov *OpenMessageView) Draw(lines []string, scroll int) error {
 		ov.errors <- err
 		labels = fmt.Sprintf("Unknown: %q", err)
 	}
-	ov.screen.Printlnf(line, "Labels: %s", labels)
-	line++
+	hdr = append(hdr, fmt.Sprintf("Labels: %s", labels))
 
 	// Message ID
 	if *showMessageID {
 		if msgid, err := ov.msg.GetHeader(ctx, "Message-ID"); err == nil {
-			ov.screen.Printlnf(line, "Message-ID: %s", msgid)
-			line++
+			hdr = append(hdr, fmt.Sprintf("Message-ID: %s", msgid))
 		} else {
 			ov.errors <- err
 		}
+	}
+
+	// The scroll line, the headers and the rule below them.
+	ov.headerHeight = len(hdr) + 2
+	contentSpace := ov.contentSpace()
+
+	var searching string
+	if ov.inIncrementalSearch {
+		searching = fmt.Sprintf(
+			" Incremental search: %s (at %d of %d)",
+			ov.incrementalQuery, ov.incrementalCurrent,
+			ov.incrementalCount)
+	}
+
+	line := 0
+	// TODO: msg index.
+	ov.screen.Printlnf(
+		line,
+		"Scroll %d-%d/%d (%d%%)%s",
+		scroll,
+		min(scroll+contentSpace, len(lines)),
+		len(lines),
+		min(100, int(100*float64(scroll+contentSpace)/
+			float64(len(lines)))),
+		searching,
+	)
+	line++
+
+	for _, h := range hdr {
+		ov.screen.Printlnf(line, "%s", h)
+		line++
 	}
 
 	ov.screen.Printlnf(line, "%s", strings.Repeat("—", ov.screen.Width))
@@ -723,7 +752,8 @@ func (ov *OpenMessageView) Run(ctx context.Context) (*MessageViewOp, error) {
 					log.Infof("Failed to draw: %v", err)
 				}
 			case " ", input.CtrlV, input.PgDown:
-				scroll = ov.scroll(ctx, len(lines), scroll, ov.screen.Height-10)
+				scroll = ov.scroll(ctx, len(lines), scroll,
+					ov.contentSpace())
 				if err := ov.Draw(lines, scroll); err != nil {
 					log.Infof("Failed to draw: %v", err)
 				}
@@ -816,7 +846,8 @@ func (ov *OpenMessageView) Run(ctx context.Context) (*MessageViewOp, error) {
 				}
 				ov.errors <- ov.showPager(ctx, buf.String())
 			case input.Backspace, input.CtrlH, input.PgUp, "Meta-v":
-				scroll = ov.scroll(ctx, len(lines), scroll, -(ov.screen.Height - 10))
+				scroll = ov.scroll(ctx, len(lines), scroll,
+					-ov.contentSpace())
 				if err := ov.Draw(lines, scroll); err != nil {
 					log.Infof("Failed to draw: %v", err)
 				}
@@ -833,13 +864,13 @@ func (ov *OpenMessageView) Run(ctx context.Context) (*MessageViewOp, error) {
 				}
 			case customize.HalfPageDown:
 				scroll = ov.scroll(ctx, len(lines), scroll,
-					halfPage(ov.screen.Height-10))
+					halfPage(ov.contentSpace()))
 				if err := ov.Draw(lines, scroll); err != nil {
 					log.Infof("Failed to draw: %v", err)
 				}
 			case customize.HalfPageUp:
 				scroll = ov.scroll(ctx, len(lines), scroll,
-					-halfPage(ov.screen.Height-10))
+					-halfPage(ov.contentSpace()))
 				if err := ov.Draw(lines, scroll); err != nil {
 					log.Infof("Failed to draw: %v", err)
 				}
@@ -884,7 +915,8 @@ func (ov *OpenMessageView) showPager(ctx context.Context, content string) error 
 func (ov *OpenMessageView) scroll(ctx context.Context, lines, scroll, inc int) int {
 	if ov.msg.HasData(cmdg.LevelFull) {
 		scroll += inc
-		if maxscroll := (lines - ov.screen.Height + 10); scroll >= maxscroll {
+		maxscroll := lines - ov.contentSpace()
+		if scroll >= maxscroll {
 			scroll = maxscroll
 		}
 		if scroll < 0 {

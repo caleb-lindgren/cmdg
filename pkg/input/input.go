@@ -103,6 +103,14 @@ type Input struct {
 	m           sync.RWMutex
 	pasteStatus []bool
 	unfocused   bool
+	lastKey     string
+}
+
+// LastKey returns the last key sent on Chan.
+func (i *Input) LastKey() string {
+	i.m.RLock()
+	defer i.m.RUnlock()
+	return i.lastKey
 }
 
 // PastePush triggers/untriggers paste protection in the stack.
@@ -477,6 +485,9 @@ func (i *Input) Start() error {
 				continue
 			}
 
+			i.m.Lock()
+			i.lastKey = key
+			i.m.Unlock()
 			i.keys <- key
 			if key == Enter || key == Return {
 				lastEnter = keyTime

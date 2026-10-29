@@ -751,6 +751,16 @@ func (mv *MessageView) Run(ctx context.Context) error {
 			if err != nil {
 				return err
 			}
+			// Under Sent, From is always the user. A row
+			// grouping a conversation shows its newest
+			// message, so this is who that was sent to.
+			if mv.label == cmdg.Sent {
+				to, err := curmsg.GetRecipients(ctx)
+				if err != nil {
+					return err
+				}
+				from = "To: " + to
+			}
 			colors, fullColors, err := curmsg.GetLabelColors(ctx, mv.label)
 			if err != nil {
 				return err

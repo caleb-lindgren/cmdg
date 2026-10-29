@@ -209,6 +209,11 @@ func startLog() error {
 	}
 	logOutput = f
 	log.SetOutput(io.MultiWriter(os.Stderr, f))
+	// A panic or fatal error is printed to stderr, the terminal, which
+	// a window takes with it as it closes, so it is put in the log too.
+	if err := debug.SetCrashOutput(f, debug.CrashOptions{}); err != nil {
+		log.Errorf("Failed to send crash output to the log: %v", err)
+	}
 	// Windows log to the same file as the process that opened them,
 	// so each line says which process wrote it, and when to the
 	// millisecond, to time a window's startup.

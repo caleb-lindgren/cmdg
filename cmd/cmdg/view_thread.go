@@ -439,8 +439,10 @@ func wrapLine(line string, width int) []string {
 	return append(ret, cur.String())
 }
 
-// messageHeader returns the lines put above msg's body.
-func messageHeader(ctx context.Context, msg *cmdg.Message) []string {
+// messageHeader returns the lines put above msg's body, width columns
+// wide.
+func messageHeader(ctx context.Context, msg *cmdg.Message,
+	width int) []string {
 	from, err := msg.GetHeader(ctx, "From")
 	if err != nil {
 		from = fmt.Sprintf("Unknown: %q", err)
@@ -465,14 +467,18 @@ func messageHeader(ctx context.Context, msg *cmdg.Message) []string {
 			tags += " — BAD signature from " + st.Signed
 		}
 	}
-	ret := []string{
-		display.Bold + from + tags + display.Reset,
-		fmt.Sprintf("%sDate: %s%s", display.Grey, date, display.Reset),
+	var ret []string
+	for _, l := range wrapLine(from+tags, width) {
+		ret = append(ret, display.Bold+l+display.Reset)
 	}
+	ret = append(ret, fmt.Sprintf("%sDate: %s%s", display.Grey, date,
+		display.Reset))
 	for _, h := range []string{"To", "CC"} {
 		if v, err := msg.GetHeader(ctx, h); err == nil && v != "" {
-			ret = append(ret, fmt.Sprintf("%s%s: %s%s",
-				display.Grey, h, v, display.Reset))
+			for _, l := range wrapHeader(h, v, width) {
+				ret = append(ret,
+					display.Grey+l+display.Reset)
+			}
 		}
 	}
 	return append(ret, "")
@@ -488,7 +494,7 @@ func (tv *ThreadView) build(ctx context.Context, width int) {
 				strings.Repeat("─", width)+display.Reset)
 		}
 		tv.starts = append(tv.starts, len(tv.lines))
-		tv.lines = append(tv.lines, messageHeader(ctx, m)...)
+		tv.lines = append(tv.lines, messageHeader(ctx, m, width)...)
 
 		gb := m.GetBody
 		if tv.preferHTML {

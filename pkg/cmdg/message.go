@@ -528,6 +528,41 @@ func (msg *Message) GetFrom(ctx context.Context) (string, error) {
 	return a.Address, nil
 }
 
+// GetRecipients returns who the message was sent to: the names, or
+// addresses where there is no name, in its To, CC and BCC, in that order,
+// separated by commas. A header that does not parse as an address list is
+// given as it is.
+func (msg *Message) GetRecipients(ctx context.Context) (string, error) {
+	var ret []string
+	for _, h := range []string{"To", "CC", "BCC"} {
+		s, err := msg.GetHeader(ctx, h)
+		if errors.Cause(err) == ErrMissing {
+			continue
+		}
+		if err != nil {
+			return "", err
+		}
+		if s == "" {
+			continue
+		}
+		as, err := addressParser.ParseList(s)
+		if err != nil {
+			log.Warningf("%q is not a valid address list: %v",
+				s, err)
+			ret = append(ret, s)
+			continue
+		}
+		for _, a := range as {
+			if a.Name != "" {
+				ret = append(ret, a.Name)
+			} else {
+				ret = append(ret, a.Address)
+			}
+		}
+	}
+	return strings.Join(ret, ", "), nil
+}
+
 // Label is a gmail label.
 type Label struct {
 	ID       string

@@ -551,6 +551,7 @@ func readMain(ctx context.Context, id string, ids []string,
 		if err != nil {
 			return err
 		}
+		log.Infof("Message view closed after key %q", keys.LastKey())
 		// As in the message list, ^N on the last message and ^P on
 		// the first show it again.
 		switch {
