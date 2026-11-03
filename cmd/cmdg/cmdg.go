@@ -84,9 +84,9 @@ var (
 	signature string
 
 	// startupReady waits for the signature, the settings and the
-	// contacts, which the message list loads while it starts, and
-	// returns the error loading the signature, if any: a message is
-	// not to be written without it. Added by this fork.
+	// contacts, which the message list loads while it starts. A
+	// message is written without the signature and the settings if
+	// they fail to load, as in a compose window. Added by this fork.
 	startupReady = func() error { return nil }
 
 	// contactsLoaded is whether conn has loaded the contacts, or been
@@ -116,16 +116,57 @@ func configFilePath() string {
 	return path.Join(os.Getenv("HOME"), defaultConfigDir, configFileName)
 }
 
-func loadSignature(ctx context.Context) error {
-	b, err := conn.GetFile(ctx, signatureFilename)
-	if err == os.ErrNotExist {
-		return nil
+// composeLoad is a load of the signature and the settings, which writing
+// a message waits for. Added by this fork.
+type composeLoad struct {
+	done chan struct{}
+	err  error
+}
+
+// startComposeLoad starts loading the signature and the settings from
+// Drive, in one listing of the folder. It is given up on after
+// composeLoadTimeout, so that a request that gets no answer does not keep
+// a message from being written; it is then written without a signature,
+// from the account's own address.
+func startComposeLoad(ctx context.Context) *composeLoad {
+	l := &composeLoad{done: make(chan struct{})}
+	go func() {
+		defer close(l.done)
+		ctx, cancel := context.WithTimeout(ctx, composeLoadTimeout)
+		defer cancel()
+		m, err := conn.LoadSettings(ctx, signatureFilename)
+		if err != nil {
+			l.err = err
+			log.Errorf("Failed to load signature and settings, "+
+				"writing without them: %v", err)
+			return
+		}
+		if b, ok := m[signatureFilename]; ok {
+			signature = string(b)
+		}
+		log.Infof("Signature and settings loaded")
+	}()
+	return l
+}
+
+// wait waits for the load to finish, saying so on screen if it has not
+// yet, as a reply waits before anything else is drawn, and returns its
+// error, which it has logged.
+func (l *composeLoad) wait() error {
+	select {
+	case <-l.done:
+		return l.err
+	default:
 	}
-	if err != nil {
-		return err
+	log.Infof("Waiting for the signature and settings")
+	if screen, err := display.NewScreen(); err != nil {
+		log.Errorf("Saying what is waited for: %v", err)
+	} else {
+		screen.Printf(0, 0, "Loading signature and settings…")
+		screen.Draw()
 	}
-	signature = string(b)
-	return nil
+	<-l.done
+	return l.err
 }
 
 func run(ctx context.Context) error {
@@ -366,18 +407,6 @@ func main() {
 	// write a message, which waits for them with startupReady, so that
 	// the list is not held up by them. Added by this fork.
 	var wg, background sync.WaitGroup
-	var sigErr error
-	background.Add(1)
-	go func() {
-		defer background.Done()
-		if sigErr = loadSignature(ctx); sigErr != nil {
-			log.Errorf("Failed to load signature from Drive "+
-				"appdata: %v", sigErr)
-			return
-		}
-		log.Infof("Signature loaded")
-	}()
-
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -394,15 +423,7 @@ func main() {
 		}
 	}
 
-	background.Add(1)
-	go func() {
-		defer background.Done()
-		if err := conn.LoadSettings(ctx); err != nil {
-			log.Errorf("Failed to load settings: %v", err)
-		} else {
-			log.Infof("Settings loaded")
-		}
-	}()
+	load := startComposeLoad(ctx)
 
 	background.Add(1)
 	go func() {
@@ -417,8 +438,15 @@ func main() {
 		log.Infof("Contacts loaded")
 	}()
 	startupReady = func() error {
+		// One that failed, as on a request that got no answer,
+		// is made again for this message, as a compose window
+		// does for each.
+		if load.wait() != nil {
+			load = startComposeLoad(ctx)
+			_ = load.wait()
+		}
 		background.Wait()
-		return errors.Wrap(sigErr, "loading signature")
+		return nil
 	}
 	wg.Wait()
 

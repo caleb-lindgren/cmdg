@@ -661,8 +661,16 @@ func (c *CmdG) UpdateFile(ctx context.Context, fn string, contents []byte) error
 	return nil
 }
 
-// GetFile downloads a file from the config folder.
-func (c *CmdG) GetFile(ctx context.Context, fn string) ([]byte, error) {
+// GetFiles downloads the files named fns from the config folder, listing
+// it once for all of them. A file not there is left out of the map. Added
+// by this fork.
+func (c *CmdG) GetFiles(ctx context.Context,
+	fns ...string) (map[string][]byte, error) {
+	want := make(map[string]bool)
+	for _, fn := range fns {
+		want[fn] = true
+	}
+	ids := make(map[string]string)
 	var token string
 	for {
 		var l *drive.FileList
@@ -674,19 +682,8 @@ func (c *CmdG) GetFile(ctx context.Context, fn string) ([]byte, error) {
 			return nil, err
 		}
 		for _, f := range l.Files {
-			if f.Name == fn {
-				var r *http.Response
-				err := wrapLogRPC("drive.Files.Get", func() (err error) {
-					r, err = c.drive.Files.Get(f.Id).Context(ctx).Download()
-					return
-				}, "fileID=%v", f.Id)
-				if err != nil {
-					return nil, err
-				}
-				defer func() {
-					_ = r.Body.Close()
-				}()
-				return io.ReadAll(r.Body)
+			if _, seen := ids[f.Name]; want[f.Name] && !seen {
+				ids[f.Name] = f.Id
 			}
 		}
 		token = l.NextPageToken
@@ -695,7 +692,31 @@ func (c *CmdG) GetFile(ctx context.Context, fn string) ([]byte, error) {
 		}
 	}
 
-	return nil, os.ErrNotExist
+	m := make(map[string][]byte)
+	for fn, id := range ids {
+		b, err := c.download(ctx, id)
+		if err != nil {
+			return nil, errors.Wrapf(err, "downloading %q", fn)
+		}
+		m[fn] = b
+	}
+	return m, nil
+}
+
+// download downloads the file with the ID id.
+func (c *CmdG) download(ctx context.Context, id string) ([]byte, error) {
+	var r *http.Response
+	err := wrapLogRPC("drive.Files.Get", func() (err error) {
+		r, err = c.drive.Files.Get(id).Context(ctx).Download()
+		return
+	}, "fileID=%v", id)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = r.Body.Close()
+	}()
+	return io.ReadAll(r.Body)
 }
 
 // Settings stores settings in the app specific folder on Google Drive.
@@ -714,16 +735,24 @@ func (c *CmdG) SetDefaultSender(s string) {
 	c.settings.Sender = s
 }
 
-// LoadSettings loads settings from app specific folder on Google Drive.
-func (c *CmdG) LoadSettings(ctx context.Context) error {
-	b, err := c.GetFile(ctx, settingsFileName)
+// LoadSettings loads settings from app specific folder on Google Drive,
+// along with the files there named others, in one listing of the folder,
+// returning those of them found. No settings file there is not an error:
+// the settings are then the defaults. Others added by this fork.
+func (c *CmdG) LoadSettings(ctx context.Context,
+	others ...string) (map[string][]byte, error) {
+	m, err := c.GetFiles(ctx, append(others, settingsFileName)...)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	if err := json.Unmarshal(b, &c.settings); err != nil {
-		return err
+	if b, ok := m[settingsFileName]; ok {
+		delete(m, settingsFileName)
+		if err := json.Unmarshal(b, &c.settings); err != nil {
+			return nil, errors.Wrapf(err, "parsing %q",
+				settingsFileName)
+		}
 	}
-	return nil
+	return m, nil
 }
 
 // SaveSettings saves settings to app specific folder on Google Drive.

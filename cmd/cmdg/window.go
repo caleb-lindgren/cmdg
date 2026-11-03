@@ -204,10 +204,10 @@ func (w *windowEventListener) Close() error {
 	return err
 }
 
-// composeLoadTimeout is how long a compose window waits for the
-// signature and the settings before writing the message without them:
-// long enough for a request stalled on a dead connection to be made again
-// on a new one, which the first of cmdg's header timeouts, 10s, sets off.
+// composeLoadTimeout is how long writing a message waits for the signature
+// and the settings before going on without them: long enough for a
+// request stalled on a dead connection to be made again on a new one,
+// which the first of cmdg's header timeouts, 10s, sets off.
 const composeLoadTimeout = 20 * time.Second
 
 var (
@@ -585,49 +585,10 @@ func readMain(ctx context.Context, id string, ids []string,
 // recipients.
 func composeMain(ctx context.Context, contacts []string) error {
 	// The signature and the default sender are needed only once the
-	// addresses have been typed in, so they load in the meantime. They
-	// are given up on after composeLoadTimeout, so that a request that
-	// gets no answer does not keep the message from being written; it
-	// is then written without a signature, from the account's own
-	// address.
-	loadCtx, cancelLoad := context.WithTimeout(ctx, composeLoadTimeout)
-	defer cancelLoad()
-	var wg sync.WaitGroup
-	wg.Add(2)
-	go func() {
-		defer wg.Done()
-		if err := loadSignature(loadCtx); err != nil {
-			log.Errorf("Failed to load signature, writing "+
-				"without it: %v", err)
-		}
-	}()
-	go func() {
-		defer wg.Done()
-		if err := conn.LoadSettings(loadCtx); err != nil {
-			log.Errorf("Failed to load settings: %v", err)
-		}
-	}()
-	loaded := make(chan struct{})
-	go func() {
-		wg.Wait()
-		close(loaded)
-	}()
+	// addresses have been typed in, so they load in the meantime.
+	load := startComposeLoad(ctx)
 	ready := func() error {
-		select {
-		case <-loaded:
-			return nil
-		default:
-		}
-		// Say what is being waited for, as a reply waits before
-		// anything else is drawn.
-		log.Infof("Waiting for the signature and settings")
-		screen, err := display.NewScreen()
-		if err != nil {
-			return err
-		}
-		screen.Printf(0, 0, "Loading signature and settings…")
-		screen.Draw()
-		<-loaded
+		_ = load.wait()
 		return nil
 	}
 
