@@ -184,7 +184,10 @@ func New(fn string) (*CmdG, error) {
 				Dial: dialer.Dial,
 			}
 		}
+	} else {
+		tp = http.DefaultTransport.(*http.Transport).Clone()
 	}
+	pingQuiet(tp.(*http.Transport))
 
 	// Attach APIkey, if any.
 	if conf.OAuth.APIKey != "" {

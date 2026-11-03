@@ -2,13 +2,16 @@ package cmdg
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -143,5 +146,145 @@ func TestRetryGivesUp(t *testing.T) {
 	_, err := c.Get(ts.URL + "/never")
 	if err == nil || !strings.Contains(err.Error(), "no response to") {
 		t.Errorf("got %v, want no response", err)
+	}
+}
+
+// TestRetryFailed checks that a read whose connection fails is made again
+// and answered, and that a request that changes something is not.
+func TestRetryFailed(t *testing.T) {
+	var m sync.Mutex
+	seen := map[string]int{}
+	ts := httptest.NewServer(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			m.Lock()
+			seen[r.URL.Path]++
+			n := seen[r.URL.Path]
+			m.Unlock()
+			if n == 1 {
+				conn, _, err := w.(http.Hijacker).Hijack()
+				if err == nil {
+					_ = conn.Close()
+				}
+				return
+			}
+			_, _ = fmt.Fprintf(w, "answer %d", n)
+		}))
+	defer ts.Close()
+	c := &http.Client{Transport: &slowLogTransport{}}
+	resp, err := c.Get(ts.URL + "/read")
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, _ := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+	if string(b) != "answer 2" {
+		t.Errorf("read: got %q, want the second attempt answered", b)
+	}
+	if _, err := c.Post(ts.URL+"/send", "text/plain",
+		strings.NewReader("mail")); err == nil {
+		t.Errorf("send: got no error, want the failure")
+	}
+	m.Lock()
+	defer m.Unlock()
+	if seen["/send"] != 1 {
+		t.Errorf("send made %d times, want once", seen["/send"])
+	}
+}
+
+// freezeConn passes on what it reads until frozen is set, and from then
+// on reads nothing until it is closed, as a connection that died without
+// closing does.
+type freezeConn struct {
+	net.Conn
+	frozen *atomic.Bool
+	closed chan struct{}
+	once   sync.Once
+}
+
+func (c *freezeConn) Read(b []byte) (int, error) {
+	n, err := c.Conn.Read(b)
+	if c.frozen.Load() {
+		<-c.closed
+		return 0, net.ErrClosed
+	}
+	return n, err
+}
+
+func (c *freezeConn) Close() error {
+	c.once.Do(func() { close(c.closed) })
+	return c.Conn.Close()
+}
+
+// TestDeadHTTP2Connection checks that a read stalled on an HTTP/2
+// connection that stops answering, as one did in logs/harvard.log, is
+// made again on a new connection once a ping goes unanswered, well
+// before the header timeout would make it again on the same connection.
+func TestDeadHTTP2Connection(t *testing.T) {
+	oldTimeouts, oldAfter, oldTimeout := headerTimeouts,
+		http2PingAfter, http2PingTimeout
+	headerTimeouts = []time.Duration{5 * time.Second, 5 * time.Second}
+	http2PingAfter = 50 * time.Millisecond
+	http2PingTimeout = 50 * time.Millisecond
+	defer func() {
+		headerTimeouts, http2PingAfter, http2PingTimeout =
+			oldTimeouts, oldAfter, oldTimeout
+	}()
+
+	ts := httptest.NewUnstartedServer(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			_, _ = fmt.Fprintf(w, "%s", r.Proto)
+		}))
+	ts.EnableHTTP2 = true
+	ts.StartTLS()
+	defer ts.Close()
+
+	var frozen atomic.Bool
+	var dials atomic.Int32
+	tp := ts.Client().Transport.(*http.Transport).Clone()
+	tp.ForceAttemptHTTP2 = true
+	tp.DialContext = func(ctx context.Context, network,
+		addr string) (net.Conn, error) {
+		dials.Add(1)
+		conn, err := (&net.Dialer{}).DialContext(ctx, network, addr)
+		if err != nil {
+			return nil, err
+		}
+		// Only the first connection dies.
+		f := &frozen
+		if dials.Load() > 1 {
+			f = new(atomic.Bool)
+		}
+		return &freezeConn{Conn: conn, frozen: f,
+			closed: make(chan struct{})}, nil
+	}
+	pingQuiet(tp)
+	c := &http.Client{Transport: &slowLogTransport{base: tp}}
+	get := func() string {
+		t.Helper()
+		resp, err := c.Get(ts.URL + "/read")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() { _ = resp.Body.Close() }()
+		b, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(b)
+	}
+
+	if got := get(); got != "HTTP/2.0" {
+		t.Fatalf("got protocol %q, want HTTP/2.0", got)
+	}
+	frozen.Store(true)
+	st := time.Now()
+	if got := get(); got != "HTTP/2.0" {
+		t.Errorf("got %q after the connection died", got)
+	}
+	if d := time.Since(st); d > time.Second {
+		t.Errorf("took %v, want the dead connection found by ping", d)
+	}
+	if n := dials.Load(); n != 2 {
+		t.Errorf("dialled %d connections, want 2", n)
 	}
 }

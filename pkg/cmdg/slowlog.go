@@ -19,18 +19,43 @@ var (
 
 	// headerTimeouts are how long each attempt at a request that can
 	// be repeated waits for the response to start before it is given
-	// up on and made again, on a connection of its own: a request
-	// stalled on one connection is usually answered at once on
-	// another. They are on the response's headers only, so that a
-	// large message or attachment can take as long as it takes to
-	// download.
+	// up on and made again. A request stalled on one connection is
+	// usually answered at once on another, which the ping that
+	// http2PingAfter sets off sees to: a connection that does not
+	// answer it is closed, failing its requests, which are then made
+	// again on a new one. They are on the response's headers only, so
+	// that a large message or attachment can take as long as it takes
+	// to download.
 	headerTimeouts = []time.Duration{
 		10 * time.Second, 20 * time.Second, 40 * time.Second}
+
+	// http2PingAfter is how long an HTTP/2 connection goes without
+	// receiving anything before it is pinged, and http2PingTimeout how
+	// long it then waits for the answer before it is closed. Together
+	// they are under the first of headerTimeouts, so that a request
+	// stalled on a dead connection is made again on a new one rather
+	// than on the dead one.
+	http2PingAfter   = 4 * time.Second
+	http2PingTimeout = 4 * time.Second
 )
+
+// pingQuiet has tp ping an HTTP/2 connection that has gone quiet, and close
+// it if the ping is not answered, so that a connection that died without
+// closing fails its requests, which slowLogTransport then makes again on a
+// new one, rather than taking every request after them with it. Without
+// this, a dead connection stays in the pool until the OS gives up on it,
+// which can take many minutes. Added by this fork.
+func pingQuiet(tp *http.Transport) {
+	tp.HTTP2 = &http.HTTP2Config{
+		SendPingTimeout: http2PingAfter,
+		PingTimeout:     http2PingTimeout,
+	}
+}
 
 // slowLogTransport makes requests through base, logs those that take
 // long, while they are still waiting and once they finish, and makes again
-// those that can be repeated and get no response within headerTimeouts.
+// those that can be repeated and fail, or get no response within
+// headerTimeouts.
 type slowLogTransport struct {
 	base http.RoundTripper
 }
@@ -97,8 +122,16 @@ func (t *slowLogTransport) RoundTrip(r *http.Request) (*http.Response,
 			return resp, nil
 		}
 		cancel()
-		if !timedOut || r.Context().Err() != nil {
+		if r.Context().Err() != nil {
 			return nil, err
+		}
+		// A request on a connection found dead, by an unanswered
+		// ping, fails rather than timing out, and is made again
+		// as well.
+		if !timedOut {
+			log.Warningf("HTTP %s failed: %v, attempt %d of %d",
+				what, err, n+1, len(headerTimeouts))
+			continue
 		}
 		err = fmt.Errorf("no response to %s in %v", what, timeout)
 		log.Warningf("HTTP %s: no response in %v, attempt %d of %d",
@@ -111,10 +144,11 @@ func (t *slowLogTransport) RoundTrip(r *http.Request) (*http.Response,
 func logSlow(base http.RoundTripper, r *http.Request,
 	what string) (*http.Response, error) {
 	st := time.Now()
+	after := slowRequestAfter
 	done := make(chan struct{})
 	defer close(done)
 	go func() {
-		tick := time.NewTicker(slowRequestAfter)
+		tick := time.NewTicker(after)
 		defer tick.Stop()
 		for {
 			select {
@@ -128,7 +162,7 @@ func logSlow(base http.RoundTripper, r *http.Request,
 		}
 	}()
 	resp, err := base.RoundTrip(r)
-	if d := time.Since(st); d >= slowRequestAfter {
+	if d := time.Since(st); d >= after {
 		status := "error"
 		if resp != nil {
 			status = resp.Status
