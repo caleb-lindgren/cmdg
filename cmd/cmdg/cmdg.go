@@ -66,7 +66,12 @@ var (
 	lynx            = flag.String("lynx", "lynx", "HTML render binary.")
 	enableSign      = flag.Bool("sign", false, "Send signed emails by default.")
 
-	updateSender = flag.String("update_sender", "", `Update default sender address. E.g.: "John Doe" <john.doe@example.com>`)
+	updateSender  = flag.String("update_sender", "", `Update default sender address. E.g.: "John Doe" <john.doe@example.com>`)
+	driveSettings = flag.Bool("drive_settings", true, "Load the "+
+		"signature and the default sender from the Drive app "+
+		"folder, where -update_signature and -update_sender store "+
+		"them. False writes messages without a signature, from the "+
+		"account's own address, without waiting for Drive.")
 
 	conn *cmdg.CmdG
 
@@ -123,13 +128,17 @@ type composeLoad struct {
 	err  error
 }
 
-// startComposeLoad starts loading the signature and the settings from
-// Drive, in one listing of the folder. It is given up on after
-// composeLoadTimeout, so that a request that gets no answer does not keep
-// a message from being written; it is then written without a signature,
+// startComposeLoad starts loading the signature and the settings from Drive,
+// in one listing of the folder, unless -drive_settings=false. It is given up
+// on after composeLoadTimeout, so that a request that gets no answer does not
+// keep a message from being written; it is then written without a signature,
 // from the account's own address.
 func startComposeLoad(ctx context.Context) *composeLoad {
 	l := &composeLoad{done: make(chan struct{})}
+	if !*driveSettings {
+		close(l.done)
+		return l
+	}
 	go func() {
 		defer close(l.done)
 		ctx, cancel := context.WithTimeout(ctx, composeLoadTimeout)
