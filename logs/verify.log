@@ -1,5 +1,5 @@
-date:   2026-10-23T18:19:14Z
-commit: 66176c062559df733ec6e6460525d88bedca15e9
+date:   2026-10-29T21:22:38Z
+commit: e965333c5fd5803bfed723cbb66690e67aa8225b
 go:     go version go1.27.1-X:nodwarf5 linux/amd64
 
 === gofmt -l ===
@@ -12,7 +12,7 @@ clean
 --- exit 0 ---
 
 === ./cmdg built from ===
-	build	vcs.revision=66176c062559df733ec6e6460525d88bedca15e9
+	build	vcs.revision=e965333c5fd5803bfed723cbb66690e67aa8225b
 	build	vcs.modified=true
 
 === go vet ./... ===
