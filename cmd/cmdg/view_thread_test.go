@@ -7,7 +7,9 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"reflect"
 	"strings"
+	"sync"
 	"testing"
 
 	"google.golang.org/api/gmail/v1"
@@ -21,6 +23,9 @@ import (
 type threadServer struct {
 	ids    []string
 	bodies map[string]string
+
+	m       sync.Mutex
+	formats []string // Of each message get, in order.
 }
 
 func (s *threadServer) RoundTrip(r *http.Request) (*http.Response, error) {
@@ -34,6 +39,9 @@ func (s *threadServer) RoundTrip(r *http.Request) (*http.Response, error) {
 		}
 		v = th
 	} else {
+		s.m.Lock()
+		s.formats = append(s.formats, r.URL.Query().Get("format"))
+		s.m.Unlock()
 		id := p[strings.LastIndex(p, "/")+1:]
 		body := base64.URLEncoding.EncodeToString(
 			[]byte(s.bodies[id]))
@@ -60,6 +68,41 @@ func (s *threadServer) RoundTrip(r *http.Request) (*http.Response, error) {
 		Body:       io.NopCloser(bytes.NewReader(b)),
 		Request:    r,
 	}, nil
+}
+
+// TestThreadLoad checks that opening a conversation fetches each message
+// once, in full. Asking for the thread ID of the message opened on, before
+// anything had fetched it, fetched it at the minimal level as well, racing
+// the fetch in full of the window it was opened in.
+func TestThreadLoad(t *testing.T) {
+	old := conn
+	t.Cleanup(func() { conn = old })
+	srv := &threadServer{ids: []string{"m1", "m2"},
+		bodies: map[string]string{"m1": "a", "m2": "b"}}
+	var err error
+	conn, err = cmdg.NewFake(&http.Client{Transport: srv})
+	if err != nil {
+		t.Fatal(err)
+	}
+	tv := &ThreadView{
+		ov:     &OpenMessageView{errors: make(chan error, 1)},
+		rep:    cmdg.NewMessage(conn, "m2"),
+		loaded: make(chan []*cmdg.Message, 1),
+	}
+	tv.load(context.Background(), false)
+	select {
+	case err := <-tv.ov.errors:
+		t.Fatal(err)
+	case msgs := <-tv.loaded:
+		if len(msgs) != 2 {
+			t.Errorf("loaded %d messages, want 2", len(msgs))
+		}
+	}
+	if want := []string{"full", "full"}; !reflect.DeepEqual(
+		srv.formats, want) {
+		t.Errorf("message gets at levels %q, want %q", srv.formats,
+			want)
+	}
 }
 
 // TestThreadBuild lays out a conversation of a message and a reply quoting

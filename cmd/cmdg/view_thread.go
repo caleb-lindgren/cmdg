@@ -183,6 +183,14 @@ func NewThreadView(ctx context.Context, rep *cmdg.Message,
 // loaded if reload is set, and sends them to tv.loaded.
 func (tv *ThreadView) load(ctx context.Context, reload bool) {
 	st := time.Now()
+	// The conversation shows rep in full, so fetch it in full first: its
+	// thread ID comes with it. Asking for the thread ID alone would fetch
+	// rep a second time, at the minimal level.
+	if err := tv.rep.Preload(ctx, cmdg.LevelFull); err != nil {
+		tv.ov.errors <- errors.Wrapf(err, "loading message %q",
+			tv.rep.ID)
+		return
+	}
 	tid, err := tv.rep.ThreadID(ctx)
 	if err != nil {
 		tv.ov.errors <- errors.Wrap(err, "getting thread ID")
