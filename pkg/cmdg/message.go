@@ -1317,8 +1317,12 @@ func (msg *Message) load(ctx context.Context, level DataLevel) error {
 	msg.Response = msg2
 	msg.level = level
 	msg.headers = make(map[string]string)
-	for _, h := range msg.Response.Payload.Headers {
-		msg.headers[strings.ToLower(h.Name)] = h.Value
+	// A minimal-level response carries no payload: only ID, thread ID and
+	// labels.
+	if msg.Response.Payload != nil {
+		for _, h := range msg.Response.Payload.Headers {
+			msg.headers[strings.ToLower(h.Name)] = h.Value
+		}
 	}
 	if level == LevelFull {
 		msg.bodyHTML, err = makeBody(ctx, msg.Response.Payload, true)
