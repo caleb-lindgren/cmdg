@@ -1,6 +1,6 @@
-date:   2026-10-29T21:22:38Z
-commit: e965333c5fd5803bfed723cbb66690e67aa8225b
-go:     go version go1.27.1-X:nodwarf5 linux/amd64
+date:   2026-11-03T15:42:54Z
+commit: 98d844e9b3a4d1c3ab2dfb0792baa81e0b9dcf55
+go:     go version go1.27.3-X:nodwarf5 linux/amd64
 
 === gofmt -l ===
 clean
@@ -12,17 +12,17 @@ clean
 --- exit 0 ---
 
 === ./cmdg built from ===
-	build	vcs.revision=e965333c5fd5803bfed723cbb66690e67aa8225b
+	build	vcs.revision=98d844e9b3a4d1c3ab2dfb0792baa81e0b9dcf55
 	build	vcs.modified=true
 
 === go vet ./... ===
 --- exit 0 ---
 
 === go test ./... ===
-ok  	github.com/ThomasHabets/cmdg/cmd/cmdg	(cached)
+ok  	github.com/ThomasHabets/cmdg/cmd/cmdg	0.281s
 ?   	github.com/ThomasHabets/cmdg/cmd/med	[no test files]
 ok  	github.com/ThomasHabets/cmdg/internal/customize	(cached)
-ok  	github.com/ThomasHabets/cmdg/pkg/cmdg	(cached)
+ok  	github.com/ThomasHabets/cmdg/pkg/cmdg	0.812s
 ok  	github.com/ThomasHabets/cmdg/pkg/dialog	(cached)
 ok  	github.com/ThomasHabets/cmdg/pkg/display	(cached)
 ok  	github.com/ThomasHabets/cmdg/pkg/gpg	(cached)
