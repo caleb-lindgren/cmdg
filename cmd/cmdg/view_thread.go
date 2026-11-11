@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -973,7 +974,12 @@ func (tv *ThreadView) Run(ctx context.Context) (*MessageViewOp, error) {
 				rebuild()
 			case "H":
 				tv.preferHTML = !tv.preferHTML
+				before := tv.lines
 				rebuild()
+				log.Infof("H: preferHTML=%v; %s; screen %s",
+					tv.preferHTML,
+					htmlToggleState(ctx, tv.msgs),
+					linesChange(before, tv.lines))
 			case nextMessageKey:
 				toMessage(tv.sel + 1)
 				redraw()
@@ -1092,4 +1098,34 @@ func (ov *OpenMessageView) redraw(lines []string, scroll int) error {
 		return ov.drawLines(lines, scroll)
 	}
 	return ov.Draw(lines, scroll)
+}
+
+// htmlToggleState says, for logging an 'H' press, how many messages are
+// loaded and for how many of them the plain and HTML bodies are the same
+// text, which makes 'H' change nothing. The bodies are already loaded by
+// the rebuild that 'H' does, so this makes no RPC.
+func htmlToggleState(ctx context.Context, msgs []*cmdg.Message) string {
+	if len(msgs) == 0 {
+		return "no messages loaded yet"
+	}
+	same := 0
+	for _, m := range msgs {
+		plain, err1 := m.GetBody(ctx)
+		html, err2 := m.GetBodyHTML(ctx)
+		if err1 == nil && err2 == nil && plain == html {
+			same++
+		}
+	}
+	return fmt.Sprintf("%d of %d messages loaded have identical "+
+		"plain and HTML bodies", same, len(msgs))
+}
+
+// linesChange says whether the laid-out conversation changed from before
+// to after, and how many lines each had.
+func linesChange(before, after []string) string {
+	if slices.Equal(before, after) {
+		return fmt.Sprintf("unchanged (%d lines)", len(after))
+	}
+	return fmt.Sprintf("changed (%d lines before, %d after)",
+		len(before), len(after))
 }
