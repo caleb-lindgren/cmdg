@@ -329,7 +329,7 @@ func compose(ctx context.Context, conn *cmdg.CmdG, headOps []headOp, keys *input
 			log.Infof("Took %v to make draft", time.Since(st))
 			return nil
 		case "t":
-			f, err := chooseFile(ctx, keys)
+			f, err := chooseFile(ctx, keys, attachments)
 			if errors.Cause(err) == dialog.ErrAborted {
 				doEdit = false
 				break
@@ -349,10 +349,50 @@ func compose(ctx context.Context, conn *cmdg.CmdG, headOps []headOp, keys *input
 type file struct {
 	name    string
 	content []byte
+
+	// path is where the file was attached from, relative to the working
+	// directory. It's empty for attachments not from the local filesystem,
+	// such as those of a forwarded message.
+	path string
 }
 
-func chooseFile(ctx context.Context, keys *input.Input) (*file, error) {
-	startDir := "."
+// attachStartDir returns the directory of the most recently attached local
+// file, or "." if there is none or it's no longer a directory.
+func attachStartDir(attachments []*file) string {
+	for i := len(attachments) - 1; i >= 0; i-- {
+		if attachments[i].path == "" {
+			continue
+		}
+		dir := path.Dir(attachments[i].path)
+		if st, err := os.Stat(dir); err == nil && st.IsDir() {
+			return dir
+		}
+		return "."
+	}
+	return "."
+}
+
+// attachedHeader lists the attachments, for showing above the file chooser.
+func attachedHeader(attachments []*file) []string {
+	if len(attachments) == 0 {
+		return []string{"No files attached yet."}
+	}
+	ret := []string{fmt.Sprintf("Attached (%d):", len(attachments))}
+	for _, a := range attachments {
+		p := a.path
+		if p == "" {
+			p = a.name
+		}
+		ret = append(ret,
+			fmt.Sprintf("  %s (%d bytes)", p, len(a.content)))
+	}
+	return ret
+}
+
+func chooseFile(ctx context.Context, keys *input.Input,
+	attachments []*file) (*file, error) {
+	startDir := attachStartDir(attachments)
+	header := attachedHeader(attachments)
 	for {
 		log.Infof("Choosing file in %q", startDir)
 		fis, err := os.ReadDir(startDir)
@@ -394,7 +434,8 @@ func chooseFile(ctx context.Context, keys *input.Input) (*file, error) {
 			}
 			return opts[i].Label < opts[j].Label
 		})
-		o, err := dialog.Selection(opts, "Attach> ", false, keys)
+		o, err := dialog.SelectionWithHeader(opts, header,
+			fmt.Sprintf("Attach %s/> ", startDir), false, keys)
 		if errors.Cause(err) == dialog.ErrAborted {
 			return nil, err
 		}
@@ -418,6 +459,7 @@ func chooseFile(ctx context.Context, keys *input.Input) (*file, error) {
 		return &file{
 			name:    fis[o.KeyInt].Name(),
 			content: b,
+			path:    full,
 		}, nil
 	}
 }

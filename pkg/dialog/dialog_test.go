@@ -74,3 +74,41 @@ func TestDrawOptionsFitsScreen(t *testing.T) {
 		t.Errorf("drew %d of 2 options, want 2", got)
 	}
 }
+
+func TestCycleSelection(t *testing.T) {
+	for _, tc := range []struct {
+		selected, shown, step int
+		free                  bool
+		want                  int
+	}{
+		{0, 3, 1, false, 1},
+		{2, 3, 1, false, 0},
+		{0, 3, -1, false, 2},
+		{-1, 3, 1, false, 1},
+		{0, 0, 1, false, -1},
+		{-1, 3, 1, true, 0},
+		{2, 3, 1, true, -1},
+		{-1, 3, -1, true, 2},
+		{0, 3, -1, true, -1},
+	} {
+		got := cycleSelection(tc.selected, tc.shown, tc.step,
+			tc.free)
+		if got != tc.want {
+			t.Errorf("cycleSelection(%d, %d, %d, %v) = %d, "+
+				"want %d", tc.selected, tc.shown, tc.step,
+				tc.free, got, tc.want)
+		}
+	}
+}
+
+func TestHeaderLines(t *testing.T) {
+	h := []string{"a", "b", "c", "d", "e", "f"}
+	if got := headerLines(h, 40); len(got) != 6 {
+		t.Errorf("tall screen: got %q, want all 6", got)
+	}
+	got := headerLines(h, 10) // Room for 3.
+	want := []string{"a", "b", "… and 4 more"}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("short screen: got %q, want %q", got, want)
+	}
+}

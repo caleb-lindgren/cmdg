@@ -306,10 +306,46 @@ func drawOptions(screen *display.Screen, start int, prefix string,
 	return shown
 }
 
+// cycleSelection moves selected by step (1 or -1) among the shown options,
+// wrapping from the last to the first and back. With free input, -1 (no
+// option, so Enter takes the typed text) is part of the cycle, between the
+// last option and the first.
+func cycleSelection(selected, shown, step int, free bool) int {
+	if shown <= 0 {
+		return -1
+	}
+	if !free {
+		return ((max(selected, 0)+step)%shown + shown) % shown
+	}
+	// Positions 0..shown, where 0 is "none" and n+1 is option n.
+	n := shown + 1
+	return ((selected+1+step)%n+n)%n - 1
+}
+
 // Selection asks the user for a choice, with populated suggestions that can be searched in.
 // If `free` is `true` then the user can input anything. If `false` then the options listed are the only valid ones.
+// Tab and Shift+Tab cycle down and up through the options, wrapping around.
 // Example: Email recipient choice.
 func Selection(opts []*Option, prompt string, free bool, keys *input.Input) (*Option, error) {
+	return SelectionWithHeader(opts, nil, prompt, free, keys)
+}
+
+// headerLines returns the header lines that fit above the prompt on a
+// screen of the given height, leaving at least half of it for the options.
+// When some are cut, the last line kept says how many more there were.
+func headerLines(header []string, height int) []string {
+	room := max(height/2-2, 1)
+	if len(header) <= room {
+		return header
+	}
+	ret := append([]string{}, header[:room-1]...)
+	return append(ret, fmt.Sprintf("… and %d more", len(header)-(room-1)))
+}
+
+// SelectionWithHeader is Selection with lines of text, such as the files
+// already attached, shown above the prompt.
+func SelectionWithHeader(opts []*Option, header []string, prompt string,
+	free bool, keys *input.Input) (*Option, error) {
 	screen, err := display.NewScreen()
 	if err != nil {
 		return nil, err
@@ -324,11 +360,19 @@ func Selection(opts []*Option, prompt string, free bool, keys *input.Input) (*Op
 	r := resizer{keys: keys}
 	defer r.done()
 	for {
-		start := 3
 		prefix := "    "
+		promptRow := 2
+		if len(header) > 0 {
+			hl := headerLines(header, screen.Height)
+			for n, l := range hl {
+				screen.Printlnf(n+1, "%s%s", prefix, l)
+			}
+			promptRow = len(hl) + 2
+		}
+		start := promptRow + 1
 		content := fmt.Sprintf("%s%s%s", prefix, prompt, cur)
-		screen.Printlnf(2, "%s", content)
-		screen.SetCursor(2, display.StringWidth(content)+1)
+		screen.Printlnf(promptRow, "%s", content)
+		screen.SetCursor(promptRow, display.StringWidth(content)+1)
 		shown := drawOptions(screen, start, prefix, visible[scroll:],
 			selected)
 		screen.Draw()
@@ -364,6 +408,10 @@ func Selection(opts []*Option, prompt string, free bool, keys *input.Input) (*Op
 					selected = 0
 				}
 			}
+		case input.Tab:
+			selected = cycleSelection(selected, shown, 1, free)
+		case input.BackTab:
+			selected = cycleSelection(selected, shown, -1, free)
 		case input.CtrlC:
 			return nil, ErrAborted
 		case input.Backspace, input.CtrlH:
